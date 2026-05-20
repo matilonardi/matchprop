@@ -2,12 +2,66 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { MapPin, DollarSign, Bed, Bath, Clock, Eye, Lock, Filter } from 'lucide-react'
+import { MapPin, Bed, Bath, Clock, Eye, Lock, Filter } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
+
+const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
+  {
+    id: 'demo-1', property_types: ['casa'], zones: ['Mendiolaza', 'Valle Escondido'],
+    bedrooms_min: 3, bedrooms_max: 4, bathrooms_min: 2, budget_usd: 230000,
+    financing: 'ambos', requirements: ['seguridad', 'cochera', 'gas_natural', 'calles_asfaltadas'],
+    description: 'Busco algo moderno, no más de 10 años de antigüedad. Cocina amplia integrada al living.',
+    urgency: 'este_mes', status: 'active', views_count: 14, leads_count: 3,
+    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 58 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-2', property_types: ['casa', 'duplex'], zones: ['Villa Belgrano', 'Cerro de las Rosas'],
+    bedrooms_min: 3, bathrooms_min: 2, budget_usd: 620000,
+    financing: 'efectivo', requirements: ['seguridad', 'pileta', 'cochera', 'living_amplio'],
+    description: 'Solo barrios cerrados: Los Cielos, Santina, Los Árboles o Los Sueños. Living amplio imprescindible.',
+    urgency: 'flexible', status: 'active', views_count: 9, leads_count: 2,
+    created_at: new Date(Date.now() - 5 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 55 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-3', property_types: ['departamento'], zones: ['Nueva Córdoba', 'General Paz'],
+    bedrooms_min: 1, bedrooms_max: 2, bathrooms_min: 1, budget_usd: 70000,
+    financing: 'credito', requirements: ['luz_natural', 'cochera'],
+    urgency: 'esta_semana', status: 'active', views_count: 21, leads_count: 5,
+    created_at: new Date(Date.now() - 8 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 52 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-4', property_types: ['casa'], zones: ['Mendiolaza', 'Valle del Sol', 'Sierra Nueva'],
+    bedrooms_min: 3, bathrooms_min: 1, budget_usd: 150000,
+    financing: 'credito', requirements: ['seguridad', 'calles_asfaltadas', 'gas_natural'],
+    urgency: 'en_3_meses', status: 'active', views_count: 6, leads_count: 1,
+    created_at: new Date(Date.now() - 18 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 42 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-5', property_types: ['casa', 'duplex'], zones: ['Unquillo', 'Rio Ceballos', 'La Calera'],
+    bedrooms_min: 2, bedrooms_max: 3, bathrooms_min: 1, budget_usd: 120000,
+    financing: 'ambos', requirements: ['jardin', 'gas_natural'],
+    description: 'Buscamos algo tranquilo, con jardín para los chicos. No es urgente pero queremos cerrar antes de fin de año.',
+    urgency: 'flexible', status: 'active', views_count: 4, leads_count: 0,
+    created_at: new Date(Date.now() - 26 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 34 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-6', property_types: ['departamento', 'ph'], zones: ['Güemes', 'Nueva Córdoba', 'Alberdi'],
+    bedrooms_min: 2, bathrooms_min: 1, budget_usd: 95000,
+    financing: 'efectivo', requirements: ['luz_natural', 'terraza'],
+    urgency: 'este_mes', status: 'active', views_count: 11, leads_count: 2,
+    created_at: new Date(Date.now() - 36 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 24 * 24 * 3600000).toISOString(), demo: true,
+  },
+]
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -28,11 +82,11 @@ function urgencyLabel(urgency?: string): string {
   return urgency ? (map[urgency] || urgency) : ''
 }
 
-function RequestCard({ req }: { req: PublicBuyerRequest }) {
+function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolean }) {
   const typeLabels = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
 
   return (
-    <Link href={`/pedidos/${req.id}`}>
+    <Link href={isDemo ? '#' : `/pedidos/${req.id}`} onClick={isDemo ? (e) => e.preventDefault() : undefined}>
       <div className="bg-white rounded-xl border border-gray-100 p-5 hover:shadow-sm hover:border-blue-200 transition-all cursor-pointer group">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
@@ -43,6 +97,11 @@ function RequestCard({ req }: { req: PublicBuyerRequest }) {
               <Badge variant="secondary" className="text-xs bg-green-100 text-green-700 border-0">
                 Activa
               </Badge>
+              {isDemo && (
+                <Badge variant="secondary" className="text-xs bg-amber-100 text-amber-700 border-0">
+                  Ejemplo
+                </Badge>
+              )}
             </div>
             <div className="flex items-center gap-1 text-sm text-gray-500">
               <MapPin className="h-3.5 w-3.5" />
@@ -115,6 +174,7 @@ export default function PedidosFeed() {
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
+  const [showingDemo, setShowingDemo] = useState(false)
 
   const [filters, setFilters] = useState({
     zone: '',
@@ -131,11 +191,27 @@ export default function PedidosFeed() {
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
 
-    const res = await fetch(`/api/pedidos?${params}`)
-    const json = await res.json()
-    setRequests(json.data || [])
-    setTotalPages(json.totalPages || 1)
-    setTotal(json.count || 0)
+    try {
+      const res = await fetch(`/api/pedidos?${params}`)
+      const json = await res.json()
+      const data = json.data || []
+      if (data.length === 0 && page === 1 && !filters.zone && !filters.type && !filters.financing && !filters.maxBudget) {
+        setRequests(DEMO_REQUESTS)
+        setTotalPages(1)
+        setTotal(0)
+        setShowingDemo(true)
+      } else {
+        setRequests(data)
+        setTotalPages(json.totalPages || 1)
+        setTotal(json.count || 0)
+        setShowingDemo(false)
+      }
+    } catch {
+      setRequests(DEMO_REQUESTS)
+      setTotalPages(1)
+      setTotal(0)
+      setShowingDemo(true)
+    }
     setLoading(false)
   }, [page, filters])
 
@@ -217,10 +293,20 @@ export default function PedidosFeed() {
       </div>
 
       {/* Results count */}
-      {!loading && (
+      {!loading && !showingDemo && (
         <p className="text-sm text-gray-500 mb-4">
           {total} pedido{total !== 1 ? 's' : ''} activo{total !== 1 ? 's' : ''}
         </p>
+      )}
+
+      {/* Demo banner */}
+      {!loading && showingDemo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4 text-sm text-amber-800">
+          <p className="font-medium mb-0.5">Estos son pedidos de ejemplo</p>
+          <p className="text-amber-700 text-xs">
+            Así se verá el feed cuando los compradores publiquen sus búsquedas. Los pedidos reales incluyen presupuesto, zonas, requisitos y contacto desbloqueables con 1 crédito.
+          </p>
+        </div>
       )}
 
       {/* Feed */}
@@ -246,7 +332,7 @@ export default function PedidosFeed() {
       ) : (
         <div className="grid md:grid-cols-2 gap-4">
           {requests.map((req) => (
-            <RequestCard key={req.id} req={req} />
+            <RequestCard key={req.id} req={req} isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo} />
           ))}
         </div>
       )}
