@@ -2,12 +2,11 @@ import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 export async function POST(request: NextRequest) {
   const { request_id } = await request.json()
   if (!request_id) return Response.json({ error: 'request_id requerido' }, { status: 400 })
 
+  const resend = new Resend(process.env.RESEND_API_KEY || 'placeholder')
   const supabase = createServerClient()
 
   // Get the buyer request
