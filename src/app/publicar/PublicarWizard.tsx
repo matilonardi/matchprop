@@ -9,9 +9,9 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
-import { ZONES_CORDOBA, REQUIREMENTS, URGENCY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
+import { ZONES_CORDOBA, REQUIREMENTS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 
-type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph'
+type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
 type FinancingType = 'efectivo' | 'credito' | 'ambos'
 
 interface FormData {
@@ -22,7 +22,14 @@ interface FormData {
   bathrooms_min: string
   budget_usd: string
   financing: FinancingType | ''
+  financing_types: string[]
+  financing_cash_pct: string
+  financing_bank: string
+  financing_precalified: string
+  search_reason: string
   requirements: string[]
+  requirements_excluyentes: string[]
+  priorities: string[]
   description: string
   urgency: string
   contact_name: string
@@ -44,6 +51,10 @@ const PROPERTY_TYPES: { id: PropertyType; label: string; icon: string }[] = [
   { id: 'departamento', label: 'Departamento', icon: '🏢' },
   { id: 'duplex', label: 'Dúplex', icon: '🏘' },
   { id: 'ph', label: 'PH', icon: '🏠' },
+  { id: 'terreno', label: 'Terreno', icon: '🌿' },
+  { id: 'local', label: 'Local Comercial', icon: '🏪' },
+  { id: 'renta', label: 'Para renta (cualquier tipo/zona)', icon: '💵' },
+  { id: 'revaluo', label: 'Para revalúo (cualquier tipo/zona)', icon: '📈' },
 ]
 
 export default function PublicarWizard() {
@@ -60,7 +71,14 @@ export default function PublicarWizard() {
     bathrooms_min: '',
     budget_usd: '',
     financing: '',
+    financing_types: [],
+    financing_cash_pct: '',
+    financing_bank: '',
+    financing_precalified: '',
+    search_reason: '',
     requirements: [],
+    requirements_excluyentes: [],
+    priorities: [],
     description: '',
     urgency: '',
     contact_name: '',
@@ -79,8 +97,8 @@ export default function PublicarWizard() {
       case 1: return form.property_types.length > 0
       case 2: return form.zones.length > 0
       case 3: return !!form.bedrooms_min
-      case 4: return !!form.budget_usd && !!form.financing
-      case 5: return true
+      case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
+      case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 15
       case 6: return !!form.contact_name && !!form.contact_phone
       default: return false
     }
@@ -90,15 +108,25 @@ export default function PublicarWizard() {
     setLoading(true)
     setError('')
     try {
+      // Derive legacy financing field from financing_types
+      const ft = form.financing_types
+      const derivedFinancing: FinancingType =
+        ft.includes('credito') && !ft.includes('efectivo') ? 'credito'
+        : ft.includes('efectivo') && !ft.includes('credito') ? 'efectivo'
+        : 'ambos'
+
       const res = await fetch('/api/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          financing: derivedFinancing,
           bedrooms_min: form.bedrooms_min ? parseInt(form.bedrooms_min) : null,
           bedrooms_max: form.bedrooms_max ? parseInt(form.bedrooms_max) : null,
           bathrooms_min: form.bathrooms_min ? parseInt(form.bathrooms_min) : null,
           budget_usd: parseInt(form.budget_usd),
+          financing_cash_pct: form.financing_cash_pct ? parseInt(form.financing_cash_pct) : null,
+          financing_precalified: form.financing_precalified === 'si' ? true : form.financing_precalified === 'no' ? false : null,
         }),
       })
       if (!res.ok) {
@@ -265,9 +293,10 @@ export default function PublicarWizard() {
           </div>
         )}
 
-        {/* Step 4: Budget */}
+        {/* Step 4: Budget + Financing + Search reason */}
         {step === 4 && (
           <div className="space-y-6">
+            {/* Budget */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
                 Presupuesto máximo en USD <span className="text-red-500">*</span>
@@ -284,58 +313,106 @@ export default function PublicarWizard() {
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
                 {['70000', '150000', '230000', '400000', '620000'].map((v) => (
-                  <button
-                    key={v}
-                    type="button"
+                  <button key={v} type="button"
                     onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
-                      form.budget_usd === v
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
-                        : 'border-gray-200 text-gray-600 hover:border-gray-300'
-                    }`}
-                  >
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                     USD {parseInt(v).toLocaleString()}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Financing types — multi-select with conditional sub-fields */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                ¿Cómo vas a pagar? <span className="text-red-500">*</span>
+              </Label>
+              <p className="text-xs text-gray-400 mb-3">Podés combinar varias opciones.</p>
+              <div className="space-y-2">
+                {[
+                  { id: 'efectivo', label: '💵 Efectivo' },
+                  { id: 'credito', label: '🏦 Crédito hipotecario' },
+                  { id: 'permuta_propiedad', label: '🏠 Doy propiedad como parte de pago' },
+                  { id: 'permuta_auto', label: '🚗 Doy auto como parte de pago' },
+                ].map(({ id, label }) => {
+                  const selected = form.financing_types.includes(id)
+                  return (
+                    <div key={id}>
+                      <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                        <Checkbox checked={selected}
+                          onCheckedChange={() => setForm((f) => ({ ...f, financing_types: toggleArrayItem(f.financing_types, id) }))} />
+                        <span className="text-sm font-medium text-gray-800">{label}</span>
+                      </label>
+                      {/* Sub-fields */}
+                      {selected && id === 'efectivo' && (
+                        <div className="ml-4 mt-2 mb-1">
+                          <Label className="text-xs text-gray-500 mb-1.5 block">¿Qué % del total pagás en efectivo?</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {['25', '50', '75', '100'].map((pct) => (
+                              <button key={pct} type="button"
+                                onClick={() => setForm((f) => ({ ...f, financing_cash_pct: f.financing_cash_pct === pct ? '' : pct }))}
+                                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.financing_cash_pct === pct ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                                {pct}%
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {selected && id === 'credito' && (
+                        <div className="ml-4 mt-2 mb-1 space-y-2">
+                          <Input placeholder="Banco (ej: Galicia, Nación, Santander...)"
+                            value={form.financing_bank}
+                            onChange={(e) => setForm((f) => ({ ...f, financing_bank: e.target.value }))}
+                            className="text-sm" />
+                          <div className="flex gap-2">
+                            <span className="text-xs text-gray-500 self-center">¿Estás precalificado?</span>
+                            {['si', 'no'].map((opt) => (
+                              <button key={opt} type="button"
+                                onClick={() => setForm((f) => ({ ...f, financing_precalified: f.financing_precalified === opt ? '' : opt }))}
+                                className={`text-xs px-4 py-1.5 rounded-full border transition-colors font-medium ${form.financing_precalified === opt ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                                {opt === 'si' ? 'Sí' : 'No'}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Search reason */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                Tipo de financiación <span className="text-red-500">*</span>
+                ¿Por qué estás buscando? <span className="text-red-500">*</span>
               </Label>
-              <div className="space-y-2">
-                {(Object.entries(FINANCING_LABELS) as [FinancingType, string][]).map(([key, label]) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, financing: key }))}
-                    className={`w-full p-3 rounded-xl border-2 text-left text-sm font-medium transition-all ${
-                      form.financing === key
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { id: 'primera_vivienda', label: '🏡 Primera vivienda' },
+                  { id: 'cambio_vivienda', label: '🔄 Cambio de vivienda' },
+                  { id: 'inversion_renta', label: '💵 Inversión para renta' },
+                  { id: 'inversion_revaluo', label: '📈 Inversión para revalúo' },
+                  { id: 'mudanza', label: '📦 Mudanza de zona' },
+                  { id: 'otro', label: '💬 Otro motivo' },
+                ].map(({ id, label }) => (
+                  <button key={id} type="button"
+                    onClick={() => setForm((f) => ({ ...f, search_reason: f.search_reason === id ? '' : id }))}
+                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${form.search_reason === id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
                     {label}
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Urgency */}
             <div>
-              <Label className="text-sm font-medium text-gray-700 mb-3 block">
-                Urgencia
-              </Label>
+              <Label className="text-sm font-medium text-gray-700 mb-3 block">Urgencia</Label>
               <div className="grid grid-cols-2 gap-2">
                 {URGENCY_OPTIONS.map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
+                  <button key={id} type="button"
                     onClick={() => setForm((f) => ({ ...f, urgency: f.urgency === id ? '' : id }))}
-                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${
-                      form.urgency === id
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
+                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${form.urgency === id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
                     {label}
                   </button>
                 ))}
@@ -344,46 +421,85 @@ export default function PublicarWizard() {
           </div>
         )}
 
-        {/* Step 5: Requirements */}
-        {step === 5 && (
-          <div className="space-y-5">
-            <div>
-              <p className="text-gray-600 mb-4">¿Algún requisito importante? (opcional)</p>
-              <div className="grid grid-cols-2 gap-2">
-                {REQUIREMENTS.map(({ id, label }) => (
-                  <label
-                    key={id}
-                    className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors ${
-                      form.requirements.includes(id)
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <Checkbox
-                      checked={form.requirements.includes(id)}
-                      onCheckedChange={() =>
-                        setForm((f) => ({ ...f, requirements: toggleArrayItem(f.requirements, id) }))
-                      }
-                    />
-                    <span className="text-sm text-gray-700">{label}</span>
-                  </label>
-                ))}
+        {/* Step 5: Requirements (3-state) + Description */}
+        {step === 5 && (() => {
+          const getReqState = (id: string): 'none' | 'importante' | 'excluyente' => {
+            if (form.requirements_excluyentes.includes(id)) return 'excluyente'
+            if (form.requirements.includes(id)) return 'importante'
+            return 'none'
+          }
+          const cycleReq = (id: string) => {
+            const s = getReqState(id)
+            setForm((f) => {
+              if (s === 'none') return { ...f, requirements: [...f.requirements, id] }
+              if (s === 'importante') return {
+                ...f,
+                requirements: f.requirements.filter(r => r !== id),
+                requirements_excluyentes: [...f.requirements_excluyentes, id],
+              }
+              return { ...f, requirements_excluyentes: f.requirements_excluyentes.filter(r => r !== id) }
+            })
+          }
+          const total = form.requirements.length + form.requirements_excluyentes.length
+          return (
+            <div className="space-y-6">
+              <div>
+                <p className="text-sm font-medium text-gray-700 mb-1">
+                  Requisitos de la propiedad <span className="text-red-500">*</span>
+                </p>
+                <p className="text-xs text-gray-400 mb-3">
+                  Tocá una vez = <span className="text-blue-600 font-medium">Importante</span> · Tocá de nuevo = <span className="text-red-600 font-medium">Excluyente</span> · Tocá otra vez = Quitar
+                </p>
+                <div className="grid grid-cols-2 gap-2">
+                  {REQUIREMENTS.map(({ id, label }) => {
+                    const state = getReqState(id)
+                    return (
+                      <button key={id} type="button" onClick={() => cycleReq(id)}
+                        className={`p-3 rounded-xl border-2 text-left text-sm transition-all relative ${
+                          state === 'excluyente' ? 'border-red-400 bg-red-50'
+                          : state === 'importante' ? 'border-blue-400 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                        }`}>
+                        <span className={state === 'none' ? 'text-gray-700' : state === 'importante' ? 'text-blue-800' : 'text-red-800'}>
+                          {label}
+                        </span>
+                        {state !== 'none' && (
+                          <span className={`block text-xs font-semibold mt-0.5 ${state === 'importante' ? 'text-blue-600' : 'text-red-600'}`}>
+                            {state === 'importante' ? '✓ Importante' : '⛔ Excluyente'}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className={`text-xs mt-2 ${total === 0 ? 'text-gray-400' : 'text-green-600'}`}>
+                  {total === 0 ? 'Seleccioná al menos un requisito' : `✓ ${total} requisito${total > 1 ? 's' : ''} marcado${total > 1 ? 's' : ''}`}
+                </p>
+              </div>
+
+              {/* Description — mandatory */}
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-1 block">
+                  Contanos más sobre tu búsqueda <span className="text-red-500">*</span>
+                </Label>
+                <p className="text-xs text-gray-400 mb-2">
+                  Las inmobiliarias leen esto antes de contactarte. Cuanto más claro, mejor.
+                </p>
+                <Textarea
+                  placeholder="Ej: busco algo moderno, no más de 10 años. Cocina integrada al living imprescindible. Prefiero planta baja o primer piso..."
+                  value={form.description}
+                  onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                  rows={4} className="resize-none"
+                />
+                <p className={`text-xs mt-1 ${form.description.trim().length < 15 ? 'text-gray-400' : 'text-green-600'}`}>
+                  {form.description.trim().length < 15
+                    ? `Mínimo 15 caracteres (${form.description.trim().length}/15)`
+                    : '✓ Listo'}
+                </p>
               </div>
             </div>
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Algo más que quieras aclarar (opcional)
-              </Label>
-              <Textarea
-                placeholder="Ej: busco algo moderno, no más de 10 años, living amplio, cocina integrada..."
-                value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
-                rows={3}
-                className="resize-none"
-              />
-            </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Step 6: Contact */}
         {step === 6 && (

@@ -53,6 +53,15 @@ export const REQUIREMENTS = [
   { id: 'terraza', label: 'Terraza / Balcón' },
 ]
 
+export const PRIORITY_OPTIONS = [
+  { id: 'zona_exacta', label: '📍 La zona es clave, no me muevo de ahí' },
+  { id: 'precio_fijo', label: '💰 El presupuesto es fijo, no me excedo' },
+  { id: 'tamano', label: '📐 El tamaño (m² / dormitorios) no es negociable' },
+  { id: 'sin_reformas', label: '🔑 Sin reformas, listo para entrar' },
+  { id: 'nuevo', label: '✨ Quiero algo nuevo o casi nuevo (< 10 años)' },
+  { id: 'disponibilidad', label: '⚡ Necesito disponibilidad inmediata' },
+]
+
 export const URGENCY_OPTIONS = [
   { id: 'esta_semana', label: 'Esta semana' },
   { id: 'este_mes', label: 'Este mes' },
@@ -73,6 +82,8 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   ph: 'PH',
   terreno: 'Terreno',
   local: 'Local Comercial',
+  renta: 'Inversión para renta',
+  revaluo: 'Inversión para revalúo',
 }
 
 export const FINANCING_LABELS: Record<string, string> = {

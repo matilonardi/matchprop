@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, requirements, description, urgency, status, views_count, leads_count, created_at',
+      'id, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at',
       { count: 'exact' }
     )
     .eq('status', 'active')
@@ -24,7 +24,14 @@ export async function GET(request: NextRequest) {
 
   if (zone) query = query.contains('zones', [zone])
   if (type) query = query.contains('property_types', [type])
-  if (financing && financing !== 'todos') query = query.eq('financing', financing)
+  if (financing && financing !== 'todos') {
+    const newTypes = ['efectivo', 'credito', 'permuta_propiedad', 'permuta_auto']
+    if (newTypes.includes(financing)) {
+      query = query.contains('financing_types', [financing])
+    } else {
+      query = query.eq('financing', financing)
+    }
+  }
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
 
   const { data, error, count } = await query
@@ -49,6 +56,13 @@ export async function POST(request: NextRequest) {
     budget_usd,
     financing,
     requirements,
+    requirements_excluyentes,
+    priorities,
+    financing_types,
+    financing_cash_pct,
+    financing_bank,
+    financing_precalified,
+    search_reason,
     description,
     urgency,
     contact_name,
@@ -73,6 +87,13 @@ export async function POST(request: NextRequest) {
       budget_usd,
       financing,
       requirements: requirements || [],
+      requirements_excluyentes: requirements_excluyentes || [],
+      priorities: priorities || [],
+      financing_types: financing_types || [],
+      financing_cash_pct: financing_cash_pct || null,
+      financing_bank: financing_bank || null,
+      financing_precalified: financing_precalified ?? null,
+      search_reason: search_reason || null,
       description: description || null,
       urgency: urgency || null,
       contact_name,

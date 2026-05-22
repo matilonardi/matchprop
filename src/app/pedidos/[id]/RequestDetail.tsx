@@ -170,17 +170,44 @@ export default function RequestDetail({
           )}
 
           {/* Requirements */}
-          {request.requirements.length > 0 && (
+          {(request.requirements.length > 0 || (request.requirements_excluyentes && request.requirements_excluyentes.length > 0)) && (
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Requisitos importantes:</p>
+              <p className="text-sm font-medium text-gray-700 mb-2">Requisitos:</p>
               <div className="flex flex-wrap gap-2">
-                {request.requirements.map((r) => (
-                  <span
-                    key={r}
-                    className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full"
-                  >
-                    {r.replace(/_/g, ' ')}
+                {(request.requirements_excluyentes || []).map((r) => (
+                  <span key={`ex-${r}`} className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full font-medium">
+                    ⛔ {r.replace(/_/g, ' ')}
                   </span>
+                ))}
+                {request.requirements.map((r) => (
+                  <span key={r} className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                    ✓ {r.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+              {(request.requirements_excluyentes?.length ?? 0) > 0 && (
+                <p className="text-xs text-red-600 mt-1.5">⛔ = Excluyente (no negocia sin esto)</p>
+              )}
+            </div>
+          )}
+
+          {/* Priorities */}
+          {request.priorities && request.priorities.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-gray-700 mb-2">Lo más importante para este comprador:</p>
+              <div className="space-y-1.5">
+                {request.priorities.map((p) => (
+                  <div key={p} className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
+                    <span>⚑</span>
+                    <span>{{
+                      zona_exacta: 'La zona es clave, no se mueve de ahí',
+                      precio_fijo: 'El presupuesto es fijo, no se excede',
+                      tamano: 'El tamaño (m² / dormitorios) no es negociable',
+                      sin_reformas: 'Sin reformas, listo para entrar',
+                      nuevo: 'Quiere algo nuevo o casi nuevo (< 10 años)',
+                      disponibilidad: 'Necesita disponibilidad inmediata',
+                    }[p] || p}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -188,9 +215,9 @@ export default function RequestDetail({
 
           {/* Description */}
           {request.description && (
-            <div className="bg-gray-50 rounded-xl p-4">
-              <p className="text-sm font-medium text-gray-700 mb-1">Descripción adicional:</p>
-              <p className="text-sm text-gray-600">{request.description}</p>
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <p className="text-sm font-medium text-blue-900 mb-1">Qué busca exactamente:</p>
+              <p className="text-sm text-blue-800 leading-relaxed">{request.description}</p>
             </div>
           )}
 

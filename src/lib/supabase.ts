@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-export type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local'
+export type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
 export type FinancingType = 'efectivo' | 'credito' | 'ambos'
 export type RequestStatus = 'active' | 'matched' | 'closed' | 'expired'
 
@@ -14,6 +14,13 @@ export interface BuyerRequest {
   budget_usd: number
   financing: FinancingType
   requirements: string[]
+  requirements_excluyentes?: string[]
+  priorities?: string[]
+  financing_types?: string[]
+  financing_cash_pct?: number
+  financing_bank?: string
+  financing_precalified?: boolean
+  search_reason?: string
   description?: string
   urgency?: string
   contact_name: string

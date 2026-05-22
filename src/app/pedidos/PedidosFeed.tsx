@@ -267,13 +267,15 @@ export default function PedidosFeed() {
 
           <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
             <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Financiación" />
+              <SelectValue placeholder="Forma de pago" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Cualquier financiación</SelectItem>
-              {Object.entries(FINANCING_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
+              <SelectItem value="todos">Cualquier forma de pago</SelectItem>
+              <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+              <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
+              <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
+              <SelectItem value="permuta_auto">🚗 Permuta de auto</SelectItem>
+              <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
             </SelectContent>
           </Select>
 
