@@ -98,7 +98,7 @@ export default function PublicarWizard() {
       case 2: return form.zones.length > 0
       case 3: return !!form.bedrooms_min
       case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
-      case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 15
+      case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10
       case 6: return !!form.contact_name && !!form.contact_phone
       default: return false
     }
@@ -492,8 +492,8 @@ export default function PublicarWizard() {
                   rows={4} className="resize-none"
                 />
                 <p className={`text-xs mt-1 ${form.description.trim().length < 15 ? 'text-gray-400' : 'text-green-600'}`}>
-                  {form.description.trim().length < 15
-                    ? `Mínimo 15 caracteres (${form.description.trim().length}/15)`
+                  {form.description.trim().length < 10
+                    ? `Mínimo 10 caracteres (${form.description.trim().length}/10)`
                     : '✓ Listo'}
                 </p>
               </div>
