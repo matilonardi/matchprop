@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const type = searchParams.get('type')
   const financing = searchParams.get('financing')
   const maxBudget = searchParams.get('maxBudget')
+  const since = searchParams.get('since') // '24h' | '7d' | '30d'
   const page = parseInt(searchParams.get('page') || '1')
   const limit = 20
 
@@ -24,6 +25,14 @@ export async function GET(request: NextRequest) {
 
   if (zone) query = query.contains('zones', [zone])
   if (type) query = query.contains('property_types', [type])
+  if (since) {
+    const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }
+    const days = sinceMap[since]
+    if (days) {
+      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+      query = query.gte('created_at', cutoff)
+    }
+  }
   if (financing && financing !== 'todos') {
     const newTypes = ['efectivo', 'credito', 'permuta_propiedad', 'permuta_auto']
     if (newTypes.includes(financing)) {

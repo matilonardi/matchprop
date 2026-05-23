@@ -5,7 +5,7 @@ import Link from 'next/link'
 export default async function PedidosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ zone?: string; type?: string; financing?: string; maxBudget?: string }>
+  searchParams: Promise<{ zone?: string; type?: string; financing?: string; maxBudget?: string; since?: string }>
 }) {
   const params = await searchParams
 
@@ -41,6 +41,7 @@ export default async function PedidosPage({
             initialType={params.type || ''}
             initialFinancing={params.financing || ''}
             initialMaxBudget={params.maxBudget || ''}
+            initialSince={params.since || ''}
           />
         </div>
 

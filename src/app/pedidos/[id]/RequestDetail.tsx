@@ -48,10 +48,22 @@ export default function RequestDetail({
   const [unlocking, setUnlocking] = useState(false)
   const [unlockError, setUnlockError] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user))
   }, [])
+
+  async function handleShare() {
+    const url = window.location.href
+    if (navigator.share) {
+      await navigator.share({ url })
+    } else {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    }
+  }
 
   const typeLabels = request.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
 
@@ -125,10 +137,15 @@ export default function RequestDetail({
               </div>
             </div>
             <button
-              onClick={() => navigator.share?.({ url: window.location.href })}
-              className="p-2 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors"
+              onClick={handleShare}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg hover:bg-gray-50 text-gray-400 hover:text-gray-600 transition-colors text-xs font-medium"
+              title="Compartir pedido"
             >
-              <Share2 className="h-4 w-4" />
+              {copied ? (
+                <><CheckCircle2 className="h-4 w-4 text-green-500" /><span className="text-green-600">¡Copiado!</span></>
+              ) : (
+                <><Share2 className="h-4 w-4" /><span>Compartir</span></>
+              )}
             </button>
           </div>
         </div>

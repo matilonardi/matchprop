@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { MapPin, Bed, Bath, Clock, Eye, Lock, X } from 'lucide-react'
+import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
@@ -218,6 +218,7 @@ interface FeedProps {
   initialType?: string
   initialFinancing?: string
   initialMaxBudget?: string
+  initialSince?: string
 }
 
 export default function PedidosFeed({
@@ -225,6 +226,7 @@ export default function PedidosFeed({
   initialType = '',
   initialFinancing = '',
   initialMaxBudget = '',
+  initialSince = '',
 }: FeedProps) {
   const [requests, setRequests] = useState<PublicBuyerRequest[]>([])
   const [loading, setLoading] = useState(true)
@@ -238,9 +240,10 @@ export default function PedidosFeed({
     type: initialType,
     financing: initialFinancing,
     maxBudget: initialMaxBudget,
+    since: initialSince,
   })
 
-  const hasFilters = !!(filters.zone || filters.type || filters.financing || filters.maxBudget)
+  const hasFilters = !!(filters.zone || filters.type || filters.financing || filters.maxBudget || filters.since)
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
@@ -249,6 +252,7 @@ export default function PedidosFeed({
     if (filters.type) params.set('type', filters.type)
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
+    if (filters.since) params.set('since', filters.since)
 
     try {
       const res = await fetch(`/api/pedidos?${params}`)
@@ -279,7 +283,7 @@ export default function PedidosFeed({
   }, [fetchRequests])
 
   function handleFilterChange(key: string, value: string | null) {
-    setFilters((f) => ({ ...f, [key]: !value || value === 'todos' ? '' : value }))
+    setFilters((f) => ({ ...f, [key]: !value || value === 'todos' || value === 'todas' ? '' : value }))
     setPage(1)
   }
 
@@ -351,9 +355,25 @@ export default function PedidosFeed({
           </Select>
         </div>
 
+        {/* Fecha */}
+        <div className="shrink-0 w-44">
+          <Select value={filters.since || 'todas'} onValueChange={(v) => handleFilterChange('since', v)}>
+            <SelectTrigger className={`${pillBase} ${filters.since ? pillActive : pillInactive} px-4`}>
+              <CalendarDays className="h-3.5 w-3.5 mr-1.5 shrink-0" />
+              <SelectValue placeholder="📅 Fecha" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todas">📅 Cualquier fecha</SelectItem>
+              <SelectItem value="24h">🔥 Últimas 24 horas</SelectItem>
+              <SelectItem value="7d">📅 Última semana</SelectItem>
+              <SelectItem value="30d">🗓️ Último mes</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
         {hasFilters && (
           <button
-            onClick={() => { setFilters({ zone: '', type: '', financing: '', maxBudget: '' }); setPage(1) }}
+            onClick={() => { setFilters({ zone: '', type: '', financing: '', maxBudget: '', since: '' }); setPage(1) }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
           >
             <X className="h-3.5 w-3.5" />
