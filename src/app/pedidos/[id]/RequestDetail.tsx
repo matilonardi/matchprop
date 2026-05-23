@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
@@ -47,6 +47,11 @@ export default function RequestDetail({
   const [contact, setContact] = useState<Contact | null>(null)
   const [unlocking, setUnlocking] = useState(false)
   const [unlockError, setUnlockError] = useState('')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user))
+  }, [])
 
   const typeLabels = request.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
 
@@ -305,9 +310,11 @@ export default function RequestDetail({
                     <><Unlock className="h-4 w-4 mr-2" />Desbloquear por 1 crédito</>
                   )}
                 </Button>
-                <Link href="/broker">
-                  <Button variant="outline">Registrarme</Button>
-                </Link>
+                {!isLoggedIn && (
+                  <Link href="/broker">
+                    <Button variant="outline">Registrarme</Button>
+                  </Link>
+                )}
               </div>
             </div>
           )}

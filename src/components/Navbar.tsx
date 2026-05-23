@@ -1,12 +1,27 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
-import { Menu, X } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Menu, X, LayoutDashboard } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { supabase } from '@/lib/supabase'
+import type { User } from '@supabase/supabase-js'
 
 export default function Navbar() {
   const [open, setOpen] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+
+    // Listen for auth changes (login / logout)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null)
+    })
+
+    return () => subscription.unsubscribe()
+  }, [])
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
@@ -22,14 +37,37 @@ export default function Navbar() {
             <Link href="/pedidos" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
               Ver pedidos
             </Link>
-            <Link href="/broker" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-              Soy inmobiliaria
-            </Link>
-            <Link href="/publicar">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
-                Publicar búsqueda
-              </Button>
-            </Link>
+
+            {user ? (
+              // Logged in: show dashboard link
+              <Link
+                href="/broker/dashboard"
+                className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Mi dashboard
+              </Link>
+            ) : (
+              // Not logged in: show broker + publish links
+              <>
+                <Link href="/broker" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Soy inmobiliaria
+                </Link>
+                <Link href="/publicar">
+                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                    Publicar búsqueda
+                  </Button>
+                </Link>
+              </>
+            )}
+
+            {user && (
+              <Link href="/publicar">
+                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  Publicar búsqueda
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* Mobile toggle */}
@@ -45,9 +83,15 @@ export default function Navbar() {
           <Link href="/pedidos" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
             Ver pedidos activos
           </Link>
-          <Link href="/broker" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
-            Soy inmobiliaria
-          </Link>
+          {user ? (
+            <Link href="/broker/dashboard" className="text-sm font-semibold text-blue-600" onClick={() => setOpen(false)}>
+              Mi dashboard →
+            </Link>
+          ) : (
+            <Link href="/broker" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
+              Soy inmobiliaria
+            </Link>
+          )}
           <Link href="/publicar" onClick={() => setOpen(false)}>
             <Button className="w-full bg-blue-600 hover:bg-blue-700">
               Publicar mi búsqueda
