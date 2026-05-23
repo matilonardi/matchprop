@@ -923,8 +923,8 @@ export default function PublicarWizard() {
                 sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY || '10000000-ffff-ffff-ffff-000000000001'}
                 size="invisible"
                 onVerify={onCaptchaVerify}
-                onError={() => { setLoading(false); setError('Error de verificación. Intentá de nuevo.') }}
-                onExpire={() => { setLoading(false); setError('Verificación expirada. Intentá de nuevo.'); captchaRef.current?.resetCaptcha() }}
+                onError={() => { onCaptchaVerify('') }}
+                onExpire={() => { captchaRef.current?.resetCaptcha(); onCaptchaVerify('') }}
                 ref={captchaRef}
               />
               <Button

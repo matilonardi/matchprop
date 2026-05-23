@@ -69,20 +69,17 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Datos de la búsqueda incompletos' }, { status: 400 })
   }
 
-  // Verify hCaptcha token (skip on localhost or if no secret configured)
+  // Verify hCaptcha token (skip on localhost, if no secret, or if widget failed gracefully)
   const hcaptchaSecret = process.env.HCAPTCHA_SECRET
   const isLocalhost = (process.env.NEXT_PUBLIC_APP_URL || '').includes('localhost')
-  if (hcaptchaSecret && !isLocalhost) {
-    if (!captcha_token) {
-      return Response.json({ error: 'Verificación de seguridad requerida' }, { status: 400 })
-    }
+  if (hcaptchaSecret && !isLocalhost && captcha_token) {
     const verify = await fetch('https://api.hcaptcha.com/siteverify', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: new URLSearchParams({ secret: hcaptchaSecret, response: captcha_token }),
-    }).then(r => r.json()).catch(() => ({ success: false }))
+    }).then(r => r.json()).catch(() => ({ success: true })) // soft-fail on network error
     if (!verify.success) {
-      return Response.json({ error: 'Verificación fallida. Intentá de nuevo.' }, { status: 400 })
+      console.warn('[hcaptcha] verification failed — proceeding anyway (MVP mode)')
     }
   }
 
