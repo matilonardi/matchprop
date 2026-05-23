@@ -9,6 +9,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 
 interface Contact {
@@ -53,11 +54,17 @@ export default function RequestDetail({
     setUnlocking(true)
     setUnlockError('')
     try {
-      // In production this sends broker_user_id from session
+      // Get the logged-in broker's user ID from Supabase session
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        setUnlockError('Tenés que iniciar sesión para desbloquear contactos.')
+        return
+      }
+
       const res = await fetch(`/api/pedidos/${request.id}/unlock`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ broker_user_id: 'demo' }),
+        body: JSON.stringify({ broker_user_id: user.id }),
       })
       if (res.status === 402) {
         setUnlockError('Sin créditos. Comprá más créditos para continuar.')
