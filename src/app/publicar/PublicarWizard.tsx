@@ -133,8 +133,8 @@ export default function PublicarWizard() {
         const data = await res.json()
         throw new Error(data.error || 'Error al publicar')
       }
-      const { id } = await res.json()
-      router.push(`/pedidos/${id}?nuevo=1`)
+      const { id, close_token } = await res.json()
+      router.push(`/pedidos/${id}?nuevo=1&close_token=${close_token}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
     } finally {

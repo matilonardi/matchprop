@@ -1,5 +1,11 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { createHmac } from 'crypto'
+
+function makeCloseToken(requestId: string): string {
+  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
+  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
+}
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -126,5 +132,6 @@ export async function POST(request: NextRequest) {
     }).catch(() => {})
   } catch {}
 
-  return Response.json({ id: data.id }, { status: 201 })
+  const close_token = makeCloseToken(data.id)
+  return Response.json({ id: data.id, close_token }, { status: 201 })
 }

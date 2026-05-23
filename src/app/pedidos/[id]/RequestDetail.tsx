@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
-  CheckCircle2, ArrowLeft, Share2, Loader2
+  CheckCircle2, ArrowLeft, Share2, Loader2, XCircle
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -40,15 +40,20 @@ function urgencyLabel(urgency?: string): string {
 export default function RequestDetail({
   request,
   isNew,
+  closeToken,
 }: {
   request: PublicBuyerRequest
   isNew: boolean
+  closeToken?: string
 }) {
   const [contact, setContact] = useState<Contact | null>(null)
   const [unlocking, setUnlocking] = useState(false)
   const [unlockError, setUnlockError] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [closing, setClosing] = useState(false)
+  const [closeError, setCloseError] = useState('')
+  const [closed, setClosed] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user))
@@ -62,6 +67,29 @@ export default function RequestDetail({
       await navigator.clipboard.writeText(url)
       setCopied(true)
       setTimeout(() => setCopied(false), 2000)
+    }
+  }
+
+  async function handleClose() {
+    if (!confirm('¿Cerrar tu búsqueda? Los brokers ya no podrán verla.')) return
+    setClosing(true)
+    setCloseError('')
+    try {
+      const res = await fetch(`/api/pedidos/${request.id}/close`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ close_token: closeToken }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setCloseError(data.error || 'Error al cerrar la búsqueda')
+        return
+      }
+      setClosed(true)
+    } catch {
+      setCloseError('Error de conexión')
+    } finally {
+      setClosing(false)
     }
   }
 
@@ -260,8 +288,41 @@ export default function RequestDetail({
           </div>
         </div>
 
-        {/* Unlock contact */}
-        <div className="p-6 bg-gray-50 border-t border-gray-100">
+        {/* Close request — only shown to the original buyer via close_token */}
+        {closeToken && !closed && (
+          <div className="px-6 pb-4 pt-0">
+            <div className="border border-dashed border-gray-200 rounded-xl p-4">
+              <p className="text-xs text-gray-500 mb-3">
+                ¿Ya encontraste lo que buscabas? Podés cerrar tu búsqueda para que deje de aparecer.
+              </p>
+              {closeError && (
+                <p className="text-xs text-red-600 mb-2">{closeError}</p>
+              )}
+              <button
+                onClick={handleClose}
+                disabled={closing}
+                className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
+              >
+                {closing ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" />Cerrando...</>
+                ) : (
+                  <><XCircle className="h-4 w-4" />Cerrar mi búsqueda</>
+                )}
+              </button>
+            </div>
+          </div>
+        )}
+
+        {closed && (
+          <div className="px-6 pb-4 pt-0">
+            <div className="bg-gray-100 rounded-xl p-4 text-center text-sm text-gray-600">
+              ✅ Búsqueda cerrada. Ya no aparece en el feed.
+            </div>
+          </div>
+        )}
+
+        {/* Unlock contact — hidden once owner closes the request */}
+        {!closed && <div className="p-6 bg-gray-50 border-t border-gray-100">
           {contact ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-green-700 font-medium mb-3">
@@ -335,7 +396,7 @@ export default function RequestDetail({
               </div>
             </div>
           )}
-        </div>
+        </div>}
       </div>
     </div>
   )

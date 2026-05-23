@@ -27,13 +27,14 @@ export default async function PedidoPage(props: PageProps<'/pedidos/[id]'>) {
   supabase.rpc('increment_request_views', { req_id: id }).then(() => {})
 
   const isNew = searchParams?.nuevo === '1'
+  const closeToken = typeof searchParams?.close_token === 'string' ? searchParams.close_token : ''
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="pt-20 pb-16 px-4">
         <div className="max-w-2xl mx-auto">
-          <RequestDetail request={request as PublicBuyerRequest} isNew={isNew} />
+          <RequestDetail request={request as PublicBuyerRequest} isNew={isNew} closeToken={closeToken} />
         </div>
       </div>
     </div>
