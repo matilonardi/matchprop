@@ -519,7 +519,7 @@ export default function PublicarWizard() {
                   Contanos más sobre tu búsqueda <span className="text-red-500">*</span>
                 </Label>
                 <p className="text-xs text-gray-400 mb-2">
-                  Las inmobiliarias leen esto antes de contactarte. Cuanto más claro, mejor.
+                  Los interesados leen esto antes de contactarte. Cuanto más claro, mejor.
                 </p>
                 <Textarea
                   placeholder="Ej: busco algo moderno, no más de 10 años. Cocina integrada al living imprescindible. Prefiero planta baja o primer piso..."
@@ -541,7 +541,7 @@ export default function PublicarWizard() {
         {step === 6 && (
           <div className="space-y-5">
             <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-700">
-              🔒 Tu contacto solo es visible para inmobiliarias que pagan para verlo. Cero spam.
+              🔒 Tu contacto solo es visible para personas que pagan para verlo. Cero spam.
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">

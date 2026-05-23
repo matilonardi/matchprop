@@ -142,7 +142,7 @@ export default function RequestDetail({
             <div>
               <p className="font-medium text-green-800">¡Búsqueda publicada con éxito!</p>
               <p className="text-sm text-green-600">
-                Las inmobiliarias de Córdoba ya pueden ver tu pedido y contactarte.
+                Los interesados ya pueden ver tu pedido y contactarte.
               </p>
             </div>
           </div>
@@ -370,7 +370,7 @@ export default function RequestDetail({
           <div className="flex items-center gap-4 text-sm text-gray-400 pt-2 border-t border-gray-50">
             <span className="flex items-center gap-1.5">
               <Eye className="h-4 w-4" />
-              {request.views_count} inmobiliarias lo vieron
+              {request.views_count} {request.views_count === 1 ? 'persona lo vio' : 'personas lo vieron'}
             </span>
             <span>{timeAgo(request.created_at)}</span>
           </div>
@@ -484,15 +484,15 @@ export default function RequestDetail({
                 <Lock className="h-6 w-6 text-blue-500" />
               </div>
               <p className="font-semibold text-gray-900 mb-1">
-                Contacto disponible para inmobiliarias
+                ¿Querés contactar a este comprador?
               </p>
               <p className="text-sm text-gray-500 mb-5 max-w-xs mx-auto">
-                Registrate gratis, comprá créditos y desbloqueá el teléfono y email de este comprador.
+                Creá tu cuenta gratis, comprá créditos y desbloqueá el teléfono y email al instante.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/broker">
                   <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 px-6">
-                    Registrarme como inmobiliaria
+                    Crear cuenta gratis
                   </Button>
                 </Link>
                 <Link href="/broker?login=1">

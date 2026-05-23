@@ -34,8 +34,8 @@ export default function HomePage() {
           </h1>
 
           <p className="text-xl text-blue-100/70 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Dejá de buscar entre miles de publicaciones. Contanos qué propiedad querés
-            y las inmobiliarias de Córdoba vienen a ofrecerte lo que tienen.
+            Dejá de buscar entre miles de publicaciones. Contanos qué propiedad o auto querés
+            y los vendedores de Córdoba vienen a ofrecerte lo que tienen.
           </p>
 
           {/* CTA bar — search-bar inspired */}
@@ -109,19 +109,19 @@ export default function HomePage() {
                 icon: <Search className="h-6 w-6 text-blue-600" />,
                 step: '01',
                 title: 'Publicás tu búsqueda',
-                desc: 'Contás qué tipo de propiedad querés, en qué zona, con qué presupuesto y cuáles son tus requisitos. Tarda menos de 3 minutos.',
+                desc: 'Contás qué propiedad o auto querés, en qué zona y con qué presupuesto. Tarda menos de 3 minutos.',
               },
               {
                 icon: <Bell className="h-6 w-6 text-blue-600" />,
                 step: '02',
-                title: 'Las inmobiliarias te ven',
-                desc: 'Brokers y agencias de Córdoba reciben alertas automáticas. Solo ven tu búsqueda, no tu contacto.',
+                title: 'Los vendedores te ven',
+                desc: 'Inmobiliarias, concesionarias y particulares reciben alertas automáticas. Solo ven tu búsqueda, no tu contacto.',
               },
               {
                 icon: <Users className="h-6 w-6 text-blue-600" />,
                 step: '03',
                 title: 'Te contactan con opciones reales',
-                desc: 'Cuando una inmobiliaria tiene algo que te puede interesar, desbloquea tu contacto y te llama. Sin spam.',
+                desc: 'Cuando alguien tiene algo que te puede interesar, desbloquea tu contacto y te llama. Sin spam.',
               },
             ].map(({ icon, step, title, desc }) => (
               <div key={step}>
@@ -151,7 +151,7 @@ export default function HomePage() {
                   'Completamente gratis, siempre',
                   'Sin registro obligatorio',
                   'Tu contacto solo lo ve quien paga — cero spam',
-                  'Sabés cuántas inmobiliarias vieron tu pedido',
+                  'Sabés cuántas personas vieron tu pedido',
                   'Podés cerrar tu búsqueda cuando quieras',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3">
@@ -236,15 +236,15 @@ export default function HomePage() {
               ))}
             </div>
             <div className="order-1 md:order-2">
-              <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Para inmobiliarias</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-5">Leads que ya saben lo que quieren comprar</h2>
+              <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Para vendedores</div>
+              <h2 className="text-3xl font-bold text-gray-900 mb-5">Compradores que ya saben lo que quieren</h2>
               <ul className="space-y-4">
                 {[
                   'Ves el pedido completo antes de pagar',
                   'Solo pagás cuando hay match real con lo que tenés',
-                  'Alertas automáticas por zona y tipo de propiedad',
+                  'Alertas automáticas por zona — propiedades y autos',
                   'Sin suscripción forzada — comprás créditos cuando los necesitás',
-                  'Dashboard con todos tus leads desbloqueados',
+                  'Dashboard con todos tus contactos desbloqueados',
                 ].map((item) => (
                   <li key={item} className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
@@ -254,7 +254,7 @@ export default function HomePage() {
               </ul>
               <Link href="/broker" className="mt-8 inline-block">
                 <Button className="bg-blue-600 hover:bg-blue-700">
-                  Registrarme como inmobiliaria
+                  Crear mi cuenta gratis
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -311,7 +311,7 @@ export default function HomePage() {
           <div className="flex gap-6">
             <Link href="/pedidos" className="hover:text-gray-700 transition-colors">Ver pedidos</Link>
             <Link href="/publicar" className="hover:text-gray-700 transition-colors">Publicar búsqueda</Link>
-            <Link href="/broker" className="hover:text-gray-700 transition-colors">Para inmobiliarias</Link>
+            <Link href="/broker" className="hover:text-gray-700 transition-colors">Para vendedores</Link>
           </div>
           <p>© 2025 MatchProp · Córdoba, Argentina</p>
         </div>

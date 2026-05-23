@@ -37,7 +37,7 @@ export default function BrokerLoginForm() {
         <Label className="text-sm mb-1 block">Email</Label>
         <Input
           type="email"
-          placeholder="juan@inmobiliaria.com"
+          placeholder="juan@email.com"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required

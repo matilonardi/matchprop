@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "MatchProp – Publicá lo que buscás",
   description:
-    "El primer marketplace donde los compradores publican sus búsquedas y las inmobiliarias los encuentran a ellos. Inmobiliario en Córdoba, Argentina.",
+    "El marketplace donde los compradores publican qué propiedad o auto buscan, y los vendedores los encuentran a ellos. Córdoba, Argentina.",
 }
 
 export default function RootLayout({

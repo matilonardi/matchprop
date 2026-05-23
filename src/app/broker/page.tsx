@@ -20,10 +20,10 @@ export default async function BrokerPage({
         <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white py-16 px-4 mb-12">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl font-bold mb-4">
-              Leads inmobiliarios que ya saben lo que quieren
+              Compradores activos que ya saben lo que quieren
             </h1>
             <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8">
-              Accedé a compradores activos que publicaron exactamente qué propiedad buscan.
+              Accedé a compradores que publicaron exactamente qué propiedad o auto buscan.
               Solo pagás cuando encontrás un match real.
             </p>
             <div className="flex flex-wrap justify-center gap-6 text-sm">
@@ -51,7 +51,7 @@ export default async function BrokerPage({
                   {
                     icon: <Bell className="h-5 w-5 text-blue-600" />,
                     title: 'Alertas por tus zonas',
-                    desc: 'Registrás tus zonas de trabajo y recibís notificaciones cada vez que un comprador publica una búsqueda compatible.',
+                    desc: 'Registrás tus zonas de interés y recibís notificaciones cada vez que alguien publica una búsqueda compatible.',
                   },
                   {
                     icon: <Lock className="h-5 w-5 text-blue-600" />,

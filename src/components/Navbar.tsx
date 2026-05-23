@@ -51,7 +51,7 @@ export default function Navbar() {
               // Not logged in: show broker + publish links
               <>
                 <Link href="/broker" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Soy inmobiliaria
+                  Para vendedores
                 </Link>
                 <Link href="/publicar">
                   <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
@@ -89,7 +89,7 @@ export default function Navbar() {
             </Link>
           ) : (
             <Link href="/broker" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
-              Soy inmobiliaria
+              Para vendedores
             </Link>
           )}
           <Link href="/publicar" onClick={() => setOpen(false)}>

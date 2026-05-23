@@ -39,7 +39,7 @@ export default function BrokerAuthSection({
 
       {mode === 'register' ? (
         <>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Crear cuenta de inmobiliaria</h2>
+          <h2 className="text-xl font-bold text-gray-900 mb-1">Crear tu cuenta</h2>
           <p className="text-sm text-gray-500 mb-6">Gratis para empezar. Comprás créditos cuando los necesitás.</p>
           <BrokerRegisterForm />
         </>

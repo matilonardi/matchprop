@@ -12,7 +12,7 @@ export default function PublicarPage() {
               Publicá tu búsqueda
             </h1>
             <p className="text-gray-500">
-              Completamente gratis. Las inmobiliarias te van a contactar si tienen algo para vos.
+              Completamente gratis. Los interesados te van a contactar si tienen algo para vos.
             </p>
           </div>
           <PublicarWizard />
