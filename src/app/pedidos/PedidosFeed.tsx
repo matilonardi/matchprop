@@ -221,10 +221,11 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
           </p>
 
           {/* Location */}
-          <div className="flex items-center gap-1 text-sm text-gray-500">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
-            <span className="truncate">
-              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2}` : ''}
+          <div className="flex items-start gap-1 text-xs text-gray-500">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-orange-400 mt-0.5" />
+            <span className="leading-relaxed">
+              <span className="text-gray-400">Busca en: </span>
+              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2} zonas` : ''}
             </span>
           </div>
 
@@ -330,10 +331,11 @@ function CarRequestCard({ req, isDemo }: { req: PublicBuyerRequest & CarFields; 
           </p>
 
           {/* Location */}
-          <div className="flex items-center gap-1 text-sm text-gray-500">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
-            <span className="truncate">
-              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2}` : ''}
+          <div className="flex items-start gap-1 text-xs text-gray-500">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-orange-400 mt-0.5" />
+            <span className="leading-relaxed">
+              <span className="text-gray-400">Busca en: </span>
+              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2} zonas` : ''}
             </span>
           </div>
 

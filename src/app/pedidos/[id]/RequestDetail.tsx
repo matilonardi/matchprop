@@ -179,9 +179,18 @@ export default function RequestDetail({
                 </h1>
                 <Badge className="bg-green-100 text-green-700 border-0">Activa</Badge>
               </div>
-              <div className="flex items-center gap-1.5 text-gray-500">
-                <MapPin className="h-4 w-4" />
-                <span>{request.zones.join(', ')}</span>
+              <div className="mt-2">
+                <p className="text-xs text-gray-400 mb-1.5 flex items-center gap-1">
+                  <MapPin className="h-3.5 w-3.5" />
+                  Busca en {request.zones.length > 1 ? `estas ${request.zones.length} zonas` : 'esta zona'}:
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {request.zones.map((zone) => (
+                    <span key={zone} className="text-xs bg-orange-50 text-orange-700 border border-orange-100 px-2 py-0.5 rounded-full">
+                      {zone}
+                    </span>
+                  ))}
+                </div>
               </div>
             </div>
             <button
