@@ -167,8 +167,15 @@ export default function BrokerRegisterForm() {
       </Button>
 
       <p className="text-xs text-gray-400 text-center">
-        Al registrarte aceptás los términos de uso y política de privacidad.
-        Recibirás alertas de nuevos pedidos en tus zonas.
+        Al registrarte aceptás los{' '}
+        <a href="/terminos" target="_blank" className="underline hover:text-gray-600">
+          términos y condiciones
+        </a>{' '}
+        y la{' '}
+        <a href="/privacidad" target="_blank" className="underline hover:text-gray-600">
+          política de privacidad
+        </a>
+        . Recibirás alertas de nuevos pedidos en tus zonas.
       </p>
     </form>
   )
