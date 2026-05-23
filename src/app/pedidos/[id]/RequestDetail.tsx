@@ -355,7 +355,8 @@ export default function RequestDetail({
                 </a>
               </div>
             </div>
-          ) : (
+          ) : isLoggedIn ? (
+            /* Logged-in broker: show unlock flow */
             <div>
               <div className="flex items-start gap-3 mb-4">
                 <Lock className="h-5 w-5 text-gray-400 flex-shrink-0 mt-0.5" />
@@ -376,23 +377,41 @@ export default function RequestDetail({
                   )}
                 </div>
               )}
-              <div className="flex gap-3">
-                <Button
-                  onClick={handleUnlock}
-                  disabled={unlocking}
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  {unlocking ? (
-                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Desbloqueando...</>
-                  ) : (
-                    <><Unlock className="h-4 w-4 mr-2" />Desbloquear por 1 crédito</>
-                  )}
-                </Button>
-                {!isLoggedIn && (
-                  <Link href="/broker">
-                    <Button variant="outline">Registrarme</Button>
-                  </Link>
+              <Button
+                onClick={handleUnlock}
+                disabled={unlocking}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                {unlocking ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Desbloqueando...</>
+                ) : (
+                  <><Unlock className="h-4 w-4 mr-2" />Desbloquear por 1 crédito</>
                 )}
+              </Button>
+            </div>
+          ) : (
+            /* Not logged in: invite to register */
+            <div className="text-center py-2">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-3">
+                <Lock className="h-6 w-6 text-blue-500" />
+              </div>
+              <p className="font-semibold text-gray-900 mb-1">
+                Contacto disponible para inmobiliarias
+              </p>
+              <p className="text-sm text-gray-500 mb-5 max-w-xs mx-auto">
+                Registrate gratis, comprá créditos y desbloqueá el teléfono y email de este comprador.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link href="/broker">
+                  <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 px-6">
+                    Registrarme como inmobiliaria
+                  </Button>
+                </Link>
+                <Link href="/broker?login=1">
+                  <Button variant="outline" className="w-full sm:w-auto px-6">
+                    Ya tengo cuenta →
+                  </Button>
+                </Link>
               </div>
             </div>
           )}

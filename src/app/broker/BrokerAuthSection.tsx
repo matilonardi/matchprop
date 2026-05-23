@@ -4,8 +4,12 @@ import { useState } from 'react'
 import BrokerRegisterForm from './BrokerRegisterForm'
 import BrokerLoginForm from './BrokerLoginForm'
 
-export default function BrokerAuthSection() {
-  const [mode, setMode] = useState<'register' | 'login'>('register')
+export default function BrokerAuthSection({
+  defaultMode = 'register',
+}: {
+  defaultMode?: 'register' | 'login'
+}) {
+  const [mode, setMode] = useState<'register' | 'login'>(defaultMode)
 
   return (
     <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">

@@ -4,7 +4,14 @@ import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import BrokerAuthSection from './BrokerAuthSection'
 
-export default function BrokerPage() {
+export default async function BrokerPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ login?: string }>
+}) {
+  const params = await searchParams
+  const defaultMode = params.login === '1' ? 'login' : 'register'
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -99,7 +106,7 @@ export default function BrokerPage() {
 
             {/* Auth section (register + login tabs) */}
             <div>
-              <BrokerAuthSection />
+              <BrokerAuthSection defaultMode={defaultMode as 'register' | 'login'} />
             </div>
           </div>
         </div>
