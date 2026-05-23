@@ -213,7 +213,19 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
   )
 }
 
-export default function PedidosFeed() {
+interface FeedProps {
+  initialZone?: string
+  initialType?: string
+  initialFinancing?: string
+  initialMaxBudget?: string
+}
+
+export default function PedidosFeed({
+  initialZone = '',
+  initialType = '',
+  initialFinancing = '',
+  initialMaxBudget = '',
+}: FeedProps) {
   const [requests, setRequests] = useState<PublicBuyerRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
@@ -222,10 +234,10 @@ export default function PedidosFeed() {
   const [showingDemo, setShowingDemo] = useState(false)
 
   const [filters, setFilters] = useState({
-    zone: '',
-    type: '',
-    financing: '',
-    maxBudget: '',
+    zone: initialZone,
+    type: initialType,
+    financing: initialFinancing,
+    maxBudget: initialMaxBudget,
   })
 
   const hasFilters = !!(filters.zone || filters.type || filters.financing || filters.maxBudget)

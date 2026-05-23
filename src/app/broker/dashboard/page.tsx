@@ -147,14 +147,27 @@ export default function BrokerDashboard() {
                   Ver todos →
                 </Link>
               </div>
-              <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
-                <p className="font-medium mb-1">Tus zonas activas:</p>
-                <p className="text-blue-600">{broker.zones.join(', ')}</p>
+              <div className="space-y-2">
+                {broker.zones.map((zone) => (
+                  <Link
+                    key={zone}
+                    href={`/pedidos?zone=${encodeURIComponent(zone)}`}
+                    className="flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
+                  >
+                    <div className="flex items-center gap-2 text-sm font-medium text-blue-800">
+                      <MapPin className="h-3.5 w-3.5 text-blue-500" />
+                      {zone}
+                    </div>
+                    <span className="text-xs text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                      Ver pedidos →
+                    </span>
+                  </Link>
+                ))}
                 <Link
                   href="/pedidos"
-                  className="inline-flex items-center gap-1.5 mt-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                  className="flex items-center justify-center gap-1.5 w-full mt-1 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                  Ver pedidos activos →
+                  Ver todos los pedidos activos
                 </Link>
               </div>
             </div>

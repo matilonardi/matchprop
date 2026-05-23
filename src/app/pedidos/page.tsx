@@ -2,7 +2,13 @@ import Navbar from '@/components/Navbar'
 import PedidosFeed from './PedidosFeed'
 import Link from 'next/link'
 
-export default function PedidosPage() {
+export default async function PedidosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ zone?: string; type?: string; financing?: string; maxBudget?: string }>
+}) {
+  const params = await searchParams
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -28,9 +34,14 @@ export default function PedidosPage() {
           </div>
         </div>
 
-        {/* Feed */}
+        {/* Feed — initial filters come from URL params */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <PedidosFeed />
+          <PedidosFeed
+            initialZone={params.zone || ''}
+            initialType={params.type || ''}
+            initialFinancing={params.financing || ''}
+            initialMaxBudget={params.maxBudget || ''}
+          />
         </div>
 
       </div>
