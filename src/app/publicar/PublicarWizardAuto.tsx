@@ -38,6 +38,7 @@ const BUDGET_OPTIONS = ['8000', '15000', '25000', '40000', '60000', '100000']
 const CAR_FINANCING_OPTIONS = [
   { id: 'efectivo', label: '💵 Efectivo' },
   { id: 'credito', label: '🏦 Financiación / Prendario' },
+  { id: 'permuta_auto', label: '🚗 Doy auto como parte de pago' },
   { id: 'permuta_propiedad', label: '🏠 Doy propiedad como parte de pago' },
 ]
 
