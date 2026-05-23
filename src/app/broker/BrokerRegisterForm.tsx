@@ -136,21 +136,33 @@ export default function BrokerRegisterForm() {
         </button>
 
         {showZones && (
-          <div className="mt-2 max-h-48 overflow-y-auto border border-gray-200 rounded-xl p-3 space-y-1">
-            {ZONES_CORDOBA.map((zone) => (
-              <label
-                key={zone}
-                className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-sm transition-colors ${
-                  selectedZones.includes(zone) ? 'bg-blue-50' : 'hover:bg-gray-50'
-                }`}
-              >
-                <Checkbox
-                  checked={selectedZones.includes(zone)}
-                  onCheckedChange={() => toggleZone(zone)}
-                />
-                {zone}
-              </label>
-            ))}
+          <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden">
+            {/* Select all row */}
+            <label className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+              <Checkbox
+                checked={selectedZones.length === ZONES_CORDOBA.length}
+                onCheckedChange={(v) =>
+                  setSelectedZones(v ? [...ZONES_CORDOBA] : [])
+                }
+              />
+              Seleccionar todas las zonas
+            </label>
+            <div className="max-h-48 overflow-y-auto p-3 space-y-1">
+              {ZONES_CORDOBA.map((zone) => (
+                <label
+                  key={zone}
+                  className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-sm transition-colors ${
+                    selectedZones.includes(zone) ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  <Checkbox
+                    checked={selectedZones.includes(zone)}
+                    onCheckedChange={() => toggleZone(zone)}
+                  />
+                  {zone}
+                </label>
+              ))}
+            </div>
           </div>
         )}
       </div>
