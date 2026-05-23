@@ -321,8 +321,8 @@ export default function RequestDetail({
           </div>
         )}
 
-        {/* Unlock contact — hidden once owner closes the request */}
-        {!closed && <div className="p-6 bg-gray-50 border-t border-gray-100">
+        {/* Unlock contact — hidden to the buyer (has close_token) and once closed */}
+        {!closed && !closeToken && <div className="p-6 bg-gray-50 border-t border-gray-100">
           {contact ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-green-700 font-medium mb-3">
