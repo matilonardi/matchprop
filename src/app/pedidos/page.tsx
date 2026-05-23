@@ -26,7 +26,7 @@ export default async function PedidosPage({
               </div>
               <Link
                 href="/publicar"
-                className="hidden md:inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0"
+                className="hidden md:inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl transition-colors shrink-0"
               >
                 + Publicar búsqueda
               </Link>

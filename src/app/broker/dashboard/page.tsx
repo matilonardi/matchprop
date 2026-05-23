@@ -70,7 +70,7 @@ export default function BrokerDashboard() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+          <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-3" />
           <p className="text-sm text-gray-500">Cargando tu dashboard...</p>
         </div>
       </div>
@@ -98,12 +98,12 @@ export default function BrokerDashboard() {
             </div>
             <div className="flex items-center gap-3">
               <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-blue-600" />
+                <CreditCard className="h-4 w-4 text-orange-500" />
                 <span className="font-bold text-blue-900 text-xl">{broker.credits}</span>
-                <span className="text-blue-600 text-sm">créditos</span>
+                <span className="text-orange-500 text-sm">créditos</span>
               </div>
               <Link href="/broker/creditos">
-                <Button className="bg-blue-600 hover:bg-blue-700" size="sm">
+                <Button className="bg-orange-500 hover:bg-orange-600" size="sm">
                   <Plus className="h-4 w-4 mr-1" />
                   Comprar créditos
                 </Button>
@@ -121,7 +121,7 @@ export default function BrokerDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
-              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-blue-600' },
+              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500' },
               { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600' },
               { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600' },
             ].map(({ label, value, icon, color }) => (
@@ -143,7 +143,7 @@ export default function BrokerDashboard() {
                   <Bell className="h-4 w-4 text-blue-500" />
                   Pedidos en tus zonas
                 </h2>
-                <Link href="/pedidos" className="text-sm text-blue-600 hover:underline">
+                <Link href="/pedidos" className="text-sm text-orange-500 hover:underline">
                   Ver todos →
                 </Link>
               </div>
@@ -158,7 +158,7 @@ export default function BrokerDashboard() {
                       <MapPin className="h-3.5 w-3.5 text-blue-500" />
                       {zone}
                     </div>
-                    <span className="text-xs text-blue-600 group-hover:translate-x-0.5 transition-transform">
+                    <span className="text-xs text-orange-500 group-hover:translate-x-0.5 transition-transform">
                       Ver pedidos →
                     </span>
                   </Link>
@@ -205,7 +205,7 @@ export default function BrokerDashboard() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{req.contact_name}</p>
-                            <a href={`tel:${req.contact_phone}`} className="text-sm text-blue-600 hover:underline font-medium">
+                            <a href={`tel:${req.contact_phone}`} className="text-sm text-orange-500 hover:underline font-medium">
                               {req.contact_phone}
                             </a>
                             {req.contact_email && (

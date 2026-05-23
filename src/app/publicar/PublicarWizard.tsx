@@ -155,7 +155,7 @@ export default function PublicarWizard() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               onClick={() => setRequestType('property')}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all group"
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all group"
             >
               <div className="text-5xl mb-3">🏠</div>
               <h3 className="font-bold text-lg text-gray-900 mb-1">Propiedad</h3>
@@ -163,7 +163,7 @@ export default function PublicarWizard() {
             </button>
             <button
               onClick={() => setRequestType('car')}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all group"
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all group"
             >
               <div className="text-5xl mb-3">🚗</div>
               <h3 className="font-bold text-lg text-gray-900 mb-1">Auto</h3>
@@ -217,7 +217,7 @@ export default function PublicarWizard() {
                   <div className="text-2xl mb-2">{icon}</div>
                   <div className="font-medium text-gray-900">{label}</div>
                   {form.property_types.includes(id) && (
-                    <CheckCircle2 className="h-4 w-4 text-blue-500 mt-1" />
+                    <CheckCircle2 className="h-4 w-4 text-orange-500 mt-1" />
                   )}
                 </button>
               ))}
@@ -270,7 +270,7 @@ export default function PublicarWizard() {
                     onClick={() => setForm((f) => ({ ...f, bedrooms_min: n === '5+' ? '5' : n }))}
                     className={`w-12 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.bedrooms_min === (n === '5+' ? '5' : n)
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -297,7 +297,7 @@ export default function PublicarWizard() {
                     }}
                     className={`w-12 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.bedrooms_max === (n === '5+' ? '5' : n)
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -318,7 +318,7 @@ export default function PublicarWizard() {
                     onClick={() => setForm((f) => ({ ...f, bathrooms_min: n === '3+' ? '3' : n }))}
                     className={`px-4 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.bathrooms_min === (n === '3+' ? '3' : n)
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -352,7 +352,7 @@ export default function PublicarWizard() {
                 {['70000', '150000', '230000', '400000', '620000'].map((v) => (
                   <button key={v} type="button"
                     onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                     USD {parseInt(v).toLocaleString()}
                   </button>
                 ))}
@@ -388,7 +388,7 @@ export default function PublicarWizard() {
                             {['25', '50', '75', '100'].map((pct) => (
                               <button key={pct} type="button"
                                 onClick={() => setForm((f) => ({ ...f, financing_cash_pct: f.financing_cash_pct === pct ? '' : pct }))}
-                                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.financing_cash_pct === pct ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.financing_cash_pct === pct ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600'}`}>
                                 {pct}%
                               </button>
                             ))}
@@ -406,7 +406,7 @@ export default function PublicarWizard() {
                             {['si', 'no'].map((opt) => (
                               <button key={opt} type="button"
                                 onClick={() => setForm((f) => ({ ...f, financing_precalified: f.financing_precalified === opt ? '' : opt }))}
-                                className={`text-xs px-4 py-1.5 rounded-full border transition-colors font-medium ${form.financing_precalified === opt ? 'border-blue-500 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-600'}`}>
+                                className={`text-xs px-4 py-1.5 rounded-full border transition-colors font-medium ${form.financing_precalified === opt ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600'}`}>
                                 {opt === 'si' ? 'Sí' : 'No'}
                               </button>
                             ))}
@@ -634,7 +634,7 @@ export default function PublicarWizard() {
             <Button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canProceed()}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-orange-500 hover:bg-orange-600"
             >
               Siguiente
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -643,7 +643,7 @@ export default function PublicarWizard() {
             <Button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-orange-500 hover:bg-orange-600"
             >
               {loading ? (
                 <>

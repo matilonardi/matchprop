@@ -28,7 +28,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-blue-600">Match</span>
+            <span className="text-xl font-bold text-orange-500">Match</span>
             <span className="text-xl font-bold text-gray-900">Prop</span>
           </Link>
 
@@ -42,7 +42,7 @@ export default function Navbar() {
               // Logged in: show dashboard link
               <Link
                 href="/broker/dashboard"
-                className="flex items-center gap-1.5 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 Mi dashboard
@@ -54,7 +54,7 @@ export default function Navbar() {
                   Para vendedores
                 </Link>
                 <Link href="/publicar">
-                  <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
                     Publicar búsqueda
                   </Button>
                 </Link>
@@ -63,7 +63,7 @@ export default function Navbar() {
 
             {user && (
               <Link href="/publicar">
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
                   Publicar búsqueda
                 </Button>
               </Link>
@@ -84,7 +84,7 @@ export default function Navbar() {
             Ver pedidos activos
           </Link>
           {user ? (
-            <Link href="/broker/dashboard" className="text-sm font-semibold text-blue-600" onClick={() => setOpen(false)}>
+            <Link href="/broker/dashboard" className="text-sm font-semibold text-orange-500" onClick={() => setOpen(false)}>
               Mi dashboard →
             </Link>
           ) : (
@@ -93,7 +93,7 @@ export default function Navbar() {
             </Link>
           )}
           <Link href="/publicar" onClick={() => setOpen(false)}>
-            <Button className="w-full bg-blue-600 hover:bg-blue-700">
+            <Button className="w-full bg-orange-500 hover:bg-orange-600">
               Publicar mi búsqueda
             </Button>
           </Link>

@@ -11,7 +11,7 @@ export default function HomePage() {
       {/* ── Hero ── */}
       <section className="relative min-h-[620px] flex items-center pt-16 overflow-hidden">
         {/* Dark gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-blue-950 to-indigo-900" />
+        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950" />
         {/* Subtle dot grid overlay */}
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -22,7 +22,7 @@ export default function HomePage() {
         />
 
         <div className="relative w-full max-w-5xl mx-auto px-4 py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 text-blue-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
+          <div className="inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/30 text-yellow-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
             <Star className="h-3.5 w-3.5 fill-current" />
             El marketplace al revés
           </div>
@@ -30,10 +30,10 @@ export default function HomePage() {
           <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.08] mb-6 tracking-tight">
             Publicá lo que buscás comprar
             <br />
-            <span className="text-blue-400">y que te encuentren a vos</span>
+            <span className="text-orange-400">y que te encuentren a vos</span>
           </h1>
 
-          <p className="text-xl text-blue-100/70 mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl text-orange-100/70 mb-10 max-w-2xl mx-auto leading-relaxed">
             Dejá de buscar entre miles de publicaciones. Contanos qué propiedad o auto querés
             y los vendedores de Córdoba vienen a ofrecerte lo que tienen.
           </p>
@@ -42,10 +42,10 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
             <Link
               href="/publicar"
-              className="flex-1 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 shadow-2xl transition-all hover:-translate-y-0.5 hover:shadow-blue-500/20"
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 shadow-2xl transition-all hover:-translate-y-0.5 hover:shadow-orange-500/20"
             >
               📋 Publicar mi búsqueda — gratis
-              <ArrowRight className="h-4 w-4 text-blue-600" />
+              <ArrowRight className="h-4 w-4 text-orange-500" />
             </Link>
             <Link
               href="/pedidos"
@@ -55,7 +55,7 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <p className="mt-5 text-sm text-blue-200/50">Gratis para compradores · Sin registro requerido</p>
+          <p className="mt-5 text-sm text-white/40">Gratis para compradores · Sin registro requerido</p>
 
           {/* Floating preview cards */}
           <div className="mt-14 grid grid-cols-3 gap-3 max-w-2xl mx-auto opacity-60">
@@ -70,7 +70,7 @@ export default function HomePage() {
                 </div>
                 <div className="p-2.5">
                   <p className="text-white text-xs font-bold">{price}</p>
-                  <p className="text-blue-200/70 text-xs">{type} · {zone}</p>
+                  <p className="text-orange-200/70 text-xs">{type} · {zone}</p>
                 </div>
               </div>
             ))}
@@ -88,7 +88,7 @@ export default function HomePage() {
               { n: 'Córdoba', label: 'foco inicial · expansión planificada' },
             ].map(({ n, label }) => (
               <div key={label}>
-                <div className="text-2xl md:text-3xl font-bold text-blue-600 mb-1">{n}</div>
+                <div className="text-2xl md:text-3xl font-bold text-orange-500 mb-1">{n}</div>
                 <div className="text-sm text-gray-500">{label}</div>
               </div>
             ))}
@@ -106,19 +106,19 @@ export default function HomePage() {
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                icon: <Search className="h-6 w-6 text-blue-600" />,
+                icon: <Search className="h-6 w-6 text-orange-500" />,
                 step: '01',
                 title: 'Publicás tu búsqueda',
                 desc: 'Contás qué propiedad o auto querés, en qué zona y con qué presupuesto. Tarda menos de 3 minutos.',
               },
               {
-                icon: <Bell className="h-6 w-6 text-blue-600" />,
+                icon: <Bell className="h-6 w-6 text-blue-500" />,
                 step: '02',
                 title: 'Los vendedores te ven',
                 desc: 'Inmobiliarias, concesionarias y particulares reciben alertas automáticas. Solo ven tu búsqueda, no tu contacto.',
               },
               {
-                icon: <Users className="h-6 w-6 text-blue-600" />,
+                icon: <Users className="h-6 w-6 text-yellow-500" />,
                 step: '03',
                 title: 'Te contactan con opciones reales',
                 desc: 'Cuando alguien tiene algo que te puede interesar, desbloquea tu contacto y te llama. Sin spam.',
@@ -126,7 +126,7 @@ export default function HomePage() {
             ].map(({ icon, step, title, desc }) => (
               <div key={step}>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
                     {icon}
                   </div>
                   <span className="text-4xl font-bold text-gray-100">{step}</span>
@@ -144,7 +144,7 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div>
-              <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Para compradores</div>
+              <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para compradores</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-5">Tu búsqueda trabaja sola mientras vos hacés otra cosa</h2>
               <ul className="space-y-4">
                 {[
@@ -161,7 +161,7 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link href="/publicar" className="mt-8 inline-block">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-orange-500 hover:bg-orange-600">
                   Publicar mi búsqueda gratis
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -192,7 +192,7 @@ export default function HomePage() {
                   <p className="text-sm font-semibold text-gray-800">Casa · Mendiolaza</p>
                   <div className="flex gap-1.5">
                     {['cochera', 'gas natural', 'seguridad'].map((r) => (
-                      <span key={r} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">{r}</span>
+                      <span key={r} className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full">{r}</span>
                     ))}
                   </div>
                   <div className="pt-1">
@@ -224,7 +224,7 @@ export default function HomePage() {
                   <p className="text-sm font-semibold text-gray-800">SUV · Nueva Córdoba</p>
                   <div className="flex gap-1.5">
                     {['Toyota / Ford', '2020+', '🔑 Usado'].map((r) => (
-                      <span key={r} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">{r}</span>
+                      <span key={r} className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full">{r}</span>
                     ))}
                   </div>
                   <div className="pt-1">
@@ -258,7 +258,7 @@ export default function HomePage() {
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium text-gray-900 truncate">{label}</span>
                       {badge && (
-                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium shrink-0">{badge}</span>
+                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium shrink-0">{badge}</span>
                       )}
                     </div>
                     <p className="text-xs text-gray-400">{time}</p>
@@ -268,7 +268,7 @@ export default function HomePage() {
               ))}
             </div>
             <div className="order-1 md:order-2">
-              <div className="text-sm font-semibold text-blue-600 uppercase tracking-wide mb-3">Para vendedores</div>
+              <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para vendedores</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-5">Compradores que ya saben lo que quieren</h2>
               <ul className="space-y-4">
                 {[
@@ -285,7 +285,7 @@ export default function HomePage() {
                 ))}
               </ul>
               <Link href="/broker" className="mt-8 inline-block">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-orange-500 hover:bg-orange-600">
                   Crear mi cuenta gratis
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
@@ -296,11 +296,11 @@ export default function HomePage() {
       </section>
 
       {/* ── Pricing ── */}
-      <section className="py-20 px-4 bg-gradient-to-br from-slate-900 to-blue-950">
+      <section className="py-20 px-4 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950">
         <div className="max-w-4xl mx-auto text-center text-white">
           <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70" />
           <h2 className="text-3xl font-bold mb-4">Un crédito = un contacto real</h2>
-          <p className="text-blue-200/70 text-lg mb-10 max-w-xl mx-auto">
+          <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto">
             Comprás créditos solo cuando los necesitás. Ves el pedido completo antes de decidir si vale la pena desbloquearlo.
           </p>
           <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10">
@@ -313,21 +313,21 @@ export default function HomePage() {
                 key={credits}
                 className={`rounded-2xl p-5 border transition-all ${
                   popular
-                    ? 'bg-white text-blue-900 border-white shadow-xl scale-105'
+                    ? 'bg-white text-gray-900 border-white shadow-xl scale-105'
                     : 'bg-white/10 text-white border-white/20 hover:bg-white/15'
                 }`}
               >
                 {popular && (
-                  <div className="text-xs font-bold uppercase tracking-wide text-blue-500 mb-2">★ Más popular</div>
+                  <div className="text-xs font-bold uppercase tracking-wide text-orange-500 mb-2">★ Más popular</div>
                 )}
                 <div className="font-semibold text-sm mb-1">{credits}</div>
                 <div className="text-3xl font-bold">{price}</div>
-                <div className={`text-xs mt-1 ${popular ? 'text-blue-400' : 'text-blue-200/60'}`}>{per}</div>
+                <div className={`text-xs mt-1 ${popular ? 'text-orange-400' : 'text-orange-200/60'}`}>{per}</div>
               </div>
             ))}
           </div>
           <Link href="/broker">
-            <Button size="lg" className="bg-white text-blue-900 hover:bg-gray-100 font-bold px-10 rounded-2xl">
+            <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 rounded-2xl">
               Empezar ahora
             </Button>
           </Link>
@@ -338,7 +338,7 @@ export default function HomePage() {
       <footer className="py-10 px-4 border-t border-gray-100 bg-white">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
           <div className="font-semibold text-gray-900">
-            <span className="text-blue-600">Match</span>Prop
+            <span className="text-orange-500">Match</span>Prop
           </div>
           <div className="flex flex-wrap gap-6 justify-center">
             <Link href="/pedidos" className="hover:text-gray-700 transition-colors">Ver pedidos</Link>

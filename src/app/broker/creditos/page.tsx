@@ -29,13 +29,13 @@ export default function CreditosPage() {
                 key={pack.id}
                 className={`bg-white rounded-xl border p-5 flex items-center justify-between ${
                   pack.popular
-                    ? 'border-blue-500 shadow-sm'
+                    ? 'border-orange-500 shadow-sm'
                     : 'border-gray-100'
                 }`}
               >
                 <div>
                   {pack.popular && (
-                    <div className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
+                    <div className="text-xs font-semibold text-orange-500 uppercase tracking-wide mb-1">
                       Más popular
                     </div>
                   )}

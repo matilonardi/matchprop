@@ -49,17 +49,17 @@ export default async function BrokerPage({
               <div className="space-y-6">
                 {[
                   {
-                    icon: <Bell className="h-5 w-5 text-blue-600" />,
+                    icon: <Bell className="h-5 w-5 text-orange-500" />,
                     title: 'Alertas por tus zonas',
                     desc: 'Registrás tus zonas de interés y recibís notificaciones cada vez que alguien publica una búsqueda compatible.',
                   },
                   {
-                    icon: <Lock className="h-5 w-5 text-blue-600" />,
+                    icon: <Lock className="h-5 w-5 text-orange-500" />,
                     title: 'Ves todo, pagás el contacto',
                     desc: 'Podés leer la búsqueda completa — zona, presupuesto, requisitos — antes de decidir si vale la pena desbloquear el contacto.',
                   },
                   {
-                    icon: <BarChart3 className="h-5 w-5 text-blue-600" />,
+                    icon: <BarChart3 className="h-5 w-5 text-orange-500" />,
                     title: 'Inteligencia de mercado',
                     desc: 'Sabés qué está demandando el mercado en tiempo real: zonas calientes, tickets promedio, requisitos más pedidos.',
                   },
@@ -96,7 +96,7 @@ export default async function BrokerPage({
                       </span>
                       <div className="text-right">
                         <span className="font-semibold text-blue-900">{price}</span>
-                        <span className="text-blue-500 text-xs ml-1">({per})</span>
+                        <span className="text-orange-400 text-xs ml-1">({per})</span>
                       </div>
                     </div>
                   ))}

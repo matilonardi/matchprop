@@ -61,7 +61,7 @@ export default function BrokerLoginForm() {
         <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
       )}
 
-      <Button type="submit" disabled={loading} className="w-full bg-blue-600 hover:bg-blue-700">
+      <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
         {loading ? (
           <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Iniciando sesión...</>
         ) : (

@@ -421,14 +421,14 @@ export default function RequestDetail({
                 <p className="font-semibold text-gray-900">{contact.contact_name}</p>
                 <a
                   href={`tel:${contact.contact_phone}`}
-                  className="text-blue-600 font-medium hover:underline block"
+                  className="text-orange-500 font-medium hover:underline block"
                 >
                   {contact.contact_phone}
                 </a>
                 {contact.contact_email && (
                   <a
                     href={`mailto:${contact.contact_email}`}
-                    className="text-blue-600 text-sm hover:underline block"
+                    className="text-orange-500 text-sm hover:underline block"
                   >
                     {contact.contact_email}
                   </a>
@@ -468,7 +468,7 @@ export default function RequestDetail({
               <Button
                 onClick={handleUnlock}
                 disabled={unlocking}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-orange-500 hover:bg-orange-600"
               >
                 {unlocking ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Desbloqueando...</>
@@ -491,7 +491,7 @@ export default function RequestDetail({
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/broker">
-                  <Button className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 px-6">
+                  <Button className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 px-6">
                     Crear cuenta gratis
                   </Button>
                 </Link>

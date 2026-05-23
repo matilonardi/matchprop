@@ -171,14 +171,14 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setCarBodyStyles(toggleItem(car_body_styles, id))}
                     className={`p-4 rounded-xl border-2 text-left transition-all ${
                       car_body_styles.includes(id)
-                        ? 'border-blue-500 bg-blue-50'
+                        ? 'border-orange-500 bg-orange-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
                     <div className="text-2xl mb-2">{icon}</div>
                     <div className="font-medium text-gray-900">{label}</div>
                     {car_body_styles.includes(id) && (
-                      <CheckCircle2 className="h-4 w-4 text-blue-500 mt-1" />
+                      <CheckCircle2 className="h-4 w-4 text-orange-500 mt-1" />
                     )}
                   </button>
                 ))}
@@ -197,7 +197,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setCarBrands(toggleItem(car_brands, brand))}
                     className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
                       car_brands.includes(brand)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -253,7 +253,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setCarCondition(id)}
                     className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
                       car_condition === id
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -302,7 +302,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                       onClick={() => setCarKmMax(car_km_max === km ? '' : km)}
                       className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
                         car_km_max === km
-                          ? 'border-blue-500 bg-blue-50 text-blue-600'
+                          ? 'border-orange-500 bg-orange-50 text-orange-600'
                           : 'border-gray-200 text-gray-600 hover:border-gray-300'
                       }`}
                     >
@@ -326,7 +326,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setCarFuelTypes(toggleItem(car_fuel_types, id))}
                     className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
                       car_fuel_types.includes(id)
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -349,7 +349,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setCarTransmission(car_transmission === id ? '' : id)}
                     className={`p-3 rounded-xl border-2 text-sm font-medium transition-all ${
                       car_transmission === id
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -387,7 +387,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setBudgetUsd(v)}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       budget_usd === v
-                        ? 'border-blue-500 bg-blue-50 text-blue-600'
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
                         : 'border-gray-200 text-gray-600 hover:border-gray-300'
                     }`}
                   >
@@ -410,7 +410,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     <label
                       key={id}
                       className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
-                        selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'
+                        selected ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
                       <Checkbox
@@ -435,7 +435,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                     onClick={() => setUrgency(urgency === id ? '' : id)}
                     className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${
                       urgency === id
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
+                        ? 'border-orange-500 bg-orange-50 text-orange-700'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -570,7 +570,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
             <Button
               onClick={() => setStep((s) => s + 1)}
               disabled={!canProceed()}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-orange-500 hover:bg-orange-600"
             >
               Siguiente
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -579,7 +579,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
             <Button
               onClick={handleSubmit}
               disabled={!canProceed() || loading}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-orange-500 hover:bg-orange-600"
             >
               {loading ? (
                 <>

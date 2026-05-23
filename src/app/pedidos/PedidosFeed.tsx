@@ -273,7 +273,7 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
             <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               isDemo
                 ? 'bg-gray-100 text-gray-400'
-                : 'bg-blue-600 group-hover:bg-blue-700 text-white shadow-sm hover:shadow-md'
+                : 'bg-orange-500 group-hover:bg-orange-600 text-white shadow-sm hover:shadow-md'
             }`}>
               <Lock className="h-3.5 w-3.5" />
               {isDemo ? 'Contacto oculto · ejemplo' : 'Ver contacto · 1 crédito'}
@@ -369,7 +369,7 @@ function CarRequestCard({ req, isDemo }: { req: PublicBuyerRequest & CarFields; 
 
           {/* CTA */}
           <div className="mt-auto pt-1">
-            <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isDemo ? 'bg-gray-100 text-gray-400' : 'bg-blue-600 group-hover:bg-blue-700 text-white shadow-sm'}`}>
+            <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isDemo ? 'bg-gray-100 text-gray-400' : 'bg-orange-500 group-hover:bg-orange-600 text-white shadow-sm'}`}>
               <Lock className="h-3.5 w-3.5" />
               {isDemo ? 'Contacto oculto · ejemplo' : 'Ver contacto · 1 crédito'}
             </div>
@@ -462,7 +462,7 @@ export default function PedidosFeed({
   }
 
   const pillBase = 'rounded-full text-sm font-medium border transition-colors w-full h-9'
-  const pillActive = 'border-blue-500 bg-blue-50 text-blue-700'
+  const pillActive = 'border-orange-500 bg-orange-50 text-orange-700'
   const pillInactive = 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
 
   return (

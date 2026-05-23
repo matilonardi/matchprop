@@ -36,7 +36,7 @@ export default function CheckoutButton({ packId, label }: { packId: string; labe
         size="sm"
         disabled={loading}
         onClick={handleCheckout}
-        className="bg-blue-600 hover:bg-blue-700"
+        className="bg-orange-500 hover:bg-orange-600"
       >
         {loading ? (
           <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
