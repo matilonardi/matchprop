@@ -1,55 +1,105 @@
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, CreditCard, Eye, Unlock, TrendingUp, Plus } from 'lucide-react'
+import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
+import { supabase } from '@/lib/supabase'
+import { PROPERTY_TYPE_LABELS } from '@/lib/constants'
 
-// In production this would be authenticated and fetch real broker data
+interface Broker {
+  id: string
+  name: string
+  agency_name?: string
+  credits: number
+  zones: string[]
+  email: string
+}
+
+interface Lead {
+  id: string
+  request_id: string
+  credits_spent: number
+  created_at: string
+  request: {
+    property_types: string[]
+    zones: string[]
+    budget_usd: number
+    contact_name: string
+    contact_phone: string
+    contact_email?: string
+  } | null
+}
+
 export default function BrokerDashboard() {
-  const mockStats = {
-    credits: 12,
-    leads_unlocked: 7,
-    requests_seen: 43,
-    zones: ['Mendiolaza', 'Valle Escondido', 'Villa Allende'],
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+  const [broker, setBroker] = useState<Broker | null>(null)
+  const [leads, setLeads] = useState<Lead[]>([])
+
+  useEffect(() => {
+    async function load() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.replace('/broker')
+        return
+      }
+
+      const res = await fetch(`/api/broker/me?userId=${user.id}`)
+      if (!res.ok) {
+        router.replace('/broker')
+        return
+      }
+
+      const data = await res.json()
+      setBroker(data.broker)
+      setLeads(data.leads || [])
+      setLoading(false)
+    }
+    load()
+  }, [router])
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.replace('/broker')
   }
 
-  const mockLeads = [
-    {
-      id: '1',
-      type: 'Casa',
-      zone: 'Mendiolaza',
-      budget: 230000,
-      unlocked_at: '2025-05-18',
-      contact_name: 'Jorge Pérez',
-      contact_phone: '+54 9 351 123 4567',
-    },
-    {
-      id: '2',
-      type: 'Casa',
-      zone: 'Valle Escondido',
-      budget: 620000,
-      unlocked_at: '2025-05-17',
-      contact_name: 'Ana Martínez',
-      contact_phone: '+54 9 351 765 4321',
-    },
-  ]
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-500">Cargando tu dashboard...</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (!broker) return null
 
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="pt-20 pb-16">
         <div className="max-w-5xl mx-auto px-4">
+
           {/* Header */}
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-              <p className="text-gray-500 text-sm mt-1">
-                Zonas: {mockStats.zones.join(', ')}
-              </p>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Hola, {broker.name.split(' ')[0]} 👋
+              </h1>
+              <div className="flex items-center gap-1.5 text-gray-500 text-sm mt-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {broker.zones.slice(0, 3).join(', ')}{broker.zones.length > 3 ? ` +${broker.zones.length - 3}` : ''}
+              </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 flex items-center gap-2">
                 <CreditCard className="h-4 w-4 text-blue-600" />
-                <span className="font-semibold text-blue-900">{mockStats.credits}</span>
+                <span className="font-bold text-blue-900 text-xl">{broker.credits}</span>
                 <span className="text-blue-600 text-sm">créditos</span>
               </div>
               <Link href="/broker/creditos">
@@ -58,63 +108,54 @@ export default function BrokerDashboard() {
                   Comprar créditos
                 </Button>
               </Link>
+              <button
+                onClick={handleLogout}
+                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+                title="Cerrar sesión"
+              >
+                <LogOut className="h-4 w-4" />
+              </button>
             </div>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-8">
             {[
-              { label: 'Créditos disponibles', value: mockStats.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" /> },
-              { label: 'Leads desbloqueados', value: mockStats.leads_unlocked, icon: <Unlock className="h-5 w-5 text-green-500" /> },
-              { label: 'Pedidos vistos', value: mockStats.requests_seen, icon: <Eye className="h-5 w-5 text-purple-500" /> },
-            ].map(({ label, value, icon }) => (
+              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-blue-600' },
+              { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600' },
+              { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600' },
+            ].map(({ label, value, icon, color }) => (
               <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
                 <div className="flex items-center gap-3 mb-2">
                   {icon}
                   <span className="text-sm text-gray-500">{label}</span>
                 </div>
-                <p className="text-3xl font-bold text-gray-900">{value}</p>
+                <p className={`text-3xl font-bold ${color}`}>{value}</p>
               </div>
             ))}
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* New requests in your zones */}
+            {/* New requests in zones */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-900 flex items-center gap-2">
                   <Bell className="h-4 w-4 text-blue-500" />
-                  Nuevos en tus zonas
+                  Pedidos en tus zonas
                 </h2>
                 <Link href="/pedidos" className="text-sm text-blue-600 hover:underline">
-                  Ver todos
+                  Ver todos →
                 </Link>
               </div>
-              <div className="space-y-3">
-                {[
-                  { type: 'Casa', zone: 'Mendiolaza', budget: 230000, ago: '2h' },
-                  { type: 'Casa', zone: 'Valle Escondido', budget: 620000, ago: '4h' },
-                  { type: 'Dúplex', zone: 'Villa Allende', budget: 180000, ago: '1d' },
-                ].map(({ type, zone, budget, ago }) => (
-                  <div
-                    key={`${type}-${zone}`}
-                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                  >
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {type} · {zone}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        USD {budget.toLocaleString()} · hace {ago}
-                      </p>
-                    </div>
-                    <Link href="/pedidos">
-                      <Button size="sm" variant="outline" className="text-xs h-7">
-                        Ver
-                      </Button>
-                    </Link>
-                  </div>
-                ))}
+              <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-800">
+                <p className="font-medium mb-1">Tus zonas activas:</p>
+                <p className="text-blue-600">{broker.zones.join(', ')}</p>
+                <Link
+                  href="/pedidos"
+                  className="inline-flex items-center gap-1.5 mt-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors"
+                >
+                  Ver pedidos activos →
+                </Link>
               </div>
             </div>
 
@@ -125,54 +166,74 @@ export default function BrokerDashboard() {
                   <Unlock className="h-4 w-4 text-green-500" />
                   Contactos desbloqueados
                 </h2>
-                <span className="text-xs text-gray-400">{mockLeads.length} leads</span>
+                <span className="text-xs text-gray-400 bg-gray-100 px-2 py-1 rounded-full">
+                  {leads.length} {leads.length === 1 ? 'lead' : 'leads'}
+                </span>
               </div>
-              <div className="space-y-3">
-                {mockLeads.map((lead) => (
-                  <div key={lead.id} className="p-3 bg-gray-50 rounded-lg">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="text-sm font-medium text-gray-900">{lead.contact_name}</p>
+
+              {leads.length === 0 ? (
+                <div className="text-center py-6">
+                  <div className="text-3xl mb-2">🔓</div>
+                  <p className="text-sm text-gray-500 mb-3">Todavía no desbloqueaste ningún contacto.</p>
+                  <Link href="/pedidos">
+                    <Button size="sm" variant="outline" className="text-xs">
+                      Ver pedidos activos
+                    </Button>
+                  </Link>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-80 overflow-y-auto">
+                  {leads.map((lead) => {
+                    const req = lead.request
+                    if (!req) return null
+                    const typeLabel = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t).join(' / ')
+                    return (
+                      <div key={lead.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900">{req.contact_name}</p>
+                            <a href={`tel:${req.contact_phone}`} className="text-sm text-blue-600 hover:underline font-medium">
+                              {req.contact_phone}
+                            </a>
+                            {req.contact_email && (
+                              <p className="text-xs text-gray-400">{req.contact_email}</p>
+                            )}
+                          </div>
+                          <div className="text-right shrink-0">
+                            <p className="text-xs text-gray-500">{typeLabel}</p>
+                            <p className="text-xs text-gray-500">{req.zones[0]}</p>
+                            <p className="text-xs font-medium text-gray-700">USD {req.budget_usd.toLocaleString()}</p>
+                          </div>
+                        </div>
                         <a
-                          href={`tel:${lead.contact_phone}`}
-                          className="text-sm text-blue-600 hover:underline"
+                          href={`https://wa.me/${req.contact_phone.replace(/\D/g, '')}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-1 text-xs text-green-600 hover:underline font-medium"
                         >
-                          {lead.contact_phone}
+                          💬 Contactar por WhatsApp
                         </a>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xs text-gray-500">{lead.type} · {lead.zone}</p>
-                        <p className="text-xs font-medium text-gray-700">
-                          USD {lead.budget.toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                    <a
-                      href={`https://wa.me/${lead.contact_phone.replace(/\D/g, '')}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="mt-2 inline-flex items-center text-xs text-green-600 hover:underline"
-                    >
-                      Contactar por WhatsApp →
-                    </a>
-                  </div>
-                ))}
-              </div>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Market insights teaser */}
-          <div className="mt-6 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-5 text-white">
+          {/* Market insights */}
+          <div className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-5 text-white">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="h-5 w-5" />
               <h3 className="font-semibold">Inteligencia de mercado</h3>
-              <span className="text-xs bg-blue-500 px-2 py-0.5 rounded-full">Próximamente</span>
+              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Próximamente</span>
             </div>
-            <p className="text-blue-100 text-sm">
+            <p className="text-blue-100/80 text-sm">
               Pronto vas a ver qué zonas tienen más demanda, tickets promedio por barrio,
               y qué requisitos están siendo más pedidos esta semana.
             </p>
           </div>
+
         </div>
       </div>
     </div>

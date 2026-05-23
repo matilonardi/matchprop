@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { ZONES_CORDOBA } from '@/lib/constants'
+import { supabase } from '@/lib/supabase'
 
 export default function BrokerRegisterForm() {
   const router = useRouter()
@@ -48,6 +49,8 @@ export default function BrokerRegisterForm() {
         const data = await res.json()
         throw new Error(data.error || 'Error al registrarse')
       }
+      // Auto sign-in after successful registration
+      await supabase.auth.signInWithPassword({ email: form.email, password: form.password })
       router.push('/broker/dashboard')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')

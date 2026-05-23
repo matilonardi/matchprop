@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { CheckCircle2, ArrowRight, Bell, Lock, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
-import BrokerRegisterForm from './BrokerRegisterForm'
+import BrokerAuthSection from './BrokerAuthSection'
 
 export default function BrokerPage() {
   return (
@@ -97,20 +97,9 @@ export default function BrokerPage() {
               </div>
             </div>
 
-            {/* Register form */}
+            {/* Auth section (register + login tabs) */}
             <div>
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-1">Crear cuenta de inmobiliaria</h2>
-                <p className="text-sm text-gray-500 mb-6">Gratis para empezar. Comprás créditos cuando los necesitás.</p>
-                <BrokerRegisterForm />
-              </div>
-
-              <p className="text-center text-sm text-gray-500 mt-4">
-                ¿Ya tenés cuenta?{' '}
-                <Link href="/broker/dashboard" className="text-blue-600 hover:underline font-medium">
-                  Ir al dashboard
-                </Link>
-              </p>
+              <BrokerAuthSection />
             </div>
           </div>
         </div>
