@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays } from 'lucide-react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 
@@ -29,7 +29,7 @@ const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
   {
     id: 'demo-1', property_types: ['casa'], zones: ['Mendiolaza', 'Valle Escondido'],
     bedrooms_min: 3, bedrooms_max: 4, bathrooms_min: 2, budget_usd: 230000,
-    financing: 'ambos', requirements: ['seguridad', 'cochera', 'gas_natural', 'calles_asfaltadas'],
+    financing: 'ambos', requirements: ['cochera', 'gas_natural', 'calles_asfaltadas'],
     description: 'Busco algo moderno, no más de 10 años de antigüedad. Cocina amplia integrada al living.',
     urgency: 'este_mes', status: 'active', views_count: 14, leads_count: 3,
     created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
@@ -38,7 +38,7 @@ const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
   {
     id: 'demo-2', property_types: ['casa', 'duplex'], zones: ['Villa Belgrano', 'Cerro de las Rosas'],
     bedrooms_min: 3, bathrooms_min: 2, budget_usd: 620000,
-    financing: 'efectivo', requirements: ['seguridad', 'pileta', 'cochera', 'living_amplio'],
+    financing: 'efectivo', requirements: ['pileta', 'cochera', 'living_amplio'],
     description: 'Solo barrios cerrados: Los Cielos, Santina, Los Árboles o Los Sueños. Living amplio imprescindible.',
     urgency: 'flexible', status: 'active', views_count: 9, leads_count: 2,
     created_at: new Date(Date.now() - 5 * 3600000).toISOString(),
@@ -55,7 +55,7 @@ const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
   {
     id: 'demo-4', property_types: ['casa'], zones: ['Mendiolaza', 'Valle del Sol', 'Sierra Nueva'],
     bedrooms_min: 3, bathrooms_min: 1, budget_usd: 150000,
-    financing: 'credito', requirements: ['seguridad', 'calles_asfaltadas', 'gas_natural'],
+    financing: 'credito', requirements: ['calles_asfaltadas', 'gas_natural'],
     urgency: 'en_3_meses', status: 'active', views_count: 6, leads_count: 1,
     created_at: new Date(Date.now() - 18 * 3600000).toISOString(),
     expires_at: new Date(Date.now() + 42 * 24 * 3600000).toISOString(), demo: true,
@@ -70,7 +70,7 @@ const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
     expires_at: new Date(Date.now() + 34 * 24 * 3600000).toISOString(), demo: true,
   },
   {
-    id: 'demo-6', property_types: ['departamento', 'ph'], zones: ['Güemes', 'Nueva Córdoba', 'Alberdi'],
+    id: 'demo-6', property_types: ['departamento', 'duplex'], zones: ['Güemes', 'Nueva Córdoba', 'Alberdi'],
     bedrooms_min: 2, bathrooms_min: 1, budget_usd: 95000,
     financing: 'efectivo', requirements: ['luz_natural', 'terraza'],
     urgency: 'este_mes', status: 'active', views_count: 11, leads_count: 2,
@@ -410,21 +410,23 @@ export default function PedidosFeed({
 
   const [filters, setFilters] = useState({
     zone: initialZone,
-    type: initialType,
+    types: initialType ? [initialType] : [] as string[],  // multi-select
+    carCondition: '',
     financing: initialFinancing,
     maxBudget: initialMaxBudget,
     since: initialSince,
   })
+  const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zone || filters.type || filters.financing || filters.maxBudget || filters.since)
+  const hasFilters = !!(filters.zone || filters.types.length || filters.carCondition || filters.financing || filters.maxBudget || filters.since)
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
     params.set('requestType', activeTab)
     if (filters.zone) params.set('zone', filters.zone)
-    if (activeTab === 'property' && filters.type) params.set('type', filters.type)
-    if (activeTab === 'car' && filters.type) params.set('condition', filters.type)
+    if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
+    if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
     if (filters.since) params.set('since', filters.since)
@@ -433,7 +435,7 @@ export default function PedidosFeed({
       const res = await fetch(`/api/pedidos?${params}`)
       const json = await res.json()
       const data = json.data || []
-      const noFilterApplied = !filters.zone && !filters.type && !filters.financing && !filters.maxBudget
+      const noFilterApplied = !filters.zone && !filters.types.length && !filters.financing && !filters.maxBudget
       if (data.length === 0 && page === 1 && noFilterApplied) {
         setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
         setTotalPages(1)
@@ -463,6 +465,14 @@ export default function PedidosFeed({
     setPage(1)
   }
 
+  function toggleTypeFilter(typeId: string) {
+    setFilters((f) => ({
+      ...f,
+      types: f.types.includes(typeId) ? f.types.filter((t) => t !== typeId) : [...f.types, typeId],
+    }))
+    setPage(1)
+  }
+
   const pillBase = 'rounded-full text-sm font-medium border transition-colors w-full h-9'
   const pillActive = 'border-orange-500 bg-orange-50 text-orange-700'
   const pillInactive = 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
@@ -479,7 +489,8 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zone: '', type: '', financing: '', maxBudget: '', since: '' })
+              setFilters({ zone: '', types: [], carCondition: '', financing: '', maxBudget: '', since: '' })
+              setTypeDropdownOpen(false)
               setPage(1)
             }}
             className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -491,16 +502,20 @@ export default function PedidosFeed({
         ))}
       </div>
 
-      {/* Pill filter bar */}
+      {/* Filter bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-6">
 
-        <div className="shrink-0 w-44">
+        {/* Zona */}
+        <div className="shrink-0 w-48">
           <Select value={filters.zone || 'todos'} onValueChange={(v) => handleFilterChange('zone', v)}>
             <SelectTrigger className={`${pillBase} ${filters.zone ? pillActive : pillInactive} px-4`}>
-              <SelectValue placeholder="📍 Zona" />
+              <span className="flex items-center gap-1 truncate text-left">
+                <span className="shrink-0 font-medium">📍 Zona:</span>
+                <span className="truncate">{filters.zone || 'todas'}</span>
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">📍 Todas las zonas</SelectItem>
+              <SelectItem value="todos">Todas las zonas</SelectItem>
               {ZONES_CORDOBA.map((z) => (
                 <SelectItem key={z} value={z}>{z}</SelectItem>
               ))}
@@ -508,28 +523,54 @@ export default function PedidosFeed({
           </Select>
         </div>
 
+        {/* Tipo — multi-select for property, single for car */}
         {activeTab === 'property' ? (
-          <div className="shrink-0 w-52">
-            <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
-              <SelectTrigger className={`${pillBase} ${filters.type ? pillActive : pillInactive} px-4`}>
-                <SelectValue placeholder="🏠 Tipo de propiedad" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">🏠 Todos los tipos</SelectItem>
-                {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
-                  <SelectItem key={k} value={k}>{v}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          <div className="shrink-0 relative">
+            <button
+              onClick={() => setTypeDropdownOpen((v) => !v)}
+              className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
+                filters.types.length ? pillActive : pillInactive
+              }`}
+            >
+              <span className="font-medium">🏠 Tipo:</span>
+              {filters.types.length === 0
+                ? 'todos'
+                : filters.types.length === 1
+                  ? PROPERTY_TYPE_LABELS[filters.types[0]]
+                  : `${filters.types.length} tipos`
+              }
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+            </button>
+            {typeDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setTypeDropdownOpen(false)} />
+                <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-52">
+                  {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
+                    <label key={k} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={filters.types.includes(k)}
+                        onChange={() => toggleTypeFilter(k)}
+                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                      />
+                      {v}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         ) : (
-          <div className="shrink-0 w-44">
-            <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
-              <SelectTrigger className={`${pillBase} ${filters.type ? pillActive : pillInactive} px-4`}>
-                <SelectValue placeholder="🚗 Condición" />
+          <div className="shrink-0 w-48">
+            <Select value={filters.carCondition || 'todos'} onValueChange={(v) => handleFilterChange('carCondition', v)}>
+              <SelectTrigger className={`${pillBase} ${filters.carCondition ? pillActive : pillInactive} px-4`}>
+                <span className="flex items-center gap-1 truncate text-left">
+                  <span className="shrink-0 font-medium">🚗 Condición:</span>
+                  <span className="truncate">{filters.carCondition === 'nuevo' ? '0km' : filters.carCondition === 'usado' ? 'usado' : 'todas'}</span>
+                </span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">🚗 Cualquier condición</SelectItem>
+                <SelectItem value="todos">Cualquier condición</SelectItem>
                 <SelectItem value="nuevo">✨ 0km</SelectItem>
                 <SelectItem value="usado">🔑 Usado</SelectItem>
               </SelectContent>
@@ -537,40 +578,55 @@ export default function PedidosFeed({
           </div>
         )}
 
-        <div className="shrink-0 w-44">
+        {/* Presupuesto */}
+        <div className="shrink-0 w-52">
           <Select value={filters.maxBudget || 'todos'} onValueChange={(v) => handleFilterChange('maxBudget', v)}>
             <SelectTrigger className={`${pillBase} ${filters.maxBudget ? pillActive : pillInactive} px-4`}>
-              <SelectValue placeholder="💰 Presupuesto" />
+              <span className="flex items-center gap-1 truncate text-left">
+                <span className="shrink-0 font-medium">💰 Hasta:</span>
+                <span className="truncate">{filters.maxBudget ? `USD ${parseInt(filters.maxBudget).toLocaleString()}` : 'cualquier precio'}</span>
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">💰 Cualquier precio</SelectItem>
+              <SelectItem value="todos">Cualquier precio</SelectItem>
               {activeTab === 'property' ? (
                 <>
-                  <SelectItem value="100000">Hasta USD 100k</SelectItem>
-                  <SelectItem value="200000">Hasta USD 200k</SelectItem>
-                  <SelectItem value="350000">Hasta USD 350k</SelectItem>
-                  <SelectItem value="500000">Hasta USD 500k</SelectItem>
+                  <SelectItem value="100000">USD 100.000</SelectItem>
+                  <SelectItem value="200000">USD 200.000</SelectItem>
+                  <SelectItem value="350000">USD 350.000</SelectItem>
+                  <SelectItem value="500000">USD 500.000</SelectItem>
                 </>
               ) : (
                 <>
-                  <SelectItem value="10000">Hasta USD 10k</SelectItem>
-                  <SelectItem value="20000">Hasta USD 20k</SelectItem>
-                  <SelectItem value="40000">Hasta USD 40k</SelectItem>
-                  <SelectItem value="80000">Hasta USD 80k</SelectItem>
+                  <SelectItem value="10000">USD 10.000</SelectItem>
+                  <SelectItem value="20000">USD 20.000</SelectItem>
+                  <SelectItem value="40000">USD 40.000</SelectItem>
+                  <SelectItem value="80000">USD 80.000</SelectItem>
                 </>
               )}
             </SelectContent>
           </Select>
         </div>
 
+        {/* Financiación (solo propiedades) */}
         {activeTab === 'property' && (
-          <div className="shrink-0 w-48">
+          <div className="shrink-0 w-52">
             <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
               <SelectTrigger className={`${pillBase} ${filters.financing ? pillActive : pillInactive} px-4`}>
-                <SelectValue placeholder="💳 Forma de pago" />
+                <span className="flex items-center gap-1 truncate text-left">
+                  <span className="shrink-0 font-medium">💳 Pago:</span>
+                  <span className="truncate">{
+                    filters.financing === 'efectivo' ? 'efectivo'
+                    : filters.financing === 'credito' ? 'crédito'
+                    : filters.financing === 'permuta_propiedad' ? 'permuta prop.'
+                    : filters.financing === 'permuta_auto' ? 'permuta auto'
+                    : filters.financing === 'ambos' ? 'efvo. o crédito'
+                    : 'cualquiera'
+                  }</span>
+                </span>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="todos">💳 Cualquier forma</SelectItem>
+                <SelectItem value="todos">Cualquier forma</SelectItem>
                 <SelectItem value="efectivo">💵 Efectivo</SelectItem>
                 <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
                 <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
@@ -582,14 +638,22 @@ export default function PedidosFeed({
         )}
 
         {/* Fecha */}
-        <div className="shrink-0 w-44">
+        <div className="shrink-0 w-48">
           <Select value={filters.since || 'todas'} onValueChange={(v) => handleFilterChange('since', v)}>
             <SelectTrigger className={`${pillBase} ${filters.since ? pillActive : pillInactive} px-4`}>
-              <CalendarDays className="h-3.5 w-3.5 mr-1.5 shrink-0" />
-              <SelectValue placeholder="📅 Fecha" />
+              <span className="flex items-center gap-1 truncate text-left">
+                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+                <span className="shrink-0 font-medium ml-0.5">Fecha:</span>
+                <span className="truncate">{
+                  filters.since === '24h' ? 'hoy'
+                  : filters.since === '7d' ? 'esta semana'
+                  : filters.since === '30d' ? 'este mes'
+                  : 'cualquiera'
+                }</span>
+              </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todas">📅 Cualquier fecha</SelectItem>
+              <SelectItem value="todas">Cualquier fecha</SelectItem>
               <SelectItem value="24h">🔥 Últimas 24 horas</SelectItem>
               <SelectItem value="7d">📅 Última semana</SelectItem>
               <SelectItem value="30d">🗓️ Último mes</SelectItem>
@@ -599,7 +663,10 @@ export default function PedidosFeed({
 
         {hasFilters && (
           <button
-            onClick={() => { setFilters({ zone: '', type: '', financing: '', maxBudget: '', since: '' }); setPage(1) }}
+            onClick={() => {
+              setFilters({ zone: '', types: [], carCondition: '', financing: '', maxBudget: '', since: '' })
+              setPage(1)
+            }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
           >
             <X className="h-3.5 w-3.5" />

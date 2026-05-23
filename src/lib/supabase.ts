@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 
-export type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
+export type PropertyType = 'casa' | 'departamento' | 'duplex' | 'terreno' | 'local' | 'renta' | 'revaluo'
 export type FinancingType = 'efectivo' | 'credito' | 'ambos'
 export type RequestStatus = 'active' | 'matched' | 'closed' | 'expired'
 
@@ -24,6 +24,17 @@ export interface BuyerRequest {
   search_reason?: string
   description?: string
   urgency?: string
+  // Property extra dimensions (optional)
+  area_cubierta_min?: number | null
+  area_cubierta_max?: number | null
+  area_terreno_min?: number | null
+  area_terreno_max?: number | null
+  terreno_frente_min?: number | null
+  terreno_frente_max?: number | null
+  terreno_fondo_min?: number | null
+  terreno_fondo_max?: number | null
+  cocheras_min?: number | null
+  seguridad_tipos?: string[]
   // Car-specific fields
   car_brands?: string[]
   car_body_styles?: string[]

@@ -100,8 +100,6 @@ export const ZONES_CORDOBA = [
 
 export const REQUIREMENTS = [
   { id: 'pileta', label: 'Pileta' },
-  { id: 'cochera', label: 'Cochera cubierta' },
-  { id: 'seguridad', label: 'Barrio con seguridad' },
   { id: 'gas_natural', label: 'Gas natural' },
   { id: 'calles_asfaltadas', label: 'Calles asfaltadas' },
   { id: 'jardin', label: 'Jardín' },
@@ -113,6 +111,15 @@ export const REQUIREMENTS = [
   { id: 'calefaccion_central', label: 'Calefacción central' },
   { id: 'antiguedad', label: 'Menos de 10 años de antigüedad' },
   { id: 'terraza', label: 'Terraza / Balcón' },
+]
+
+// Specific security types (replaces the generic "seguridad" requirement)
+export const SEGURIDAD_TIPOS = [
+  { id: 'rejas', label: 'Rejas' },
+  { id: 'guardia_cuadra', label: 'Guardia en la cuadra' },
+  { id: 'housing', label: 'Housing' },
+  { id: 'barrio_cerrado', label: 'Barrio cerrado' },
+  { id: 'country', label: 'Country' },
 ]
 
 export const PRIORITY_OPTIONS = [
@@ -141,7 +148,6 @@ export const PROPERTY_TYPE_LABELS: Record<string, string> = {
   casa: 'Casa',
   departamento: 'Departamento',
   duplex: 'Dúplex',
-  ph: 'PH',
   terreno: 'Terreno',
   local: 'Local Comercial',
   renta: 'Inversión para renta',

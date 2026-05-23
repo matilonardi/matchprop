@@ -10,7 +10,8 @@ function makeCloseToken(requestId: string): string {
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const zone = searchParams.get('zone')
-  const type = searchParams.get('type')
+  const typesParam = searchParams.get('types') // comma-separated: "casa,departamento"
+  const types = typesParam ? typesParam.split(',').filter(Boolean) : []
   const financing = searchParams.get('financing')
   const maxBudget = searchParams.get('maxBudget')
   const since = searchParams.get('since') // '24h' | '7d' | '30d'
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
   if (requestType) query = query.eq('request_type', requestType)
   else query = query.eq('request_type', 'property') // default to property tab
   if (zone) query = query.contains('zones', [zone])
-  if (type && requestType !== 'car') query = query.contains('property_types', [type])
+  if (types.length && requestType !== 'car') query = query.overlaps('property_types', types)
   if (condition && requestType === 'car') query = query.eq('car_condition', condition)
   if (since) {
     const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }

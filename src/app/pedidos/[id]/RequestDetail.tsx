@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
-  CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar
+  CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar,
+  MessageCircle, Send
 } from 'lucide-react'
-import { CAR_BODY_STYLE_LABELS } from '@/lib/constants'
+import { CAR_BODY_STYLE_LABELS, SEGURIDAD_TIPOS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
@@ -51,13 +52,24 @@ export default function RequestDetail({
   const [unlocking, setUnlocking] = useState(false)
   const [unlockError, setUnlockError] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [userId, setUserId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState('')
   const [closed, setClosed] = useState(false)
 
+  // Messaging state
+  const [messages, setMessages] = useState<{ id: string; sender_type: string; content: string; created_at: string; read_at: string | null }[]>([])
+  const [msgText, setMsgText] = useState('')
+  const [sendingMsg, setSendingMsg] = useState(false)
+  const [msgError, setMsgError] = useState('')
+  const [showChat, setShowChat] = useState(false)
+
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setIsLoggedIn(!!data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setIsLoggedIn(!!data.user)
+      setUserId(data.user?.id ?? null)
+    })
   }, [])
 
   async function handleShare() {
@@ -94,6 +106,56 @@ export default function RequestDetail({
     }
   }
 
+  async function loadMessages() {
+    try {
+      const url = closeToken
+        ? `/api/pedidos/${request.id}/messages?close_token=${closeToken}`
+        : `/api/pedidos/${request.id}/messages`
+      const res = await fetch(url)
+      if (res.ok) {
+        const data = await res.json()
+        setMessages(data.messages || [])
+      }
+    } catch {
+      // silently fail
+    }
+  }
+
+  async function sendMessage() {
+    if (!msgText.trim()) return
+    setSendingMsg(true)
+    setMsgError('')
+    try {
+      const body = closeToken
+        ? { content: msgText, close_token: closeToken }
+        : { content: msgText, broker_user_id: userId }
+      const res = await fetch(`/api/pedidos/${request.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setMsgError(data.error || 'Error al enviar')
+        return
+      }
+      setMsgText('')
+      await loadMessages()
+    } catch {
+      setMsgError('Error de conexión')
+    } finally {
+      setSendingMsg(false)
+    }
+  }
+
+  // Load messages for buyer (close_token in URL) on mount
+  useEffect(() => {
+    if (closeToken) {
+      loadMessages()
+      setShowChat(true)
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
   const isCar = request.request_type === 'car'
   const typeLabels = isCar
     ? (request.car_body_styles?.map((s) => CAR_BODY_STYLE_LABELS[s] || s) ?? ['Auto'])
@@ -126,6 +188,8 @@ export default function RequestDetail({
       }
       const { contact: c } = await res.json()
       setContact(c)
+      loadMessages()
+      setShowChat(true)
     } catch {
       setUnlockError('Error de conexión')
     } finally {
@@ -313,6 +377,81 @@ export default function RequestDetail({
                 )}
               </div>
 
+              {/* Property dimensions */}
+              {(request.area_cubierta_min || request.area_cubierta_max ||
+                request.area_terreno_min || request.area_terreno_max ||
+                request.terreno_frente_min || request.terreno_frente_max ||
+                request.terreno_fondo_min || request.terreno_fondo_max ||
+                request.cocheras_min) && (
+                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-700">
+                  {(request.area_cubierta_min || request.area_cubierta_max) && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-blue-500 font-medium">📐</span>
+                      {request.area_cubierta_min && request.area_cubierta_max
+                        ? `${request.area_cubierta_min}–${request.area_cubierta_max} m² cub.`
+                        : request.area_cubierta_min
+                        ? `≥ ${request.area_cubierta_min} m² cub.`
+                        : `≤ ${request.area_cubierta_max} m² cub.`}
+                    </span>
+                  )}
+                  {(request.area_terreno_min || request.area_terreno_max) && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="text-green-500 font-medium">🌿</span>
+                      {request.area_terreno_min && request.area_terreno_max
+                        ? `${request.area_terreno_min}–${request.area_terreno_max} m² terreno`
+                        : request.area_terreno_min
+                        ? `≥ ${request.area_terreno_min} m² terreno`
+                        : `≤ ${request.area_terreno_max} m² terreno`}
+                    </span>
+                  )}
+                  {(request.terreno_frente_min || request.terreno_frente_max) && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-medium text-gray-500">↔</span>
+                      Frente:{' '}
+                      {request.terreno_frente_min && request.terreno_frente_max
+                        ? `${request.terreno_frente_min}–${request.terreno_frente_max} m`
+                        : request.terreno_frente_min
+                        ? `≥ ${request.terreno_frente_min} m`
+                        : `≤ ${request.terreno_frente_max} m`}
+                    </span>
+                  )}
+                  {(request.terreno_fondo_min || request.terreno_fondo_max) && (
+                    <span className="flex items-center gap-1.5">
+                      <span className="font-medium text-gray-500">↕</span>
+                      Fondo:{' '}
+                      {request.terreno_fondo_min && request.terreno_fondo_max
+                        ? `${request.terreno_fondo_min}–${request.terreno_fondo_max} m`
+                        : request.terreno_fondo_min
+                        ? `≥ ${request.terreno_fondo_min} m`
+                        : `≤ ${request.terreno_fondo_max} m`}
+                    </span>
+                  )}
+                  {(request.cocheras_min ?? 0) > 0 && (
+                    <span className="flex items-center gap-1.5">
+                      <span>🚗</span>
+                      {request.cocheras_min}+ cochera{(request.cocheras_min ?? 0) > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              )}
+
+              {/* Seguridad específica */}
+              {(request.seguridad_tipos?.length ?? 0) > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Seguridad:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(request.seguridad_tipos ?? []).map((s) => {
+                      const label = SEGURIDAD_TIPOS.find(x => x.id === s)?.label || s
+                      return (
+                        <span key={s} className="text-sm bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1 rounded-full">
+                          🛡 {label}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Requirements */}
               {(request.requirements.length > 0 || (request.requirements_excluyentes && request.requirements_excluyentes.length > 0)) && (
                 <div>
@@ -418,6 +557,92 @@ export default function RequestDetail({
           </div>
         )}
 
+        {/* Buyer: in-app messages section */}
+        {closeToken && (
+          <div className="px-6 pb-6" id="mensajes">
+            <div className="border border-gray-200 rounded-xl overflow-hidden">
+              <button
+                onClick={() => { setShowChat(!showChat); if (!showChat) loadMessages() }}
+                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <MessageCircle className="h-4 w-4 text-orange-500" />
+                  Mensajes de brokers
+                  {messages.length > 0 && (
+                    <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                      {messages.length}
+                    </span>
+                  )}
+                </div>
+                <span className="text-gray-400 text-xs">{showChat ? '▲' : '▼'}</span>
+              </button>
+
+              {showChat && (
+                <>
+                  <div className="p-4 space-y-3 max-h-72 overflow-y-auto bg-white">
+                    {messages.length === 0 ? (
+                      <p className="text-sm text-gray-400 text-center py-6">
+                        Todavía no recibiste mensajes. Los brokers interesados podrán escribirte acá.
+                      </p>
+                    ) : (
+                      messages.map((msg) => {
+                        const isMine = msg.sender_type === 'buyer'
+                        return (
+                          <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                              isMine
+                                ? 'bg-orange-500 text-white rounded-br-sm'
+                                : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                            }`}>
+                              {!isMine && (
+                                <p className="text-xs font-semibold text-orange-600 mb-1">Broker</p>
+                              )}
+                              <p>{msg.content}</p>
+                              <p className={`text-xs mt-1 ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
+                                {timeAgo(msg.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                  <div className="p-3 bg-gray-50 border-t border-gray-100">
+                    {msgError && (
+                      <p className="text-xs text-red-600 mb-2">{msgError}</p>
+                    )}
+                    <div className="flex gap-2">
+                      <textarea
+                        value={msgText}
+                        onChange={(e) => setMsgText(e.target.value)}
+                        placeholder="Respondé a los brokers..."
+                        rows={2}
+                        className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none bg-white"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault()
+                            void sendMessage()
+                          }
+                        }}
+                      />
+                      <button
+                        onClick={() => void sendMessage()}
+                        disabled={sendingMsg || !msgText.trim()}
+                        className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
+                      >
+                        {sendingMsg
+                          ? <Loader2 className="h-4 w-4 animate-spin" />
+                          : <Send className="h-4 w-4" />
+                        }
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Unlock contact — hidden to the buyer (has close_token) and once closed */}
         {!closed && !closeToken && <div className="p-6 bg-gray-50 border-t border-gray-100">
           {contact ? (
@@ -450,6 +675,83 @@ export default function RequestDetail({
                 >
                   Contactar por WhatsApp
                 </a>
+              </div>
+
+              {/* In-app chat */}
+              <div className="mt-2">
+                <button
+                  onClick={() => { setShowChat(!showChat); if (!showChat) loadMessages() }}
+                  className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                    <MessageCircle className="h-4 w-4 text-orange-500" />
+                    Mensajes por MatchProp
+                    {messages.length > 0 && (
+                      <span className="text-gray-400 text-xs">({messages.length})</span>
+                    )}
+                  </div>
+                  <span className="text-gray-400 text-xs">{showChat ? '▲' : '▼'}</span>
+                </button>
+
+                {showChat && (
+                  <div className="mt-1 border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="p-4 space-y-3 max-h-72 overflow-y-auto bg-gray-50">
+                      {messages.length === 0 ? (
+                        <p className="text-sm text-gray-400 text-center py-6">
+                          No hay mensajes aún. Enviá el primero.
+                        </p>
+                      ) : (
+                        messages.map((msg) => {
+                          const isMine = msg.sender_type === 'broker'
+                          return (
+                            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                                isMine
+                                  ? 'bg-orange-500 text-white rounded-br-sm'
+                                  : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
+                              }`}>
+                                <p>{msg.content}</p>
+                                <p className={`text-xs mt-1 ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
+                                  {timeAgo(msg.created_at)}
+                                </p>
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                    <div className="p-3 bg-white border-t border-gray-100">
+                      {msgError && (
+                        <p className="text-xs text-red-600 mb-2">{msgError}</p>
+                      )}
+                      <div className="flex gap-2">
+                        <textarea
+                          value={msgText}
+                          onChange={(e) => setMsgText(e.target.value)}
+                          placeholder="Escribí tu mensaje..."
+                          rows={2}
+                          className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                              e.preventDefault()
+                              void sendMessage()
+                            }
+                          }}
+                        />
+                        <button
+                          onClick={() => void sendMessage()}
+                          disabled={sendingMsg || !msgText.trim()}
+                          className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
+                        >
+                          {sendingMsg
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <Send className="h-4 w-4" />
+                          }
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ) : isLoggedIn ? (

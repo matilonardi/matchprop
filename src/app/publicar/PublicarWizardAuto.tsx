@@ -1,14 +1,16 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react'
+import { CheckCircle2, ArrowRight, ArrowLeft, Loader2, Eye, EyeOff } from 'lucide-react'
+import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
+import { supabase } from '@/lib/supabase'
 import {
   ZONES_CORDOBA,
   URGENCY_OPTIONS,
@@ -29,7 +31,7 @@ const STEPS = [
   { id: 3, title: 'Año y condición' },
   { id: 4, title: 'Presupuesto' },
   { id: 5, title: 'Descripción' },
-  { id: 6, title: 'Tu contacto' },
+  { id: 6, title: 'Crear cuenta' },
 ]
 
 const KM_MAX_OPTIONS = ['30000', '60000', '100000', '150000', '200000']
@@ -47,6 +49,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const captchaRef = useRef<HCaptcha>(null)
 
   // Step 1
   const [car_body_styles, setCarBodyStyles] = useState<string[]>([])
@@ -54,6 +57,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
 
   // Step 2
   const [zones, setZones] = useState<string[]>([])
+  const [zoneSearch, setZoneSearch] = useState('')
 
   // Step 3
   const [car_condition, setCarCondition] = useState('')
@@ -75,8 +79,9 @@ export default function PublicarWizardAuto({ onBack }: Props) {
   const [contact_name, setContactName] = useState('')
   const [contact_phone, setContactPhone] = useState('')
   const [contact_email, setContactEmail] = useState('')
+  const [contact_password, setContactPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
-  const [zoneSearch, setZoneSearch] = useState('')
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100
 
@@ -91,14 +96,19 @@ export default function PublicarWizardAuto({ onBack }: Props) {
       case 3: return !!car_condition
       case 4: return !!budget_usd && financing_types.length > 0
       case 5: return description.trim().length >= 10
-      case 6: return !!contact_name && !!contact_phone && acceptedTerms
+      case 6: return !!contact_name && !!contact_phone && !!contact_email && contact_email.includes('@') && contact_password.length >= 8 && acceptedTerms
       default: return false
     }
   }
 
-  async function handleSubmit() {
+  function handleSubmitClick() {
+    if (!canProceed() || loading) return
     setLoading(true)
     setError('')
+    captchaRef.current?.execute()
+  }
+
+  async function onCaptchaVerify(captchaToken: string) {
     try {
       const ft = financing_types
       const derivedFinancing =
@@ -106,10 +116,17 @@ export default function PublicarWizardAuto({ onBack }: Props) {
         : ft.includes('efectivo') && !ft.includes('credito') ? 'efectivo'
         : 'ambos'
 
-      const res = await fetch('/api/pedidos', {
+      const res = await fetch('/api/buyer/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Auth
+          email: contact_email,
+          password: contact_password,
+          name: contact_name,
+          phone: contact_phone,
+          captcha_token: captchaToken,
+          // Request
           request_type: 'car',
           property_types: [],
           zones,
@@ -126,20 +143,26 @@ export default function PublicarWizardAuto({ onBack }: Props) {
           car_transmission: car_transmission || null,
           description,
           urgency: urgency || null,
-          contact_name,
-          contact_phone,
-          contact_email: contact_email || null,
         }),
       })
+
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.error || 'Error al publicar')
+        captchaRef.current?.resetCaptcha()
+        setError(data.error || 'Error al publicar')
+        setLoading(false)
+        return
       }
+
       const { id, close_token } = await res.json()
+
+      // Auto sign-in
+      await supabase.auth.signInWithPassword({ email: contact_email, password: contact_password })
+
       router.push(`/pedidos/${id}?nuevo=1&close_token=${close_token}`)
     } catch (err) {
+      captchaRef.current?.resetCaptcha()
       setError(err instanceof Error ? err.message : 'Error inesperado')
-    } finally {
       setLoading(false)
     }
   }
@@ -484,11 +507,11 @@ export default function PublicarWizardAuto({ onBack }: Props) {
           </div>
         )}
 
-        {/* Step 6: Contact */}
+        {/* Step 6: Create account */}
         {step === 6 && (
           <div className="space-y-5">
             <div className="bg-blue-50 rounded-xl p-4 text-sm text-blue-700">
-              🔒 Tu contacto solo es visible para vendedores que pagan para verlo. Cero spam.
+              🔒 Creá tu cuenta para gestionar tu búsqueda y recibir mensajes de vendedores.
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
@@ -498,6 +521,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                 placeholder="Juan García"
                 value={contact_name}
                 onChange={(e) => setContactName(e.target.value)}
+                autoComplete="name"
               />
             </div>
             <div>
@@ -509,18 +533,45 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                 placeholder="+54 9 351 xxx xxxx"
                 value={contact_phone}
                 onChange={(e) => setContactPhone(e.target.value)}
+                autoComplete="tel"
               />
             </div>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Email (opcional)
+                Email <span className="text-red-500">*</span>
               </Label>
               <Input
                 type="email"
                 placeholder="juan@email.com"
                 value={contact_email}
                 onChange={(e) => setContactEmail(e.target.value)}
+                autoComplete="email"
               />
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Contraseña <span className="text-red-500">*</span>
+              </Label>
+              <div className="relative">
+                <Input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Mínimo 8 caracteres"
+                  value={contact_password}
+                  onChange={(e) => setContactPassword(e.target.value)}
+                  autoComplete="new-password"
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              {contact_password.length > 0 && contact_password.length < 8 && (
+                <p className="text-xs text-red-500 mt-1">Mínimo 8 caracteres ({contact_password.length}/8)</p>
+              )}
             </div>
 
             {/* Summary */}
@@ -557,6 +608,13 @@ export default function PublicarWizardAuto({ onBack }: Props) {
               </span>
             </label>
 
+            <HCaptcha
+              sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY || '10000000-ffff-ffff-ffff-000000000001'}
+              size="invisible"
+              onVerify={onCaptchaVerify}
+              ref={captchaRef}
+            />
+
             {error && (
               <div className="bg-red-50 text-red-700 rounded-lg p-3 text-sm">{error}</div>
             )}
@@ -588,7 +646,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
             </Button>
           ) : (
             <Button
-              onClick={handleSubmit}
+              onClick={handleSubmitClick}
               disabled={!canProceed() || loading}
               className="bg-orange-500 hover:bg-orange-600"
             >
