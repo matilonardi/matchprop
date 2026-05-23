@@ -22,9 +22,9 @@ export async function GET(request: NextRequest) {
   // Fetch purchases
   const { data: purchases } = await supabase
     .from('lead_purchases')
-    .select('id, request_id, credits_spent, created_at')
+    .select('id, request_id, credits_spent, purchased_at')
     .eq('broker_id', broker.id)
-    .order('created_at', { ascending: false })
+    .order('purchased_at', { ascending: false })
     .limit(20)
 
   let leads: object[] = []

@@ -22,7 +22,7 @@ interface Lead {
   id: string
   request_id: string
   credits_spent: number
-  created_at: string
+  purchased_at: string
   request: {
     property_types: string[]
     zones: string[]
