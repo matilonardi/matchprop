@@ -16,14 +16,16 @@ export async function POST(request: NextRequest) {
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-  const body = {
+  const isLocalhost = appUrl.includes('localhost') || appUrl.includes('127.0.0.1')
+
+  const body: Record<string, unknown> = {
     items: [
       {
         title: `MatchProp – ${pack.label}`,
         description: `${pack.credits} créditos para desbloquear contactos de compradores`,
         quantity: 1,
         currency_id: 'ARS',
-        unit_price: pack.price_usd * 1000, // rough ARS conversion — should use real FX
+        unit_price: pack.price_usd * 1000, // rough ARS conversion — replace with real FX at launch
       },
     ],
     back_urls: {
@@ -31,9 +33,11 @@ export async function POST(request: NextRequest) {
       failure: `${appUrl}/broker/creditos?error=1`,
       pending: `${appUrl}/broker/creditos?pending=1`,
     },
-    auto_return: 'approved',
     external_reference: `${pack_id}_${Date.now()}`,
-    notification_url: `${appUrl}/api/checkout/webhook`,
+    // auto_return requires HTTPS back_url — only set in production
+    ...(!isLocalhost && { auto_return: 'approved' }),
+    // webhook requires public URL — only set in production
+    ...(!isLocalhost && { notification_url: `${appUrl}/api/checkout/webhook` }),
   }
 
   const res = await fetch('https://api.mercadopago.com/checkout/preferences', {
