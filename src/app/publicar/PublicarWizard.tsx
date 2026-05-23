@@ -65,6 +65,7 @@ export default function PublicarWizard() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [zoneSearch, setZoneSearch] = useState('')
 
   const [form, setForm] = useState<FormData>({
     property_types: [],
@@ -228,13 +229,23 @@ export default function PublicarWizard() {
         {/* Step 2: Zones */}
         {step === 2 && (
           <div>
-            <p className="text-gray-600 mb-5">¿En qué zonas o barrios? Podés elegir varios.</p>
-            <div className="max-h-72 overflow-y-auto space-y-1.5 pr-2">
-              {ZONES_CORDOBA.map((zone) => (
+            <p className="text-gray-600 mb-3">¿En qué zonas o barrios? Podés elegir varios.</p>
+            <input
+              type="text"
+              placeholder="🔍 Buscar barrio o ciudad..."
+              value={zoneSearch}
+              onChange={e => setZoneSearch(e.target.value)}
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
+            />
+            <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
+              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).length === 0 && (
+                <p className="text-sm text-gray-400 py-4 text-center">Sin resultados para &quot;{zoneSearch}&quot;</p>
+              )}
+              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((zone) => (
                 <label
                   key={zone}
-                  className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                    form.zones.includes(zone) ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
+                    form.zones.includes(zone) ? 'bg-orange-50' : 'hover:bg-gray-50'
                   }`}
                 >
                   <Checkbox
@@ -248,8 +259,8 @@ export default function PublicarWizard() {
               ))}
             </div>
             {form.zones.length > 0 && (
-              <p className="mt-3 text-xs text-blue-600 font-medium">
-                {form.zones.length} zona{form.zones.length > 1 ? 's' : ''} seleccionada{form.zones.length > 1 ? 's' : ''}
+              <p className="mt-3 text-xs text-orange-500 font-medium">
+                ✓ {form.zones.length} zona{form.zones.length > 1 ? 's' : ''}: {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}
               </p>
             )}
           </div>

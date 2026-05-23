@@ -16,6 +16,7 @@ export default function BrokerRegisterForm() {
   const [error, setError] = useState('')
   const [selectedZones, setSelectedZones] = useState<string[]>([])
   const [acceptedTerms, setAcceptedTerms] = useState(false)
+  const [zoneSearch, setZoneSearch] = useState('')
   const [showZones, setShowZones] = useState(false)
 
   const [form, setForm] = useState({
@@ -137,22 +138,37 @@ export default function BrokerRegisterForm() {
 
         {showZones && (
           <div className="mt-2 border border-gray-200 rounded-xl overflow-hidden">
-            {/* Select all row */}
-            <label className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
-              <Checkbox
-                checked={selectedZones.length === ZONES_CORDOBA.length}
-                onCheckedChange={(v) =>
-                  setSelectedZones(v ? [...ZONES_CORDOBA] : [])
-                }
+            {/* Search */}
+            <div className="px-3 pt-2.5 pb-1.5 border-b border-gray-100">
+              <input
+                type="text"
+                placeholder="🔍 Buscar barrio o ciudad..."
+                value={zoneSearch}
+                onChange={e => setZoneSearch(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
               />
-              Seleccionar todas las zonas
-            </label>
+            </div>
+            {/* Select all row — only when no search active */}
+            {zoneSearch === '' && (
+              <label className="flex items-center gap-2.5 px-3 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-100 transition-colors">
+                <Checkbox
+                  checked={selectedZones.length === ZONES_CORDOBA.length}
+                  onCheckedChange={(v) =>
+                    setSelectedZones(v ? [...ZONES_CORDOBA] : [])
+                  }
+                />
+                Seleccionar todas las zonas
+              </label>
+            )}
             <div className="max-h-48 overflow-y-auto p-3 space-y-1">
-              {ZONES_CORDOBA.map((zone) => (
+              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).length === 0 && (
+                <p className="text-sm text-gray-400 py-2 text-center">Sin resultados</p>
+              )}
+              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((zone) => (
                 <label
                   key={zone}
                   className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-sm transition-colors ${
-                    selectedZones.includes(zone) ? 'bg-blue-50' : 'hover:bg-gray-50'
+                    selectedZones.includes(zone) ? 'bg-orange-50' : 'hover:bg-gray-50'
                   }`}
                 >
                   <Checkbox
