@@ -6,6 +6,7 @@ export type RequestStatus = 'active' | 'matched' | 'closed' | 'expired'
 
 export interface BuyerRequest {
   id: string
+  request_type?: 'property' | 'car'
   property_types: PropertyType[]
   zones: string[]
   bedrooms_min?: number
@@ -23,6 +24,15 @@ export interface BuyerRequest {
   search_reason?: string
   description?: string
   urgency?: string
+  // Car-specific fields
+  car_brands?: string[]
+  car_body_styles?: string[]
+  car_year_min?: number
+  car_year_max?: number
+  car_condition?: string
+  car_km_max?: number
+  car_fuel_types?: string[]
+  car_transmission?: string
   contact_name: string
   contact_phone: string
   contact_email?: string

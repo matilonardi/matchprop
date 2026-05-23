@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { ZONES_CORDOBA, REQUIREMENTS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
+import PublicarWizardAuto from './PublicarWizardAuto'
 
 type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
 type FinancingType = 'efectivo' | 'credito' | 'ambos'
@@ -59,6 +60,7 @@ const PROPERTY_TYPES: { id: PropertyType; label: string; icon: string }[] = [
 
 export default function PublicarWizard() {
   const router = useRouter()
+  const [requestType, setRequestType] = useState<null | 'property' | 'car'>(null)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -120,6 +122,7 @@ export default function PublicarWizard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...form,
+          request_type: 'property',
           financing: derivedFinancing,
           bedrooms_min: form.bedrooms_min ? parseInt(form.bedrooms_min) : null,
           bedrooms_max: form.bedrooms_max ? parseInt(form.bedrooms_max) : null,
@@ -140,6 +143,39 @@ export default function PublicarWizard() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (requestType === null) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">¿Qué estás buscando?</h2>
+          <p className="text-gray-500 text-center mb-8">Elegí el tipo de búsqueda para empezar</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <button
+              onClick={() => setRequestType('property')}
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all group"
+            >
+              <div className="text-5xl mb-3">🏠</div>
+              <h3 className="font-bold text-lg text-gray-900 mb-1">Propiedad</h3>
+              <p className="text-sm text-gray-500">Casa, departamento, terreno, local o inversión</p>
+            </button>
+            <button
+              onClick={() => setRequestType('car')}
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-blue-400 hover:bg-blue-50 text-left transition-all group"
+            >
+              <div className="text-5xl mb-3">🚗</div>
+              <h3 className="font-bold text-lg text-gray-900 mb-1">Auto</h3>
+              <p className="text-sm text-gray-500">Sedán, SUV, pickup, hatchback u otro vehículo</p>
+            </button>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (requestType === 'car') {
+    return <PublicarWizardAuto onBack={() => setRequestType(null)} />
   }
 
   return (

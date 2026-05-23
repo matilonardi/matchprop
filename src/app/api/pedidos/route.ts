@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
   const financing = searchParams.get('financing')
   const maxBudget = searchParams.get('maxBudget')
   const since = searchParams.get('since') // '24h' | '7d' | '30d'
+  const requestType = searchParams.get('requestType') // 'property' | 'car'
+  const condition = searchParams.get('condition') // car condition filter
   const page = parseInt(searchParams.get('page') || '1')
   const limit = 20
 
@@ -22,15 +24,18 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at',
+      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission',
       { count: 'exact' }
     )
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
 
+  if (requestType) query = query.eq('request_type', requestType)
+  else query = query.eq('request_type', 'property') // default to property tab
   if (zone) query = query.contains('zones', [zone])
-  if (type) query = query.contains('property_types', [type])
+  if (type && requestType !== 'car') query = query.contains('property_types', [type])
+  if (condition && requestType === 'car') query = query.eq('car_condition', condition)
   if (since) {
     const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }
     const days = sinceMap[since]
@@ -39,7 +44,7 @@ export async function GET(request: NextRequest) {
       query = query.gte('created_at', cutoff)
     }
   }
-  if (financing && financing !== 'todos') {
+  if (financing && financing !== 'todos' && requestType !== 'car') {
     const newTypes = ['efectivo', 'credito', 'permuta_propiedad', 'permuta_auto']
     if (newTypes.includes(financing)) {
       query = query.contains('financing_types', [financing])
@@ -63,6 +68,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
 
   const {
+    request_type,
     property_types,
     zones,
     bedrooms_min,
@@ -83,9 +89,23 @@ export async function POST(request: NextRequest) {
     contact_name,
     contact_phone,
     contact_email,
+    // Car-specific
+    car_brands,
+    car_body_styles,
+    car_year_min,
+    car_year_max,
+    car_condition,
+    car_km_max,
+    car_fuel_types,
+    car_transmission,
   } = body
 
-  if (!property_types?.length || !zones?.length || !budget_usd || !financing || !contact_name || !contact_phone) {
+  const isCarRequest = request_type === 'car'
+
+  if (!zones?.length || !budget_usd || !financing || !contact_name || !contact_phone) {
+    return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
+  }
+  if (!isCarRequest && !property_types?.length) {
     return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
   }
 
@@ -94,7 +114,8 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('buyer_requests')
     .insert({
-      property_types,
+      request_type: request_type || 'property',
+      property_types: property_types || [],
       zones,
       bedrooms_min: bedrooms_min || null,
       bedrooms_max: bedrooms_max || null,
@@ -114,6 +135,15 @@ export async function POST(request: NextRequest) {
       contact_name,
       contact_phone,
       contact_email: contact_email || null,
+      // Car-specific
+      car_brands: car_brands || [],
+      car_body_styles: car_body_styles || [],
+      car_year_min: car_year_min || null,
+      car_year_max: car_year_max || null,
+      car_condition: car_condition || null,
+      car_km_max: car_km_max || null,
+      car_fuel_types: car_fuel_types || [],
+      car_transmission: car_transmission || null,
     })
     .select('id')
     .single()

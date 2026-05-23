@@ -91,3 +91,47 @@ export const FINANCING_LABELS: Record<string, string> = {
   credito: 'Crédito Hipotecario',
   ambos: 'Efectivo o Crédito',
 }
+
+export const CAR_BRANDS = [
+  'Toyota', 'Ford', 'Volkswagen', 'Chevrolet', 'Renault', 'Peugeot',
+  'Fiat', 'Honda', 'Hyundai', 'Jeep', 'Nissan', 'Kia', 'Citroën',
+  'Suzuki', 'Dodge', 'Otro',
+]
+
+export const CAR_BODY_STYLES: { id: string; label: string; icon: string }[] = [
+  { id: 'sedan', label: 'Sedán', icon: '🚗' },
+  { id: 'suv', label: 'SUV / 4x4', icon: '🚙' },
+  { id: 'hatchback', label: 'Hatchback', icon: '🚗' },
+  { id: 'pickup', label: 'Pickup', icon: '🛻' },
+  { id: 'monovolumen', label: 'Monovolumen', icon: '🚐' },
+  { id: 'coupe', label: 'Coupé / Sport', icon: '🏎️' },
+]
+
+export const CAR_FUEL_TYPES: { id: string; label: string }[] = [
+  { id: 'nafta', label: 'Nafta' },
+  { id: 'diesel', label: 'Diesel' },
+  { id: 'gnc', label: 'GNC' },
+  { id: 'electrico', label: 'Eléctrico' },
+  { id: 'hibrido', label: 'Híbrido' },
+]
+
+export const CAR_TRANSMISSION_OPTIONS = [
+  { id: 'manual', label: 'Manual' },
+  { id: 'automatico', label: 'Automático' },
+  { id: 'cualquiera', label: 'Cualquiera' },
+]
+
+export const CAR_CONDITION_OPTIONS = [
+  { id: 'nuevo', label: '✨ 0km / Nuevo' },
+  { id: 'usado', label: '🔑 Usado' },
+  { id: 'cualquiera', label: '🔄 Cualquiera' },
+]
+
+export const CAR_BODY_STYLE_LABELS: Record<string, string> = {
+  sedan: 'Sedán',
+  suv: 'SUV / 4x4',
+  hatchback: 'Hatchback',
+  pickup: 'Pickup',
+  monovolumen: 'Monovolumen',
+  coupe: 'Coupé',
+}

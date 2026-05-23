@@ -13,7 +13,7 @@ export default async function PedidoPage(props: PageProps<'/pedidos/[id]'>) {
   const { data: request, error } = await supabase
     .from('buyer_requests')
     .select(
-      'id, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, expires_at'
+      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, expires_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission'
     )
     .eq('id', id)
     .eq('status', 'active')

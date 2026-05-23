@@ -4,9 +4,27 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
+import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 
+// ---------------------------------------------------------------------------
+// Car extra fields (not in PublicBuyerRequest type yet)
+// ---------------------------------------------------------------------------
+interface CarFields {
+  car_body_styles?: string[]
+  car_brands?: string[]
+  car_year_min?: number | null
+  car_year_max?: number | null
+  car_condition?: string | null
+  car_km_max?: number | null
+  car_fuel_types?: string[]
+  car_transmission?: string | null
+  request_type?: string
+}
+
+// ---------------------------------------------------------------------------
+// Demo data
+// ---------------------------------------------------------------------------
 const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
   {
     id: 'demo-1', property_types: ['casa'], zones: ['Mendiolaza', 'Valle Escondido'],
@@ -61,6 +79,44 @@ const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
   },
 ]
 
+const DEMO_CAR_REQUESTS: (PublicBuyerRequest & CarFields & { demo?: boolean })[] = [
+  {
+    id: 'demo-car-1', property_types: [], zones: ['Córdoba Capital', 'Nueva Córdoba'],
+    budget_usd: 18000, financing: 'efectivo',
+    requirements: [], description: 'Busco Toyota Corolla o similar, 2019 en adelante. Buen estado.',
+    urgency: 'este_mes', status: 'active', views_count: 8, leads_count: 1,
+    request_type: 'car', car_body_styles: ['sedan'], car_brands: ['Toyota', 'Honda'],
+    car_year_min: 2019, car_condition: 'usado', car_km_max: 80000,
+    car_fuel_types: ['nafta'], car_transmission: 'automatico',
+    created_at: new Date(Date.now() - 3 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 57 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-car-2', property_types: [], zones: ['Mendiolaza', 'Villa Allende', 'La Calera'],
+    budget_usd: 35000, financing: 'efectivo',
+    requirements: [], description: 'Necesito una SUV para familia. Ford Kuga, Nissan Kicks o similar. GNC ideal.',
+    urgency: 'en_3_meses', status: 'active', views_count: 12, leads_count: 2,
+    request_type: 'car', car_body_styles: ['suv'], car_brands: ['Ford', 'Nissan', 'Hyundai'],
+    car_year_min: 2020, car_year_max: 2024, car_condition: 'usado', car_km_max: 60000,
+    car_fuel_types: ['nafta', 'gnc'],
+    created_at: new Date(Date.now() - 6 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 54 * 24 * 3600000).toISOString(), demo: true,
+  },
+  {
+    id: 'demo-car-3', property_types: [], zones: ['Centro', 'General Paz', 'Güemes'],
+    budget_usd: 12000, financing: 'efectivo',
+    requirements: [], description: 'Busco auto chico económico para ciudad. Cualquier marca.',
+    urgency: 'esta_semana', status: 'active', views_count: 5, leads_count: 0,
+    request_type: 'car', car_body_styles: ['hatchback', 'sedan'], car_brands: [],
+    car_condition: 'usado', car_km_max: 100000, car_fuel_types: ['gnc', 'nafta'],
+    created_at: new Date(Date.now() - 10 * 3600000).toISOString(),
+    expires_at: new Date(Date.now() + 50 * 24 * 3600000).toISOString(), demo: true,
+  },
+]
+
+// ---------------------------------------------------------------------------
+// Config
+// ---------------------------------------------------------------------------
 const TYPE_CONFIG: Record<string, { gradient: string; emoji: string }> = {
   casa:         { gradient: 'from-emerald-400 to-teal-500',    emoji: '🏡' },
   departamento: { gradient: 'from-blue-400 to-indigo-500',     emoji: '🏢' },
@@ -72,6 +128,19 @@ const TYPE_CONFIG: Record<string, { gradient: string; emoji: string }> = {
   revaluo:      { gradient: 'from-pink-400 to-rose-500',       emoji: '📈' },
 }
 
+const CAR_TYPE_CONFIG: Record<string, { gradient: string; emoji: string }> = {
+  suv:         { gradient: 'from-slate-500 to-zinc-600',   emoji: '🚙' },
+  sedan:       { gradient: 'from-blue-500 to-indigo-600',  emoji: '🚗' },
+  pickup:      { gradient: 'from-amber-500 to-orange-600', emoji: '🛻' },
+  hatchback:   { gradient: 'from-violet-500 to-purple-600',emoji: '🚗' },
+  monovolumen: { gradient: 'from-teal-500 to-cyan-600',    emoji: '🚐' },
+  coupe:       { gradient: 'from-red-500 to-rose-600',     emoji: '🏎️' },
+  default:     { gradient: 'from-gray-500 to-slate-600',   emoji: '🚗' },
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime()
   const hours = Math.floor(diff / 3600000)
@@ -91,6 +160,9 @@ function urgencyLabel(urgency?: string): string {
   return urgency ? (map[urgency] || urgency) : ''
 }
 
+// ---------------------------------------------------------------------------
+// Cards
+// ---------------------------------------------------------------------------
 function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolean }) {
   const primaryType = req.property_types[0]
   const { gradient, emoji } = TYPE_CONFIG[primaryType] || { gradient: 'from-blue-400 to-blue-600', emoji: '🏠' }
@@ -213,6 +285,104 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
   )
 }
 
+function CarRequestCard({ req, isDemo }: { req: PublicBuyerRequest & CarFields; isDemo?: boolean }) {
+  const primaryStyle = req.car_body_styles?.[0] || 'default'
+  const { gradient, emoji } = CAR_TYPE_CONFIG[primaryStyle] || CAR_TYPE_CONFIG.default
+  const styleLabels = req.car_body_styles?.map((s) => CAR_BODY_STYLE_LABELS[s] || s) || []
+
+  return (
+    <Link href={isDemo ? '#' : `/pedidos/${req.id}`} onClick={isDemo ? (e) => e.preventDefault() : undefined}>
+      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-blue-100 transition-all duration-200 cursor-pointer h-full flex flex-col group">
+        {/* Same header pattern as RequestCard but with car gradient */}
+        <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
+          <span className="text-7xl select-none opacity-75">{emoji}</span>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+          <div className="absolute top-3 right-3">
+            <span className="bg-white/95 backdrop-blur-sm text-green-600 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">✓ Activa</span>
+          </div>
+          {isDemo && (
+            <div className="absolute top-3 left-3">
+              <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">Ejemplo</span>
+            </div>
+          )}
+          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-white/90 text-xs font-medium">
+              <Eye className="h-3.5 w-3.5" />{req.views_count} vista{req.views_count !== 1 ? 's' : ''}
+            </div>
+            <div className="text-white/70 text-xs">{timeAgo(req.created_at)}</div>
+          </div>
+        </div>
+
+        <div className="p-5 flex flex-col flex-1 gap-2.5">
+          {/* Budget */}
+          <div className="text-2xl font-bold text-gray-900 tracking-tight">
+            USD {req.budget_usd.toLocaleString()}
+          </div>
+
+          {/* Body style */}
+          <p className="text-sm font-semibold text-gray-800">
+            {styleLabels.join(' · ') || 'Auto'}
+          </p>
+
+          {/* Brands */}
+          <p className="text-sm text-gray-500">
+            {(req.car_brands?.length ?? 0) > 0 ? req.car_brands!.slice(0, 3).join(', ') : 'Cualquier marca'}
+          </p>
+
+          {/* Location */}
+          <div className="flex items-center gap-1 text-sm text-gray-500">
+            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-blue-500" />
+            <span className="truncate">
+              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2}` : ''}
+            </span>
+          </div>
+
+          {/* Year + condition */}
+          <div className="flex items-center gap-4 text-sm text-gray-600 py-2.5 border-y border-gray-100">
+            {(req.car_year_min || req.car_year_max) && (
+              <span className="flex items-center gap-1.5">
+                📅 {req.car_year_min || '...'}{req.car_year_max ? `–${req.car_year_max}` : '+'}
+              </span>
+            )}
+            {req.car_condition && (
+              <span className="text-xs">
+                {req.car_condition === 'nuevo' ? '✨ 0km' : req.car_condition === 'usado' ? '🔑 Usado' : '🔄 Cualquiera'}
+              </span>
+            )}
+            {req.car_km_max && (
+              <span className="text-xs text-gray-400 ml-auto">
+                ≤{(req.car_km_max / 1000).toFixed(0)}k km
+              </span>
+            )}
+          </div>
+
+          {/* Fuel types */}
+          {(req.car_fuel_types?.length ?? 0) > 0 && (
+            <div className="flex flex-wrap gap-1.5">
+              {req.car_fuel_types!.map((f) => (
+                <span key={f} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full">
+                  ⛽ {f}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* CTA */}
+          <div className="mt-auto pt-1">
+            <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isDemo ? 'bg-gray-100 text-gray-400' : 'bg-blue-600 group-hover:bg-blue-700 text-white shadow-sm'}`}>
+              <Lock className="h-3.5 w-3.5" />
+              {isDemo ? 'Contacto oculto · ejemplo' : 'Ver contacto · 1 crédito'}
+            </div>
+          </div>
+        </div>
+      </article>
+    </Link>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Feed
+// ---------------------------------------------------------------------------
 interface FeedProps {
   initialZone?: string
   initialType?: string
@@ -228,7 +398,8 @@ export default function PedidosFeed({
   initialMaxBudget = '',
   initialSince = '',
 }: FeedProps) {
-  const [requests, setRequests] = useState<PublicBuyerRequest[]>([])
+  const [activeTab, setActiveTab] = useState<'property' | 'car'>('property')
+  const [requests, setRequests] = useState<(PublicBuyerRequest & CarFields)[]>([])
   const [loading, setLoading] = useState(true)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -248,8 +419,10 @@ export default function PedidosFeed({
   const fetchRequests = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
+    params.set('requestType', activeTab)
     if (filters.zone) params.set('zone', filters.zone)
-    if (filters.type) params.set('type', filters.type)
+    if (activeTab === 'property' && filters.type) params.set('type', filters.type)
+    if (activeTab === 'car' && filters.type) params.set('condition', filters.type)
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
     if (filters.since) params.set('since', filters.since)
@@ -258,8 +431,9 @@ export default function PedidosFeed({
       const res = await fetch(`/api/pedidos?${params}`)
       const json = await res.json()
       const data = json.data || []
-      if (data.length === 0 && page === 1 && !filters.zone && !filters.type && !filters.financing && !filters.maxBudget) {
-        setRequests(DEMO_REQUESTS)
+      const noFilterApplied = !filters.zone && !filters.type && !filters.financing && !filters.maxBudget
+      if (data.length === 0 && page === 1 && noFilterApplied) {
+        setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
         setTotalPages(1)
         setTotal(0)
         setShowingDemo(true)
@@ -270,13 +444,13 @@ export default function PedidosFeed({
         setShowingDemo(false)
       }
     } catch {
-      setRequests(DEMO_REQUESTS)
+      setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
       setTotalPages(1)
       setTotal(0)
       setShowingDemo(true)
     }
     setLoading(false)
-  }, [page, filters])
+  }, [page, filters, activeTab])
 
   useEffect(() => {
     fetchRequests()
@@ -293,6 +467,28 @@ export default function PedidosFeed({
 
   return (
     <div>
+      {/* Tab switcher */}
+      <div className="flex gap-1 mb-5 bg-gray-100 rounded-2xl p-1 w-fit">
+        {[
+          { id: 'property', label: '🏠 Propiedades' },
+          { id: 'car', label: '🚗 Autos' },
+        ].map(({ id, label }) => (
+          <button
+            key={id}
+            onClick={() => {
+              setActiveTab(id as 'property' | 'car')
+              setFilters({ zone: '', type: '', financing: '', maxBudget: '', since: '' })
+              setPage(1)
+            }}
+            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
+              activeTab === id ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       {/* Pill filter bar */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-6">
 
@@ -310,19 +506,34 @@ export default function PedidosFeed({
           </Select>
         </div>
 
-        <div className="shrink-0 w-52">
-          <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
-            <SelectTrigger className={`${pillBase} ${filters.type ? pillActive : pillInactive} px-4`}>
-              <SelectValue placeholder="🏠 Tipo de propiedad" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">🏠 Todos los tipos</SelectItem>
-              {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {activeTab === 'property' ? (
+          <div className="shrink-0 w-52">
+            <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
+              <SelectTrigger className={`${pillBase} ${filters.type ? pillActive : pillInactive} px-4`}>
+                <SelectValue placeholder="🏠 Tipo de propiedad" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">🏠 Todos los tipos</SelectItem>
+                {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : (
+          <div className="shrink-0 w-44">
+            <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
+              <SelectTrigger className={`${pillBase} ${filters.type ? pillActive : pillInactive} px-4`}>
+                <SelectValue placeholder="🚗 Condición" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">🚗 Cualquier condición</SelectItem>
+                <SelectItem value="nuevo">✨ 0km</SelectItem>
+                <SelectItem value="usado">🔑 Usado</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="shrink-0 w-44">
           <Select value={filters.maxBudget || 'todos'} onValueChange={(v) => handleFilterChange('maxBudget', v)}>
@@ -331,29 +542,42 @@ export default function PedidosFeed({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">💰 Cualquier precio</SelectItem>
-              <SelectItem value="100000">Hasta USD 100k</SelectItem>
-              <SelectItem value="200000">Hasta USD 200k</SelectItem>
-              <SelectItem value="350000">Hasta USD 350k</SelectItem>
-              <SelectItem value="500000">Hasta USD 500k</SelectItem>
+              {activeTab === 'property' ? (
+                <>
+                  <SelectItem value="100000">Hasta USD 100k</SelectItem>
+                  <SelectItem value="200000">Hasta USD 200k</SelectItem>
+                  <SelectItem value="350000">Hasta USD 350k</SelectItem>
+                  <SelectItem value="500000">Hasta USD 500k</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="10000">Hasta USD 10k</SelectItem>
+                  <SelectItem value="20000">Hasta USD 20k</SelectItem>
+                  <SelectItem value="40000">Hasta USD 40k</SelectItem>
+                  <SelectItem value="80000">Hasta USD 80k</SelectItem>
+                </>
+              )}
             </SelectContent>
           </Select>
         </div>
 
-        <div className="shrink-0 w-48">
-          <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
-            <SelectTrigger className={`${pillBase} ${filters.financing ? pillActive : pillInactive} px-4`}>
-              <SelectValue placeholder="💳 Forma de pago" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">💳 Cualquier forma</SelectItem>
-              <SelectItem value="efectivo">💵 Efectivo</SelectItem>
-              <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
-              <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
-              <SelectItem value="permuta_auto">🚗 Permuta de auto</SelectItem>
-              <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {activeTab === 'property' && (
+          <div className="shrink-0 w-48">
+            <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
+              <SelectTrigger className={`${pillBase} ${filters.financing ? pillActive : pillInactive} px-4`}>
+                <SelectValue placeholder="💳 Forma de pago" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">💳 Cualquier forma</SelectItem>
+                <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
+                <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
+                <SelectItem value="permuta_auto">🚗 Permuta de auto</SelectItem>
+                <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         {/* Fecha */}
         <div className="shrink-0 w-44">
@@ -385,7 +609,9 @@ export default function PedidosFeed({
       {/* Results count */}
       {!loading && !showingDemo && (
         <p className="text-sm font-medium text-gray-600 mb-5">
-          {total} pedido{total !== 1 ? 's' : ''} activo{total !== 1 ? 's' : ''}
+          {activeTab === 'car'
+            ? `${total} búsqueda${total !== 1 ? 's' : ''} de autos activa${total !== 1 ? 's' : ''}`
+            : `${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
         </p>
       )}
 
@@ -427,11 +653,19 @@ export default function PedidosFeed({
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {requests.map((req) => (
-            <RequestCard
-              key={req.id}
-              req={req}
-              isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
-            />
+            activeTab === 'car' ? (
+              <CarRequestCard
+                key={req.id}
+                req={req}
+                isDemo={(req as PublicBuyerRequest & CarFields & { demo?: boolean }).demo}
+              />
+            ) : (
+              <RequestCard
+                key={req.id}
+                req={req}
+                isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
+              />
+            )
           ))}
         </div>
       )}

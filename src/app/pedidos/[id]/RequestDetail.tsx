@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
-  CheckCircle2, ArrowLeft, Share2, Loader2, XCircle
+  CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar
 } from 'lucide-react'
+import { CAR_BODY_STYLE_LABELS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
@@ -93,7 +94,10 @@ export default function RequestDetail({
     }
   }
 
-  const typeLabels = request.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
+  const isCar = request.request_type === 'car'
+  const typeLabels = isCar
+    ? (request.car_body_styles?.map((s) => CAR_BODY_STYLE_LABELS[s] || s) ?? ['Auto'])
+    : request.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
 
   async function handleUnlock() {
     setUnlocking(true)
@@ -215,74 +219,142 @@ export default function RequestDetail({
             </div>
           </div>
 
-          {/* Rooms */}
-          <div className="flex gap-4">
-            {request.bedrooms_min && (
-              <div className="flex items-center gap-2 text-gray-700">
-                <Bed className="h-5 w-5 text-blue-500" />
-                <span>
-                  {request.bedrooms_min}
-                  {request.bedrooms_max ? `–${request.bedrooms_max}` : '+'} dormitorios
-                </span>
+          {isCar ? (
+            /* ── Car-specific details ── */
+            <>
+              {/* Year + condition + km */}
+              <div className="flex flex-wrap gap-4">
+                {(request.car_year_min || request.car_year_max) && (
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Calendar className="h-5 w-5 text-blue-500" />
+                    <span>
+                      {request.car_year_min && request.car_year_max
+                        ? `${request.car_year_min} – ${request.car_year_max}`
+                        : request.car_year_min
+                        ? `Desde ${request.car_year_min}`
+                        : `Hasta ${request.car_year_max}`}
+                    </span>
+                  </div>
+                )}
+                {request.car_condition && (
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <span className="text-sm">
+                      {request.car_condition === 'nuevo' ? '✨ 0km / Nuevo'
+                        : request.car_condition === 'usado' ? '🔑 Usado'
+                        : '🔄 Nuevo o usado'}
+                    </span>
+                  </div>
+                )}
+                {request.car_km_max && (
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <span className="text-sm">Hasta {request.car_km_max.toLocaleString()} km</span>
+                  </div>
+                )}
               </div>
-            )}
-            {request.bathrooms_min && (
-              <div className="flex items-center gap-2 text-gray-700">
-                <Bath className="h-5 w-5 text-blue-500" />
-                <span>{request.bathrooms_min}+ baños</span>
-              </div>
-            )}
-          </div>
 
-          {/* Urgency */}
+              {/* Brands */}
+              {(request.car_brands?.length ?? 0) > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Marcas preferidas:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {request.car_brands!.map((b) => (
+                      <span key={b} className="text-sm bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full">
+                        {b}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Fuel + transmission */}
+              {((request.car_fuel_types?.length ?? 0) > 0 || request.car_transmission) && (
+                <div className="flex flex-wrap gap-2">
+                  {request.car_fuel_types?.map((f) => (
+                    <span key={f} className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                      ⛽ {f}
+                    </span>
+                  ))}
+                  {request.car_transmission && request.car_transmission !== 'cualquiera' && (
+                    <span className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
+                      ⚙️ {request.car_transmission === 'manual' ? 'Caja manual' : 'Caja automática'}
+                    </span>
+                  )}
+                </div>
+              )}
+            </>
+          ) : (
+            /* ── Property-specific details ── */
+            <>
+              {/* Rooms */}
+              <div className="flex gap-4">
+                {request.bedrooms_min && (
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Bed className="h-5 w-5 text-blue-500" />
+                    <span>
+                      {request.bedrooms_min}
+                      {request.bedrooms_max ? `–${request.bedrooms_max}` : '+'} dormitorios
+                    </span>
+                  </div>
+                )}
+                {request.bathrooms_min && (
+                  <div className="flex items-center gap-2 text-gray-700">
+                    <Bath className="h-5 w-5 text-blue-500" />
+                    <span>{request.bathrooms_min}+ baños</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Requirements */}
+              {(request.requirements.length > 0 || (request.requirements_excluyentes && request.requirements_excluyentes.length > 0)) && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Requisitos:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {(request.requirements_excluyentes || []).map((r) => (
+                      <span key={`ex-${r}`} className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full font-medium">
+                        ⛔ {r.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                    {request.requirements.map((r) => (
+                      <span key={r} className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
+                        ✓ {r.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                  {(request.requirements_excluyentes?.length ?? 0) > 0 && (
+                    <p className="text-xs text-red-600 mt-1.5">⛔ = Excluyente (no negocia sin esto)</p>
+                  )}
+                </div>
+              )}
+
+              {/* Priorities */}
+              {request.priorities && request.priorities.length > 0 && (
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-2">Lo más importante para este comprador:</p>
+                  <div className="space-y-1.5">
+                    {request.priorities.map((p) => (
+                      <div key={p} className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
+                        <span>⚑</span>
+                        <span>{{
+                          zona_exacta: 'La zona es clave, no se mueve de ahí',
+                          precio_fijo: 'El presupuesto es fijo, no se excede',
+                          tamano: 'El tamaño (m² / dormitorios) no es negociable',
+                          sin_reformas: 'Sin reformas, listo para entrar',
+                          nuevo: 'Quiere algo nuevo o casi nuevo (< 10 años)',
+                          disponibilidad: 'Necesita disponibilidad inmediata',
+                        }[p] || p}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* Urgency — shown for both types */}
           {request.urgency && (
             <div className="flex items-center gap-2 text-gray-700">
               <Clock className="h-4 w-4 text-blue-500" />
               <span className="text-sm">{urgencyLabel(request.urgency)}</span>
-            </div>
-          )}
-
-          {/* Requirements */}
-          {(request.requirements.length > 0 || (request.requirements_excluyentes && request.requirements_excluyentes.length > 0)) && (
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Requisitos:</p>
-              <div className="flex flex-wrap gap-2">
-                {(request.requirements_excluyentes || []).map((r) => (
-                  <span key={`ex-${r}`} className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full font-medium">
-                    ⛔ {r.replace(/_/g, ' ')}
-                  </span>
-                ))}
-                {request.requirements.map((r) => (
-                  <span key={r} className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                    ✓ {r.replace(/_/g, ' ')}
-                  </span>
-                ))}
-              </div>
-              {(request.requirements_excluyentes?.length ?? 0) > 0 && (
-                <p className="text-xs text-red-600 mt-1.5">⛔ = Excluyente (no negocia sin esto)</p>
-              )}
-            </div>
-          )}
-
-          {/* Priorities */}
-          {request.priorities && request.priorities.length > 0 && (
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">Lo más importante para este comprador:</p>
-              <div className="space-y-1.5">
-                {request.priorities.map((p) => (
-                  <div key={p} className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
-                    <span>⚑</span>
-                    <span>{{
-                      zona_exacta: 'La zona es clave, no se mueve de ahí',
-                      precio_fijo: 'El presupuesto es fijo, no se excede',
-                      tamano: 'El tamaño (m² / dormitorios) no es negociable',
-                      sin_reformas: 'Sin reformas, listo para entrar',
-                      nuevo: 'Quiere algo nuevo o casi nuevo (< 10 años)',
-                      disponibilidad: 'Necesita disponibilidad inmediata',
-                    }[p] || p}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
