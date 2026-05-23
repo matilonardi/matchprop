@@ -168,41 +168,73 @@ export default function HomePage() {
               </Link>
             </div>
 
-            {/* Mock card — matches new design */}
-            <div className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 max-w-sm mx-auto w-full">
-              <div className="relative h-44 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                <span className="text-6xl opacity-75">🏡</span>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                <div className="absolute top-3 right-3">
-                  <span className="bg-white/95 text-green-600 text-xs font-semibold px-2.5 py-1 rounded-full">✓ Activa</span>
+            {/* Two mock cards — property + car */}
+            <div className="flex flex-col gap-4 max-w-sm mx-auto w-full">
+
+              {/* Property card */}
+              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
+                <div className="relative h-36 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                  <span className="text-5xl opacity-75">🏡</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <div className="absolute top-2.5 right-2.5">
+                    <span className="bg-white/95 text-green-600 text-xs font-semibold px-2 py-0.5 rounded-full">✓ Activa</span>
+                  </div>
+                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
+                    <span className="text-white/90 text-xs">14 vistas</span>
+                    <span className="text-white/70 text-xs">hace 2h</span>
+                  </div>
                 </div>
-                <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-                  <span className="text-white/90 text-xs font-medium">14 vistas</span>
-                  <span className="text-white/70 text-xs">hace 2h</span>
-                </div>
-              </div>
-              <div className="p-5 space-y-2">
-                <div className="flex items-baseline justify-between">
-                  <span className="text-2xl font-bold text-gray-900">USD 230.000</span>
-                  <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">Efectivo o crédito</span>
-                </div>
-                <p className="text-sm font-semibold text-gray-800">Casa</p>
-                <div className="flex items-center gap-1 text-sm text-gray-500">
-                  <MapPin className="h-3.5 w-3.5 text-blue-500" />
-                  Mendiolaza, Valle Escondido
-                </div>
-                <div className="flex gap-1.5 pt-1">
-                  {['cochera', 'gas natural', 'seguridad'].map((r) => (
-                    <span key={r} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full">{r}</span>
-                  ))}
-                </div>
-                <div className="pt-2">
-                  <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold bg-gray-100 text-gray-400">
-                    <Lock className="h-3.5 w-3.5" />
-                    Contacto oculto · ejemplo
+                <div className="p-4 space-y-1.5">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xl font-bold text-gray-900">USD 230.000</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Efectivo</span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-800">Casa · Mendiolaza</p>
+                  <div className="flex gap-1.5">
+                    {['cochera', 'gas natural', 'seguridad'].map((r) => (
+                      <span key={r} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">{r}</span>
+                    ))}
+                  </div>
+                  <div className="pt-1">
+                    <div className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-400">
+                      <Lock className="h-3 w-3" /> Contacto oculto · ejemplo
+                    </div>
                   </div>
                 </div>
               </div>
+
+              {/* Car card */}
+              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
+                <div className="relative h-36 bg-gradient-to-br from-slate-500 to-zinc-600 flex items-center justify-center">
+                  <span className="text-5xl opacity-75">🚙</span>
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+                  <div className="absolute top-2.5 right-2.5">
+                    <span className="bg-white/95 text-green-600 text-xs font-semibold px-2 py-0.5 rounded-full">✓ Activa</span>
+                  </div>
+                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
+                    <span className="text-white/90 text-xs">8 vistas</span>
+                    <span className="text-white/70 text-xs">hace 1h</span>
+                  </div>
+                </div>
+                <div className="p-4 space-y-1.5">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-xl font-bold text-gray-900">USD 25.000</span>
+                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Efectivo</span>
+                  </div>
+                  <p className="text-sm font-semibold text-gray-800">SUV · Nueva Córdoba</p>
+                  <div className="flex gap-1.5">
+                    {['Toyota / Ford', '2020+', '🔑 Usado'].map((r) => (
+                      <span key={r} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">{r}</span>
+                    ))}
+                  </div>
+                  <div className="pt-1">
+                    <div className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-400">
+                      <Lock className="h-3 w-3" /> Contacto oculto · ejemplo
+                    </div>
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
