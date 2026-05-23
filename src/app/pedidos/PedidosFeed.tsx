@@ -228,69 +228,87 @@ export default function PedidosFeed() {
     <div>
       {/* Filters */}
       <div className="bg-white rounded-xl border border-gray-100 p-4 mb-6">
-        <div className="flex items-center gap-2 mb-3">
+        <div className="flex items-center gap-2 mb-4">
           <Filter className="h-4 w-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-700">Filtros</span>
+          <span className="text-sm font-medium text-gray-700">Filtrar pedidos</span>
           {(filters.zone || filters.type || filters.financing || filters.maxBudget) && (
             <button
               onClick={() => setFilters({ zone: '', type: '', financing: '', maxBudget: '' })}
-              className="ml-auto text-xs text-blue-600 hover:underline"
+              className="ml-auto text-xs text-blue-600 hover:underline flex items-center gap-1"
             >
-              Limpiar filtros
+              ✕ Limpiar filtros
             </button>
           )}
         </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Select value={filters.zone || 'todos'} onValueChange={(v) => handleFilterChange('zone', v)}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Zona" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas las zonas</SelectItem>
-              {ZONES_CORDOBA.map((z) => (
-                <SelectItem key={z} value={z}>{z}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
-          <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Tipo" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todos los tipos</SelectItem>
-              {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
-                <SelectItem key={k} value={k}>{v}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          {/* Zona */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide pl-1">📍 Zona</label>
+            <Select value={filters.zone || 'todos'} onValueChange={(v) => handleFilterChange('zone', v)}>
+              <SelectTrigger className={`text-sm ${filters.zone ? 'border-blue-400 text-blue-700 bg-blue-50' : ''}`}>
+                <SelectValue placeholder="Todas las zonas" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas las zonas</SelectItem>
+                {ZONES_CORDOBA.map((z) => (
+                  <SelectItem key={z} value={z}>{z}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Forma de pago" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Cualquier forma de pago</SelectItem>
-              <SelectItem value="efectivo">💵 Efectivo</SelectItem>
-              <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
-              <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
-              <SelectItem value="permuta_auto">🚗 Permuta de auto</SelectItem>
-              <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
-            </SelectContent>
-          </Select>
+          {/* Tipo */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide pl-1">🏠 Tipo</label>
+            <Select value={filters.type || 'todos'} onValueChange={(v) => handleFilterChange('type', v)}>
+              <SelectTrigger className={`text-sm ${filters.type ? 'border-blue-400 text-blue-700 bg-blue-50' : ''}`}>
+                <SelectValue placeholder="Todos los tipos" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todos los tipos</SelectItem>
+                {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
+                  <SelectItem key={k} value={k}>{v}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-          <Select value={filters.maxBudget || 'todos'} onValueChange={(v) => handleFilterChange('maxBudget', v)}>
-            <SelectTrigger className="text-sm">
-              <SelectValue placeholder="Presupuesto" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Cualquier precio</SelectItem>
+          {/* Forma de pago */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide pl-1">💳 Pago</label>
+            <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
+              <SelectTrigger className={`text-sm ${filters.financing ? 'border-blue-400 text-blue-700 bg-blue-50' : ''}`}>
+                <SelectValue placeholder="Cualquier forma" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Cualquier forma de pago</SelectItem>
+                <SelectItem value="efectivo">💵 Efectivo</SelectItem>
+                <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
+                <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
+                <SelectItem value="permuta_auto">🚗 Permuta de auto</SelectItem>
+                <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Presupuesto */}
+          <div className="space-y-1">
+            <label className="text-xs font-medium text-gray-500 uppercase tracking-wide pl-1">💰 Presupuesto</label>
+            <Select value={filters.maxBudget || 'todos'} onValueChange={(v) => handleFilterChange('maxBudget', v)}>
+              <SelectTrigger className={`text-sm ${filters.maxBudget ? 'border-blue-400 text-blue-700 bg-blue-50' : ''}`}>
+                <SelectValue placeholder="Cualquier precio" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Cualquier precio</SelectItem>
               <SelectItem value="100000">Hasta USD 100k</SelectItem>
               <SelectItem value="200000">Hasta USD 200k</SelectItem>
               <SelectItem value="350000">Hasta USD 350k</SelectItem>
               <SelectItem value="500000">Hasta USD 500k</SelectItem>
             </SelectContent>
-          </Select>
+            </Select>
+          </div>
+
         </div>
       </div>
 
