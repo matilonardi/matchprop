@@ -24,7 +24,7 @@ export default function HomePage() {
         <div className="relative w-full max-w-5xl mx-auto px-4 py-20 text-center">
           <div className="inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 text-blue-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
             <Star className="h-3.5 w-3.5 fill-current" />
-            El marketplace inmobiliario al revés
+            El marketplace al revés
           </div>
 
           <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.08] mb-6 tracking-tight">

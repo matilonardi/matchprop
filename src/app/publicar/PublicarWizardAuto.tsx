@@ -75,6 +75,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
   const [contact_name, setContactName] = useState('')
   const [contact_phone, setContactPhone] = useState('')
   const [contact_email, setContactEmail] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100
 
@@ -89,7 +90,7 @@ export default function PublicarWizardAuto({ onBack }: Props) {
       case 3: return !!car_condition
       case 4: return !!budget_usd && financing_types.length > 0
       case 5: return description.trim().length >= 10
-      case 6: return !!contact_name && !!contact_phone
+      case 6: return !!contact_name && !!contact_phone && acceptedTerms
       default: return false
     }
   }
@@ -524,6 +525,26 @@ export default function PublicarWizardAuto({ onBack }: Props) {
                 )}
               </div>
             </div>
+
+            {/* T&C */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox
+                checked={acceptedTerms}
+                onCheckedChange={(v) => setAcceptedTerms(!!v)}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-gray-600">
+                Leí y acepto los{' '}
+                <a href="/terminos" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+                  términos y condiciones
+                </a>{' '}
+                y la{' '}
+                <a href="/privacidad" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+                  política de privacidad
+                </a>
+                . Entiendo que mis datos de contacto serán visibles para vendedores que paguen.
+              </span>
+            </label>
 
             {error && (
               <div className="bg-red-50 text-red-700 rounded-lg p-3 text-sm">{error}</div>

@@ -15,6 +15,7 @@ export default function BrokerRegisterForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [selectedZones, setSelectedZones] = useState<string[]>([])
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [showZones, setShowZones] = useState(false)
 
   const [form, setForm] = useState({
@@ -35,6 +36,10 @@ export default function BrokerRegisterForm() {
     e.preventDefault()
     if (selectedZones.length === 0) {
       setError('Seleccioná al menos una zona de trabajo')
+      return
+    }
+    if (!acceptedTerms) {
+      setError('Tenés que aceptar los términos y condiciones para continuar')
       return
     }
     setLoading(true)
@@ -166,17 +171,24 @@ export default function BrokerRegisterForm() {
         )}
       </Button>
 
-      <p className="text-xs text-gray-400 text-center">
-        Al registrarte aceptás los{' '}
-        <a href="/terminos" target="_blank" className="underline hover:text-gray-600">
-          términos y condiciones
-        </a>{' '}
-        y la{' '}
-        <a href="/privacidad" target="_blank" className="underline hover:text-gray-600">
-          política de privacidad
-        </a>
-        . Recibirás alertas de nuevos pedidos en tus zonas.
-      </p>
+      <label className="flex items-start gap-3 cursor-pointer">
+        <Checkbox
+          checked={acceptedTerms}
+          onCheckedChange={(v) => setAcceptedTerms(!!v)}
+          className="mt-0.5"
+        />
+        <span className="text-xs text-gray-500 leading-relaxed">
+          Leí y acepto los{' '}
+          <a href="/terminos" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+            términos y condiciones
+          </a>{' '}
+          y la{' '}
+          <a href="/privacidad" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+            política de privacidad
+          </a>
+          . Recibirás alertas de nuevos pedidos en tus zonas.
+        </span>
+      </label>
     </form>
   )
 }

@@ -64,6 +64,7 @@ export default function PublicarWizard() {
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [acceptedTerms, setAcceptedTerms] = useState(false)
 
   const [form, setForm] = useState<FormData>({
     property_types: [],
@@ -101,7 +102,7 @@ export default function PublicarWizard() {
       case 3: return !!form.bedrooms_min
       case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
       case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10
-      case 6: return !!form.contact_name && !!form.contact_phone
+      case 6: return !!form.contact_name && !!form.contact_phone && acceptedTerms
       default: return false
     }
   }
@@ -587,6 +588,26 @@ export default function PublicarWizard() {
                 <span>💳 {FINANCING_LABELS[form.financing as FinancingType]}</span>
               </div>
             </div>
+
+            {/* T&C */}
+            <label className="flex items-start gap-3 cursor-pointer">
+              <Checkbox
+                checked={acceptedTerms}
+                onCheckedChange={(v) => setAcceptedTerms(!!v)}
+                className="mt-0.5"
+              />
+              <span className="text-sm text-gray-600">
+                Leí y acepto los{' '}
+                <a href="/terminos" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+                  términos y condiciones
+                </a>{' '}
+                y la{' '}
+                <a href="/privacidad" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+                  política de privacidad
+                </a>
+                . Entiendo que mis datos de contacto serán visibles para vendedores que paguen.
+              </span>
+            </label>
 
             {error && (
               <div className="bg-red-50 text-red-700 rounded-lg p-3 text-sm">{error}</div>
