@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MapPin, DollarSign, MessageCircle, Eye, PlusCircle, LogOut, Clock } from 'lucide-react'
+import { MapPin, DollarSign, MessageCircle, Eye, PlusCircle, LogOut, Clock, Pencil } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -194,12 +194,21 @@ export default function BuyerDashboard() {
                     </span>
                   </div>
 
-                  <Link
-                    href={`/pedidos/${req.id}`}
-                    className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
-                  >
-                    {(req.unread_count ?? 0) > 0 ? '💬 Ver mensajes' : 'Ver mi búsqueda →'}
-                  </Link>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      href={`/pedidos/${req.id}`}
+                      className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                    >
+                      {(req.unread_count ?? 0) > 0 ? '💬 Ver mensajes' : 'Ver mi búsqueda →'}
+                    </Link>
+                    <Link
+                      href={`/pedidos/${req.id}/editar`}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-white border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-lg transition-colors"
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                      Editar
+                    </Link>
+                  </div>
                 </div>
               )
             })}

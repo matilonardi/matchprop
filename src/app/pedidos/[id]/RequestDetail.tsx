@@ -5,7 +5,7 @@ import Link from 'next/link'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
   CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar,
-  MessageCircle, Send
+  MessageCircle, Send, Pencil
 } from 'lucide-react'
 import { CAR_BODY_STYLE_LABELS, SEGURIDAD_TIPOS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -47,12 +47,14 @@ export default function RequestDetail({
   request: PublicBuyerRequest
   isNew: boolean
   closeToken?: string
+  // buyer_user_id is embedded in the request object itself
 }) {
   const [contact, setContact] = useState<Contact | null>(null)
   const [unlocking, setUnlocking] = useState(false)
   const [unlockError, setUnlockError] = useState('')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
+  const [isOwner, setIsOwner] = useState(false)
   const [copied, setCopied] = useState(false)
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState('')
@@ -70,10 +72,15 @@ export default function RequestDetail({
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
+      const uid = data.user?.id ?? null
       setIsLoggedIn(!!data.user)
-      setUserId(data.user?.id ?? null)
+      setUserId(uid)
+      // Detect if the logged-in user owns this request
+      if (uid && request.buyer_user_id && uid === request.buyer_user_id) {
+        setIsOwner(true)
+      }
     })
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleShare() {
     const url = window.location.href
@@ -692,8 +699,24 @@ export default function RequestDetail({
           )
         })()}
 
-        {/* Unlock contact — hidden to the buyer (has close_token) and once closed */}
-        {!closed && !closeToken && <div className="p-6 bg-gray-50 border-t border-gray-100">
+        {/* Owner actions (Edit button) — shown when the buyer is logged in as the owner */}
+        {(isOwner || closeToken) && !closed && (
+          <div className="px-6 pb-4 pt-0">
+            <div className="border border-dashed border-blue-200 rounded-xl p-4 bg-blue-50/40">
+              <p className="text-xs text-blue-600 mb-3 font-medium">Esta es tu búsqueda</p>
+              <Link
+                href={`/pedidos/${request.id}/editar${closeToken ? `?close_token=${closeToken}` : ''}`}
+                className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-800 bg-white border border-blue-200 hover:border-blue-300 px-4 py-2 rounded-lg transition-colors"
+              >
+                <Pencil className="h-4 w-4" />
+                Editar mi búsqueda
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {/* Unlock contact — hidden to the buyer (has close_token or is owner) and once closed */}
+        {!closed && !closeToken && !isOwner && <div className="p-6 bg-gray-50 border-t border-gray-100">
           {contact ? (
             <div className="space-y-3">
               <div className="flex items-center gap-2 text-green-700 font-medium mb-3">

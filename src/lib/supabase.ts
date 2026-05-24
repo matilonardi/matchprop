@@ -47,6 +47,7 @@ export interface BuyerRequest {
   contact_name: string
   contact_phone: string
   contact_email?: string
+  buyer_user_id?: string | null
   status: RequestStatus
   views_count: number
   leads_count: number
