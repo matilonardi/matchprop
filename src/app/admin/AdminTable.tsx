@@ -14,7 +14,7 @@ interface BuyerRequest {
   contact_phone: string | null
   zones: string[] | null
   budget_usd: number | null
-  is_active: boolean | null
+  status: string | null
   views_count: number | null
   created_at: string
 }
@@ -155,13 +155,13 @@ export default function AdminTable({ requests: initialRequests, adminSecret }: A
 
                 {/* Status */}
                 <td className="px-4 py-3">
-                  {r.is_active !== false ? (
+                  {r.status === 'active' ? (
                     <Badge className="bg-green-100 text-green-700 border-0 text-xs">
                       Activa
                     </Badge>
                   ) : (
                     <Badge className="bg-red-100 text-red-700 border-0 text-xs">
-                      Cerrada
+                      {r.status === 'closed' ? 'Cerrada' : r.status || 'Inactiva'}
                     </Badge>
                   )}
                 </td>
