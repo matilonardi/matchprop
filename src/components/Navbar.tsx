@@ -39,9 +39,9 @@ export default function Navbar() {
             </Link>
 
             {user ? (
-              // Logged in: show dashboard link
+              // Logged in: route to buyer or broker dashboard based on role
               <Link
-                href="/broker/dashboard"
+                href={user.user_metadata?.role === 'buyer' ? '/comprador/dashboard' : '/broker/dashboard'}
                 className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -84,7 +84,11 @@ export default function Navbar() {
             Ver pedidos activos
           </Link>
           {user ? (
-            <Link href="/broker/dashboard" className="text-sm font-semibold text-orange-500" onClick={() => setOpen(false)}>
+            <Link
+              href={user.user_metadata?.role === 'buyer' ? '/comprador/dashboard' : '/broker/dashboard'}
+              className="text-sm font-semibold text-orange-500"
+              onClick={() => setOpen(false)}
+            >
               Mi dashboard →
             </Link>
           ) : (

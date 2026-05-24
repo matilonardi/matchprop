@@ -19,16 +19,18 @@ export default function BrokerLoginForm() {
     e.preventDefault()
     setLoading(true)
     setError('')
-
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
-
-    if (authError) {
-      setError('Email o contraseña incorrectos. Verificá tus datos.')
+    try {
+      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      if (authError) {
+        setError('Email o contraseña incorrectos. Verificá tus datos.')
+        return
+      }
+      router.push('/broker/dashboard')
+    } catch {
+      setError('Error de conexión. Intentá de nuevo.')
+    } finally {
       setLoading(false)
-      return
     }
-
-    router.push('/broker/dashboard')
   }
 
   return (

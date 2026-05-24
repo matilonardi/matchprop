@@ -13,6 +13,7 @@ export async function GET(request: NextRequest) {
   const typesParam = searchParams.get('types') // comma-separated: "casa,departamento"
   const types = typesParam ? typesParam.split(',').filter(Boolean) : []
   const financing = searchParams.get('financing')
+  const minBudget = searchParams.get('minBudget')
   const maxBudget = searchParams.get('maxBudget')
   const since = searchParams.get('since') // '24h' | '7d' | '30d'
   const requestType = searchParams.get('requestType') // 'property' | 'car'
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('financing', financing)
     }
   }
+  if (minBudget) query = query.gte('budget_usd', parseInt(minBudget))
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
 
   const { data, error, count } = await query

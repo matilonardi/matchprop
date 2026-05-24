@@ -413,12 +413,13 @@ export default function PedidosFeed({
     types: initialType ? [initialType] : [] as string[],  // multi-select
     carCondition: '',
     financing: initialFinancing,
+    minBudget: '',
     maxBudget: initialMaxBudget,
     since: initialSince,
   })
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zone || filters.types.length || filters.carCondition || filters.financing || filters.maxBudget || filters.since)
+  const hasFilters = !!(filters.zone || filters.types.length || filters.carCondition || filters.financing || filters.minBudget || filters.maxBudget || filters.since)
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
@@ -428,6 +429,7 @@ export default function PedidosFeed({
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
     if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
     if (filters.financing) params.set('financing', filters.financing)
+    if (filters.minBudget) params.set('minBudget', filters.minBudget)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
     if (filters.since) params.set('since', filters.since)
 
@@ -489,7 +491,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zone: '', types: [], carCondition: '', financing: '', maxBudget: '', since: '' })
+              setFilters({ zone: '', types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '' })
               setTypeDropdownOpen(false)
               setPage(1)
             }}
@@ -503,7 +505,7 @@ export default function PedidosFeed({
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 mb-6">
+      <div className="flex items-center gap-2 flex-wrap mb-6">
 
         {/* Zona */}
         <div className="shrink-0 w-48">
@@ -578,17 +580,47 @@ export default function PedidosFeed({
           </div>
         )}
 
-        {/* Presupuesto */}
-        <div className="shrink-0 w-52">
+        {/* Presupuesto Desde */}
+        <div className="shrink-0 w-48">
+          <Select value={filters.minBudget || 'todos'} onValueChange={(v) => handleFilterChange('minBudget', v)}>
+            <SelectTrigger className={`${pillBase} ${filters.minBudget ? pillActive : pillInactive} px-4`}>
+              <span className="flex items-center gap-1 truncate text-left">
+                <span className="shrink-0 font-medium">💰 Desde:</span>
+                <span className="truncate">{filters.minBudget ? `USD ${parseInt(filters.minBudget).toLocaleString()}` : 'cualquier'}</span>
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Sin mínimo</SelectItem>
+              {activeTab === 'property' ? (
+                <>
+                  <SelectItem value="50000">USD 50.000+</SelectItem>
+                  <SelectItem value="100000">USD 100.000+</SelectItem>
+                  <SelectItem value="200000">USD 200.000+</SelectItem>
+                  <SelectItem value="400000">USD 400.000+</SelectItem>
+                </>
+              ) : (
+                <>
+                  <SelectItem value="5000">USD 5.000+</SelectItem>
+                  <SelectItem value="10000">USD 10.000+</SelectItem>
+                  <SelectItem value="25000">USD 25.000+</SelectItem>
+                  <SelectItem value="50000">USD 50.000+</SelectItem>
+                </>
+              )}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Presupuesto Hasta */}
+        <div className="shrink-0 w-48">
           <Select value={filters.maxBudget || 'todos'} onValueChange={(v) => handleFilterChange('maxBudget', v)}>
             <SelectTrigger className={`${pillBase} ${filters.maxBudget ? pillActive : pillInactive} px-4`}>
               <span className="flex items-center gap-1 truncate text-left">
                 <span className="shrink-0 font-medium">💰 Hasta:</span>
-                <span className="truncate">{filters.maxBudget ? `USD ${parseInt(filters.maxBudget).toLocaleString()}` : 'cualquier precio'}</span>
+                <span className="truncate">{filters.maxBudget ? `USD ${parseInt(filters.maxBudget).toLocaleString()}` : 'cualquier'}</span>
               </span>
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="todos">Cualquier precio</SelectItem>
+              <SelectItem value="todos">Sin máximo</SelectItem>
               {activeTab === 'property' ? (
                 <>
                   <SelectItem value="100000">USD 100.000</SelectItem>
@@ -664,7 +696,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zone: '', types: [], carCondition: '', financing: '', maxBudget: '', since: '' })
+              setFilters({ zone: '', types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '' })
               setPage(1)
             }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
