@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   if (!authRes.ok) {
     const msg = authData?.msg || authData?.message || 'Error al crear usuario'
     return Response.json(
-      { error: msg.includes('already') ? 'El email ya está registrado' : msg },
+      { error: msg.includes('already') ? 'El email ya está registrado. Si ya tenés cuenta, iniciá sesión en la pestaña "Iniciar sesión".' : msg },
       { status: 400 }
     )
   }
