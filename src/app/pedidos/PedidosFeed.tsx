@@ -581,63 +581,41 @@ export default function PedidosFeed({
         )}
 
         {/* Presupuesto Desde */}
-        <div className="shrink-0 w-48">
-          <Select value={filters.minBudget || 'todos'} onValueChange={(v) => handleFilterChange('minBudget', v)}>
-            <SelectTrigger className={`${pillBase} ${filters.minBudget ? pillActive : pillInactive} px-4`}>
-              <span className="flex items-center gap-1 truncate text-left">
-                <span className="shrink-0 font-medium">💰 Desde:</span>
-                <span className="truncate">{filters.minBudget ? `USD ${parseInt(filters.minBudget).toLocaleString()}` : 'cualquier'}</span>
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Sin mínimo</SelectItem>
-              {activeTab === 'property' ? (
-                <>
-                  <SelectItem value="50000">USD 50.000+</SelectItem>
-                  <SelectItem value="100000">USD 100.000+</SelectItem>
-                  <SelectItem value="200000">USD 200.000+</SelectItem>
-                  <SelectItem value="400000">USD 400.000+</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="5000">USD 5.000+</SelectItem>
-                  <SelectItem value="10000">USD 10.000+</SelectItem>
-                  <SelectItem value="25000">USD 25.000+</SelectItem>
-                  <SelectItem value="50000">USD 50.000+</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
+        <div
+          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudget ? pillActive : pillInactive}`}
+          style={{ width: '11rem' }}
+        >
+          <span className="shrink-0 font-medium">💰 Desde:</span>
+          <span className="shrink-0">USD</span>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="libre"
+            value={filters.minBudget || ''}
+            onChange={(e) => handleFilterChange('minBudget', e.target.value || null)}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            className="w-full min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
         </div>
 
         {/* Presupuesto Hasta */}
-        <div className="shrink-0 w-48">
-          <Select value={filters.maxBudget || 'todos'} onValueChange={(v) => handleFilterChange('maxBudget', v)}>
-            <SelectTrigger className={`${pillBase} ${filters.maxBudget ? pillActive : pillInactive} px-4`}>
-              <span className="flex items-center gap-1 truncate text-left">
-                <span className="shrink-0 font-medium">💰 Hasta:</span>
-                <span className="truncate">{filters.maxBudget ? `USD ${parseInt(filters.maxBudget).toLocaleString()}` : 'cualquier'}</span>
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Sin máximo</SelectItem>
-              {activeTab === 'property' ? (
-                <>
-                  <SelectItem value="100000">USD 100.000</SelectItem>
-                  <SelectItem value="200000">USD 200.000</SelectItem>
-                  <SelectItem value="350000">USD 350.000</SelectItem>
-                  <SelectItem value="500000">USD 500.000</SelectItem>
-                </>
-              ) : (
-                <>
-                  <SelectItem value="10000">USD 10.000</SelectItem>
-                  <SelectItem value="20000">USD 20.000</SelectItem>
-                  <SelectItem value="40000">USD 40.000</SelectItem>
-                  <SelectItem value="80000">USD 80.000</SelectItem>
-                </>
-              )}
-            </SelectContent>
-          </Select>
+        <div
+          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudget ? pillActive : pillInactive}`}
+          style={{ width: '11rem' }}
+        >
+          <span className="shrink-0 font-medium">💰 Hasta:</span>
+          <span className="shrink-0">USD</span>
+          <input
+            type="number"
+            min="0"
+            step="1000"
+            placeholder="libre"
+            value={filters.maxBudget || ''}
+            onChange={(e) => handleFilterChange('maxBudget', e.target.value || null)}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            className="w-full min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          />
         </div>
 
         {/* Financiación (solo propiedades) */}
