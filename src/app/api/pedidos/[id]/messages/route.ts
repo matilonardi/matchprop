@@ -126,13 +126,44 @@ export async function GET(
       .is('read_at', null)
   }
 
-  const { data: msgs, error } = await supabase
+  // For broker auth: only fetch their own conversation thread
+  let msgsQuery = supabase
     .from('messages')
-    .select('id, sender_type, content, created_at, read_at')
+    .select('id, sender_type, content, created_at, read_at, broker_id, broker_profiles(name)')
     .eq('request_id', requestId)
     .order('created_at', { ascending: true })
 
+  // When fetched by buyer (closeToken), return all messages
+  // When fetched by broker, filter to their conversation only
+  if (!closeToken) {
+    // broker view — get broker id from auth (already verified above)
+    const { data: { user } } = await supabase.auth.getUser()
+    const { data: brokerProfile } = await supabase
+      .from('broker_profiles').select('id').eq('user_id', user!.id).single()
+    if (brokerProfile) {
+      msgsQuery = msgsQuery.eq('broker_id', brokerProfile.id) as typeof msgsQuery
+    }
+  }
+
+  const { data: rawMsgs, error } = await msgsQuery
+
   if (error) return Response.json({ error: error.message }, { status: 500 })
+
+  const msgs = (rawMsgs || []).map(m => {
+    const profiles = m.broker_profiles as unknown
+    const brokerName = profiles
+      ? ((Array.isArray(profiles) ? profiles[0] : profiles) as { name: string } | null)?.name ?? null
+      : null
+    return {
+      id: m.id,
+      sender_type: m.sender_type,
+      content: m.content,
+      created_at: m.created_at,
+      read_at: m.read_at,
+      broker_id: m.broker_id ?? null,
+      broker_name: brokerName,
+    }
+  })
 
   return Response.json({ messages: msgs })
 }
@@ -146,7 +177,7 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: requestId } = await params
-  const { content, broker_user_id, close_token } = await request.json()
+  const { content, broker_user_id, close_token, reply_to_broker_id } = await request.json()
 
   if (!content?.trim()) {
     return Response.json({ error: 'El mensaje no puede estar vacío' }, { status: 400 })
@@ -162,7 +193,7 @@ export async function POST(
 
     const { error } = await supabase.from('messages').insert({
       request_id: requestId,
-      broker_id: null,
+      broker_id: reply_to_broker_id || null, // links reply to the specific broker thread
       sender_type: 'buyer',
       content: content.trim(),
     })

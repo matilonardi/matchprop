@@ -59,8 +59,11 @@ export default function RequestDetail({
   const [closed, setClosed] = useState(false)
 
   // Messaging state
-  const [messages, setMessages] = useState<{ id: string; sender_type: string; content: string; created_at: string; read_at: string | null }[]>([])
-  const [msgText, setMsgText] = useState('')
+  type Msg = { id: string; sender_type: string; content: string; created_at: string; read_at: string | null; broker_id?: string | null; broker_name?: string | null }
+  const [messages, setMessages] = useState<Msg[]>([])
+  const [msgText, setMsgText] = useState('') // broker compose
+  const [replyTexts, setReplyTexts] = useState<Record<string, string>>({}) // buyer compose per broker
+  const [replyingToBrokerId, setReplyingToBrokerId] = useState<string | null>(null)
   const [sendingMsg, setSendingMsg] = useState(false)
   const [msgError, setMsgError] = useState('')
   const [showChat, setShowChat] = useState(false)
@@ -121,18 +124,16 @@ export default function RequestDetail({
     }
   }
 
+  // Broker: send a message
   async function sendMessage() {
     if (!msgText.trim()) return
     setSendingMsg(true)
     setMsgError('')
     try {
-      const body = closeToken
-        ? { content: msgText, close_token: closeToken }
-        : { content: msgText, broker_user_id: userId }
       const res = await fetch(`/api/pedidos/${request.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
+        body: JSON.stringify({ content: msgText, broker_user_id: userId }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -145,6 +146,34 @@ export default function RequestDetail({
       setMsgError('Error de conexión')
     } finally {
       setSendingMsg(false)
+    }
+  }
+
+  // Buyer: reply to a specific broker thread
+  async function sendMessageToBroker(brokerId: string) {
+    const text = replyTexts[brokerId]?.trim()
+    if (!text) return
+    setSendingMsg(true)
+    setMsgError('')
+    setReplyingToBrokerId(brokerId)
+    try {
+      const res = await fetch(`/api/pedidos/${request.id}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content: text, close_token: closeToken, reply_to_broker_id: brokerId }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setMsgError(data.error || 'Error al enviar')
+        return
+      }
+      setReplyTexts(prev => ({ ...prev, [brokerId]: '' }))
+      await loadMessages()
+    } catch {
+      setMsgError('Error de conexión')
+    } finally {
+      setSendingMsg(false)
+      setReplyingToBrokerId(null)
     }
   }
 
@@ -557,91 +586,111 @@ export default function RequestDetail({
           </div>
         )}
 
-        {/* Buyer: in-app messages section */}
-        {closeToken && (
-          <div className="px-6 pb-6" id="mensajes">
-            <div className="border border-gray-200 rounded-xl overflow-hidden">
-              <button
-                onClick={() => { setShowChat(!showChat); if (!showChat) loadMessages() }}
-                className="w-full flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <MessageCircle className="h-4 w-4 text-orange-500" />
+        {/* Buyer: in-app messages — grouped by broker */}
+        {closeToken && (() => {
+          // Group messages by broker
+          const convMap = new Map<string, { brokerName: string; msgs: typeof messages }>()
+          for (const msg of messages) {
+            const bid = msg.broker_id || 'unknown'
+            if (!convMap.has(bid)) {
+              convMap.set(bid, { brokerName: msg.broker_name || 'Broker', msgs: [] })
+            }
+            convMap.get(bid)!.msgs.push(msg)
+          }
+          const conversations = Array.from(convMap.entries()).map(([brokerId, d]) => ({ brokerId, ...d }))
+
+          return (
+            <div className="px-6 pb-6" id="mensajes">
+              <div className="flex items-center gap-2 mb-3">
+                <MessageCircle className="h-4 w-4 text-orange-500" />
+                <span className="text-sm font-medium text-gray-700">
                   Mensajes de brokers
-                  {messages.length > 0 && (
-                    <span className="bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                      {messages.length}
+                  {conversations.length > 0 && (
+                    <span className="ml-1.5 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                      {conversations.length}
                     </span>
                   )}
-                </div>
-                <span className="text-gray-400 text-xs">{showChat ? '▲' : '▼'}</span>
-              </button>
+                </span>
+              </div>
 
-              {showChat && (
-                <>
-                  <div className="p-4 space-y-3 max-h-72 overflow-y-auto bg-white">
-                    {messages.length === 0 ? (
-                      <p className="text-sm text-gray-400 text-center py-6">
-                        Todavía no recibiste mensajes. Los brokers interesados podrán escribirte acá.
-                      </p>
-                    ) : (
-                      messages.map((msg) => {
-                        const isMine = msg.sender_type === 'buyer'
-                        return (
-                          <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
-                              isMine
-                                ? 'bg-orange-500 text-white rounded-br-sm'
-                                : 'bg-gray-100 text-gray-800 rounded-bl-sm'
-                            }`}>
-                              {!isMine && (
-                                <p className="text-xs font-semibold text-orange-600 mb-1">Broker</p>
-                              )}
-                              <p>{msg.content}</p>
-                              <p className={`text-xs mt-1 ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
-                                {timeAgo(msg.created_at)}
-                              </p>
+              {conversations.length === 0 ? (
+                <div className="border border-dashed border-gray-200 rounded-xl p-6 text-center">
+                  <MessageCircle className="h-8 w-8 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500 font-medium">Todavía no recibiste mensajes</p>
+                  <p className="text-xs text-gray-400 mt-1">
+                    Cuando un broker compre tu contacto, podrá escribirte acá.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {conversations.map(({ brokerId, brokerName, msgs: convMsgs }) => (
+                    <div key={brokerId} className="border border-gray-200 rounded-xl overflow-hidden">
+                      {/* Broker header */}
+                      <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-xs font-bold text-orange-600 flex-shrink-0">
+                          {brokerName.charAt(0).toUpperCase()}
+                        </div>
+                        <span className="text-sm font-medium text-gray-800">{brokerName}</span>
+                        <span className="text-xs text-gray-400 ml-auto">{convMsgs.length} {convMsgs.length === 1 ? 'mensaje' : 'mensajes'}</span>
+                      </div>
+                      {/* Message thread */}
+                      <div className="p-3 space-y-2 max-h-60 overflow-y-auto bg-white">
+                        {convMsgs.map((msg) => {
+                          const isMine = msg.sender_type === 'buyer'
+                          return (
+                            <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                                isMine
+                                  ? 'bg-orange-500 text-white rounded-br-sm'
+                                  : 'bg-gray-100 text-gray-800 rounded-bl-sm'
+                              }`}>
+                                <p>{msg.content}</p>
+                                <p className={`text-xs mt-1 ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
+                                  {timeAgo(msg.created_at)}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        )
-                      })
-                    )}
-                  </div>
-                  <div className="p-3 bg-gray-50 border-t border-gray-100">
-                    {msgError && (
-                      <p className="text-xs text-red-600 mb-2">{msgError}</p>
-                    )}
-                    <div className="flex gap-2">
-                      <textarea
-                        value={msgText}
-                        onChange={(e) => setMsgText(e.target.value)}
-                        placeholder="Respondé a los brokers..."
-                        rows={2}
-                        className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none bg-white"
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault()
-                            void sendMessage()
-                          }
-                        }}
-                      />
-                      <button
-                        onClick={() => void sendMessage()}
-                        disabled={sendingMsg || !msgText.trim()}
-                        className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
-                      >
-                        {sendingMsg
-                          ? <Loader2 className="h-4 w-4 animate-spin" />
-                          : <Send className="h-4 w-4" />
-                        }
-                      </button>
+                          )
+                        })}
+                      </div>
+                      {/* Reply box */}
+                      <div className="p-3 bg-gray-50 border-t border-gray-100">
+                        {msgError && replyingToBrokerId === brokerId && (
+                          <p className="text-xs text-red-600 mb-2">{msgError}</p>
+                        )}
+                        <div className="flex gap-2">
+                          <textarea
+                            value={replyTexts[brokerId] || ''}
+                            onChange={(e) => setReplyTexts(prev => ({ ...prev, [brokerId]: e.target.value }))}
+                            placeholder={`Respondé a ${brokerName}...`}
+                            rows={2}
+                            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none bg-white"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault()
+                                void sendMessageToBroker(brokerId)
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={() => void sendMessageToBroker(brokerId)}
+                            disabled={sendingMsg || !replyTexts[brokerId]?.trim()}
+                            className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
+                          >
+                            {sendingMsg && replyingToBrokerId === brokerId
+                              ? <Loader2 className="h-4 w-4 animate-spin" />
+                              : <Send className="h-4 w-4" />
+                            }
+                          </button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </>
+                  ))}
+                </div>
               )}
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Unlock contact — hidden to the buyer (has close_token) and once closed */}
         {!closed && !closeToken && <div className="p-6 bg-gray-50 border-t border-gray-100">
