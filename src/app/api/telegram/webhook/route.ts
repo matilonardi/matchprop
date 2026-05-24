@@ -2,13 +2,13 @@ import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import OpenAI from 'openai'
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 
 // ─────────────────────────────────────────────────────────────
 // AI parser — extracts structured data from a free-form search text
 // ─────────────────────────────────────────────────────────────
 async function parseRequestWithAI(text: string) {
+  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
   const response = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [
