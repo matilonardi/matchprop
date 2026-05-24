@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import OpenAI from 'openai'
+import Anthropic from '@anthropic-ai/sdk'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 
@@ -8,13 +8,11 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 // AI parser — extracts structured data from a free-form search text
 // ─────────────────────────────────────────────────────────────
 async function parseRequestWithAI(text: string) {
-  const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
-  const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
-    messages: [
-      {
-        role: 'system',
-        content: `Sos un asistente que parsea mensajes de grupos inmobiliarios de WhatsApp de Córdoba, Argentina. Extraé información estructurada de búsquedas de propiedades.
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5',
+    max_tokens: 600,
+    system: `Sos un asistente que parsea mensajes de grupos inmobiliarios de WhatsApp de Córdoba, Argentina. Extraé información estructurada de búsquedas de propiedades.
 
 Devolvé ÚNICAMENTE un JSON válido con estos campos (omití los que no puedas inferir):
 {
@@ -60,14 +58,10 @@ Reglas clave:
 - "para cerrar ya"/"urgente"/"esta semana" → urgency:"esta_semana"
 - "entrega lote"/"parte de pago"/"permuta" → financing_types incluye "permuta_propiedad"
 - Si no especifica financiación → financing:"ambos"`,
-      },
-      { role: 'user', content: text },
-    ],
-    temperature: 0.1,
-    max_tokens: 600,
+    messages: [{ role: 'user', content: text }],
   })
 
-  const content = response.choices[0].message.content || '{}'
+  const content = response.content[0].type === 'text' ? response.content[0].text : '{}'
   // Strip markdown code fences if present
   const jsonStr = content
     .replace(/^```(?:json)?\n?/m, '')
