@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import WhatsAppButton from '@/components/WhatsAppButton'
+import AnimateIn from '@/components/AnimateIn'
 
 export default function HomePage() {
   return (
@@ -12,9 +13,7 @@ export default function HomePage() {
 
       {/* ── Hero ── */}
       <section className="relative min-h-[620px] flex items-center pt-16 overflow-hidden">
-        {/* Animated gradient background */}
         <div className="absolute inset-0 hero-bg-animated" />
-        {/* Subtle dot grid overlay */}
         <div
           className="absolute inset-0 opacity-[0.07]"
           style={{
@@ -22,7 +21,6 @@ export default function HomePage() {
             backgroundSize: '32px 32px',
           }}
         />
-        {/* Ambient glow blobs */}
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-float-slow" />
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float-slow delay-1000" />
 
@@ -43,7 +41,6 @@ export default function HomePage() {
             y los vendedores de Córdoba vienen a ofrecerte lo que tienen.
           </p>
 
-          {/* CTA bar */}
           <div className="animate-hero-fade-up delay-500 flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
             <Link
               href="/publicar"
@@ -62,7 +59,6 @@ export default function HomePage() {
 
           <p className="animate-hero-fade-up delay-600 mt-5 text-sm text-white/40">Gratis para compradores · Sin registro requerido</p>
 
-          {/* Floating preview cards */}
           <div className="mt-14 grid grid-cols-3 gap-3 max-w-2xl mx-auto opacity-60">
             {[
               { type: 'Casa', zone: 'Mendiolaza', price: 'USD 230k', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: '' },
@@ -84,30 +80,31 @@ export default function HomePage() {
       </section>
 
       {/* ── Stats bar ── */}
-      <section className="py-10 border-b border-gray-100 bg-white">
+      <section className="py-10 border-b border-gray-100 bg-white overflow-hidden">
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-3 gap-8 text-center">
             {[
-              { n: '100%', label: 'Gratis para compradores', delay: '' },
-              { n: 'Leads', label: 'de altísima calidad para brokers', delay: 'delay-200' },
-              { n: 'Córdoba', label: 'foco inicial · expansión planificada', delay: 'delay-400' },
+              { n: '100%', label: 'Gratis para compradores', delay: 0 },
+              { n: 'Leads', label: 'de altísima calidad para brokers', delay: 120 },
+              { n: 'Córdoba', label: 'foco inicial · expansión planificada', delay: 240 },
             ].map(({ n, label, delay }) => (
-              <div key={label} className={`animate-hero-fade-up ${delay}`}>
+              <AnimateIn key={label} variant="scale-up" delay={delay}>
                 <div className="text-2xl md:text-3xl font-bold text-orange-500 mb-1">{n}</div>
                 <div className="text-sm text-gray-500">{label}</div>
-              </div>
+              </AnimateIn>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── How it works ── */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white overflow-hidden">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14 animate-hero-fade-up">
+          <AnimateIn variant="fade-up" className="text-center mb-14">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">¿Cómo funciona?</h2>
             <p className="text-gray-500 text-lg">Tres pasos y la oferta viene a buscarte</p>
-          </div>
+          </AnimateIn>
+
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
@@ -115,72 +112,76 @@ export default function HomePage() {
                 step: '01',
                 title: 'Publicás tu búsqueda',
                 desc: 'Contás qué propiedad o auto querés, en qué zona y con qué presupuesto. Tarda menos de 3 minutos.',
-                delay: 'delay-100',
+                delay: 0,
               },
               {
                 icon: <Bell className="h-6 w-6 text-blue-500" />,
                 step: '02',
                 title: 'Los vendedores te ven',
                 desc: 'Inmobiliarias, concesionarias y particulares reciben alertas automáticas. Solo ven tu búsqueda, no tu contacto.',
-                delay: 'delay-300',
+                delay: 150,
               },
               {
                 icon: <Users className="h-6 w-6 text-yellow-500" />,
                 step: '03',
                 title: 'Te contactan con opciones reales',
                 desc: 'Cuando alguien tiene algo que te puede interesar, desbloquea tu contacto y te llama. Sin spam.',
-                delay: 'delay-500',
+                delay: 300,
               },
             ].map(({ icon, step, title, desc, delay }) => (
-              <div key={step} className={`animate-hero-fade-up ${delay}`}>
+              <AnimateIn key={step} variant="fade-up" delay={delay}
+                className="group p-6 rounded-2xl border border-transparent hover:border-orange-100 hover:bg-orange-50/40 transition-all duration-300 cursor-default"
+              >
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-orange-50 group-hover:bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-300">
                     {icon}
                   </div>
-                  <span className="text-4xl font-bold text-gray-100">{step}</span>
+                  <span className="text-4xl font-bold text-gray-100 group-hover:text-orange-100 transition-colors duration-300">{step}</span>
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-              </div>
+              </AnimateIn>
             ))}
           </div>
         </div>
       </section>
 
       {/* ── For buyers ── */}
-      <section className="py-20 px-4 bg-gray-50">
+      <section className="py-20 px-4 bg-gray-50 overflow-hidden">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div className="animate-slide-left">
+
+            <AnimateIn variant="fade-left">
               <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para compradores</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-5">Tu búsqueda trabaja sola mientras vos hacés otra cosa</h2>
               <ul className="space-y-4">
                 {[
-                  { text: 'Completamente gratis, siempre', delay: 'delay-100' },
-                  { text: 'Sin registro obligatorio', delay: 'delay-200' },
-                  { text: 'Tu contacto solo lo ve quien paga — cero spam', delay: 'delay-300' },
-                  { text: 'Sabés cuántas personas vieron tu pedido', delay: 'delay-400' },
-                  { text: 'Podés cerrar tu búsqueda cuando quieras', delay: 'delay-500' },
+                  { text: 'Completamente gratis, siempre', delay: 80 },
+                  { text: 'Sin registro obligatorio', delay: 160 },
+                  { text: 'Tu contacto solo lo ve quien paga — cero spam', delay: 240 },
+                  { text: 'Sabés cuántas personas vieron tu pedido', delay: 320 },
+                  { text: 'Podés cerrar tu búsqueda cuando quieras', delay: 400 },
                 ].map(({ text, delay }) => (
-                  <li key={text} className={`flex items-center gap-3 animate-hero-fade-up ${delay}`}>
+                  <AnimateIn key={text} variant="fade-left" delay={delay} as="li" className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <span className="text-gray-700">{text}</span>
-                  </li>
+                  </AnimateIn>
                 ))}
               </ul>
-              <Link href="/publicar" className="mt-8 inline-block animate-hero-fade-up delay-600">
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Publicar mi búsqueda gratis
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+              <AnimateIn variant="fade-up" delay={500} className="mt-8 inline-block">
+                <Link href="/publicar">
+                  <Button className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200">
+                    Publicar mi búsqueda gratis
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </AnimateIn>
+            </AnimateIn>
 
-            {/* Two mock cards — property + car */}
-            <div className="flex flex-col gap-4 max-w-sm mx-auto w-full animate-slide-right delay-200">
+            {/* Two mock cards */}
+            <AnimateIn variant="fade-right" delay={200} className="flex flex-col gap-4 max-w-sm mx-auto w-full">
 
-              {/* Property card */}
-              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
+              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div className="relative h-36 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
                   <span className="text-5xl opacity-75">🏡</span>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -198,7 +199,7 @@ export default function HomePage() {
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Efectivo</span>
                   </div>
                   <p className="text-sm font-semibold text-gray-800">Casa · Mendiolaza</p>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 flex-wrap">
                     {['cochera', 'gas natural', 'seguridad'].map((r) => (
                       <span key={r} className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full">{r}</span>
                     ))}
@@ -211,8 +212,7 @@ export default function HomePage() {
                 </div>
               </div>
 
-              {/* Car card */}
-              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
+              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
                 <div className="relative h-36 bg-gradient-to-br from-slate-500 to-zinc-600 flex items-center justify-center">
                   <span className="text-5xl opacity-75">🚙</span>
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
@@ -230,7 +230,7 @@ export default function HomePage() {
                     <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Efectivo</span>
                   </div>
                   <p className="text-sm font-semibold text-gray-800">SUV · Nueva Córdoba</p>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-1.5 flex-wrap">
                     {['Toyota / Ford', '2020+', '🔑 Usado'].map((r) => (
                       <span key={r} className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full">{r}</span>
                     ))}
@@ -243,23 +243,26 @@ export default function HomePage() {
                 </div>
               </div>
 
-            </div>
+            </AnimateIn>
           </div>
         </div>
       </section>
 
       {/* ── For brokers ── */}
-      <section className="py-20 px-4 bg-white">
+      <section className="py-20 px-4 bg-white overflow-hidden">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
+
             <div className="order-2 md:order-1 space-y-3">
               {[
-                { label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: 'delay-100' },
-                { label: 'Casa · Villa Belgrano · USD 620k', badge: 'Nuevo', time: 'hace 3h', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️', delay: 'delay-300' },
-                { label: 'Depto · Nueva Córdoba · USD 70k', badge: '', time: 'hace 6h', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢', delay: 'delay-500' },
+                { label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: 0 },
+                { label: 'Casa · Villa Belgrano · USD 620k', badge: 'Nuevo', time: 'hace 3h', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️', delay: 150 },
+                { label: 'Depto · Nueva Córdoba · USD 70k', badge: '', time: 'hace 6h', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢', delay: 300 },
               ].map(({ label, badge, time, gradient, emoji, delay }) => (
-                <div key={label} className={`animate-slide-left ${delay} flex items-center gap-4 bg-gray-50 rounded-2xl p-3 border border-gray-100`}>
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl shrink-0`}>
+                <AnimateIn key={label} variant="fade-left" delay={delay}
+                  className="flex items-center gap-4 bg-gray-50 hover:bg-orange-50 rounded-2xl p-3 border border-gray-100 hover:border-orange-100 hover:shadow-sm transition-all duration-300 cursor-default group"
+                >
+                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform duration-300`}>
                     {emoji}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -271,56 +274,61 @@ export default function HomePage() {
                     </div>
                     <p className="text-xs text-gray-400">{time}</p>
                   </div>
-                  <Button size="sm" variant="outline" className="text-xs h-7 shrink-0">1 crédito</Button>
-                </div>
+                  <Button size="sm" variant="outline" className="text-xs h-7 shrink-0 group-hover:border-orange-300 group-hover:text-orange-600 transition-colors duration-300">1 crédito</Button>
+                </AnimateIn>
               ))}
             </div>
-            <div className="order-1 md:order-2 animate-slide-right">
+
+            <AnimateIn variant="fade-right" className="order-1 md:order-2">
               <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para vendedores</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-5">Compradores que ya saben lo que quieren</h2>
               <ul className="space-y-4">
                 {[
-                  { text: 'Ves el pedido completo antes de pagar', delay: 'delay-100' },
-                  { text: 'Solo pagás cuando hay match real con lo que tenés', delay: 'delay-200' },
-                  { text: 'Alertas automáticas por zona — propiedades y autos', delay: 'delay-300' },
-                  { text: 'Sin suscripción forzada — comprás créditos cuando los necesitás', delay: 'delay-400' },
-                  { text: 'Dashboard con todos tus contactos desbloqueados', delay: 'delay-500' },
+                  { text: 'Ves el pedido completo antes de pagar', delay: 80 },
+                  { text: 'Solo pagás cuando hay match real con lo que tenés', delay: 160 },
+                  { text: 'Alertas automáticas por zona — propiedades y autos', delay: 240 },
+                  { text: 'Sin suscripción forzada — comprás créditos cuando los necesitás', delay: 320 },
+                  { text: 'Dashboard con todos tus contactos desbloqueados', delay: 400 },
                 ].map(({ text, delay }) => (
-                  <li key={text} className={`flex items-center gap-3 animate-hero-fade-up ${delay}`}>
+                  <AnimateIn key={text} variant="fade-right" delay={delay} as="li" className="flex items-center gap-3">
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <span className="text-gray-700">{text}</span>
-                  </li>
+                  </AnimateIn>
                 ))}
               </ul>
-              <Link href="/broker" className="mt-8 inline-block animate-hero-fade-up delay-600">
-                <Button className="bg-orange-500 hover:bg-orange-600">
-                  Crear mi cuenta gratis
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </Link>
-            </div>
+              <AnimateIn variant="fade-up" delay={500} className="mt-8 inline-block">
+                <Link href="/broker">
+                  <Button className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200">
+                    Crear mi cuenta gratis
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </Link>
+              </AnimateIn>
+            </AnimateIn>
           </div>
         </div>
       </section>
 
       {/* ── Pricing ── */}
-      <section className="py-20 px-4 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950">
+      <section className="py-20 px-4 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center text-white">
-          <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70 animate-float" />
-          <h2 className="text-3xl font-bold mb-4 animate-hero-fade-up">Un crédito = un contacto real</h2>
-          <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto animate-hero-fade-up delay-200">
-            Comprás créditos solo cuando los necesitás. Ves el pedido completo antes de decidir si vale la pena desbloquearlo.
-          </p>
+          <AnimateIn variant="scale-up">
+            <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70 animate-float" />
+            <h2 className="text-3xl font-bold mb-4">Un crédito = un contacto real</h2>
+            <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto">
+              Comprás créditos solo cuando los necesitás. Ves el pedido completo antes de decidir si vale la pena desbloquearlo.
+            </p>
+          </AnimateIn>
+
           <div className="grid sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-10">
             {[
-              { credits: '3 créditos', price: '$80.000', per: '$26.667 c/u', popular: false, unlimited: false, delay: 'delay-100' },
-              { credits: '5 créditos', price: '$100.000', per: '$20.000 c/u', popular: true, unlimited: false, delay: 'delay-200' },
-              { credits: '10 créditos', price: '$180.000', per: '$18.000 c/u', popular: false, unlimited: false, delay: 'delay-300' },
-              { credits: 'Ilimitado', price: '$350.000', per: 'por mes', popular: false, unlimited: true, delay: 'delay-400' },
+              { credits: '3 créditos', price: '$80.000', per: '$26.667 c/u', popular: false, unlimited: false, delay: 0 },
+              { credits: '5 créditos', price: '$100.000', per: '$20.000 c/u', popular: true, unlimited: false, delay: 100 },
+              { credits: '10 créditos', price: '$180.000', per: '$18.000 c/u', popular: false, unlimited: false, delay: 200 },
+              { credits: 'Ilimitado', price: '$350.000', per: 'por mes', popular: false, unlimited: true, delay: 300 },
             ].map(({ credits, price, per, popular, unlimited, delay }) => (
-              <div
-                key={credits}
-                className={`animate-hero-fade-up ${delay} rounded-2xl p-5 border transition-all ${
+              <AnimateIn key={credits} variant="scale-up" delay={delay}
+                className={`rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
                   unlimited
                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white border-orange-400 shadow-xl'
                     : popular
@@ -337,15 +345,18 @@ export default function HomePage() {
                 <div className="font-semibold text-sm mb-1">{credits}</div>
                 <div className="text-2xl font-bold">{price}</div>
                 <div className={`text-xs mt-1 ${popular ? 'text-orange-400' : 'text-orange-200/70'}`}>{per}</div>
-              </div>
+              </AnimateIn>
             ))}
           </div>
-          <p className="text-xs text-white/40 mb-8 animate-hero-fade-up delay-500">Precios en pesos argentinos · créditos válidos 30 días</p>
-          <Link href="/broker" className="animate-hero-fade-up delay-600 inline-block">
-            <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 rounded-2xl">
-              Empezar ahora
-            </Button>
-          </Link>
+
+          <AnimateIn variant="fade-up" delay={400}>
+            <p className="text-xs text-white/40 mb-8">Precios en pesos argentinos · créditos válidos 30 días</p>
+            <Link href="/broker">
+              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200 text-white font-bold px-10 rounded-2xl">
+                Empezar ahora
+              </Button>
+            </Link>
+          </AnimateIn>
         </div>
       </section>
 
