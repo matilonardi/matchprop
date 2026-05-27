@@ -1,4 +1,6 @@
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import PedidosFeed from './PedidosFeed'
 import Link from 'next/link'
 
@@ -46,6 +48,8 @@ export default async function PedidosPage({
         </div>
 
       </div>
+      <Footer />
+      <WhatsAppButton />
     </div>
   )
 }

@@ -9,13 +9,17 @@ function makeCloseToken(requestId: string): string {
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
-  const zone = searchParams.get('zone')
+  const zonesParam = searchParams.get('zones') // comma-separated multi-zone
+  const zones = zonesParam ? zonesParam.split(',').filter(Boolean) : []
   const typesParam = searchParams.get('types') // comma-separated: "casa,departamento"
   const types = typesParam ? typesParam.split(',').filter(Boolean) : []
   const financing = searchParams.get('financing')
   const minBudget = searchParams.get('minBudget')
   const maxBudget = searchParams.get('maxBudget')
   const since = searchParams.get('since') // '24h' | '7d' | '30d'
+  const dateFrom = searchParams.get('dateFrom') // 'YYYY-MM-DD'
+  const dateTo = searchParams.get('dateTo')     // 'YYYY-MM-DD'
+  const sort = searchParams.get('sort') || 'recent' // 'recent' | 'oldest' | 'budget_asc' | 'budget_desc'
   const requestType = searchParams.get('requestType') // 'property' | 'car'
   const condition = searchParams.get('condition') // car condition filter
   const page = parseInt(searchParams.get('page') || '1')
@@ -30,12 +34,20 @@ export async function GET(request: NextRequest) {
       { count: 'exact' }
     )
     .eq('status', 'active')
-    .order('created_at', { ascending: false })
     .range((page - 1) * limit, page * limit - 1)
+
+  // Sorting
+  if (sort === 'oldest')      query = query.order('created_at', { ascending: true })
+  else if (sort === 'budget_asc')  query = query.order('budget_usd', { ascending: true })
+  else if (sort === 'budget_desc') query = query.order('budget_usd', { ascending: false })
+  else                        query = query.order('created_at', { ascending: false })
 
   if (requestType) query = query.eq('request_type', requestType)
   else query = query.eq('request_type', 'property') // default to property tab
-  if (zone) query = query.contains('zones', [zone])
+
+  // Multi-zone: match any request whose zones array overlaps the selected zones
+  if (zones.length === 1) query = query.contains('zones', [zones[0]])
+  else if (zones.length > 1) query = query.overlaps('zones', zones)
   if (types.length && requestType !== 'car') query = query.overlaps('property_types', types)
   if (condition && requestType === 'car') query = query.eq('car_condition', condition)
   if (since) {
@@ -46,6 +58,8 @@ export async function GET(request: NextRequest) {
       query = query.gte('created_at', cutoff)
     }
   }
+  if (dateFrom) query = query.gte('created_at', dateFrom)
+  if (dateTo)   query = query.lte('created_at', dateTo + 'T23:59:59Z')
   if (financing && financing !== 'todos' && requestType !== 'car') {
     const newTypes = ['efectivo', 'credito', 'permuta_propiedad', 'permuta_auto']
     if (newTypes.includes(financing)) {

@@ -409,35 +409,52 @@ export default function PedidosFeed({
   const [showingDemo, setShowingDemo] = useState(false)
 
   const [filters, setFilters] = useState({
-    zone: initialZone,
-    types: initialType ? [initialType] : [] as string[],  // multi-select
+    zones: initialZone ? [initialZone] : [] as string[],
+    types: initialType ? [initialType] : [] as string[],
     carCondition: '',
     financing: initialFinancing,
     minBudget: '',
     maxBudget: initialMaxBudget,
     since: initialSince,
+    dateFrom: '',
+    dateTo: '',
+    sort: 'recent',
   })
+  const [zoneSearch, setZoneSearch] = useState('')
+  const [zoneDropdownOpen, setZoneDropdownOpen] = useState(false)
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
+  const [dateDropdownOpen, setDateDropdownOpen] = useState(false)
+  const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zone || filters.types.length || filters.carCondition || filters.financing || filters.minBudget || filters.maxBudget || filters.since)
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.carCondition || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent')
+
+  const SORT_OPTIONS = [
+    { id: 'recent',     label: '🕐 Más recientes' },
+    { id: 'oldest',     label: '📅 Más antiguos' },
+    { id: 'budget_asc', label: '💰 Menor presupuesto' },
+    { id: 'budget_desc',label: '💰 Mayor presupuesto' },
+  ]
 
   const fetchRequests = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
     params.set('requestType', activeTab)
-    if (filters.zone) params.set('zone', filters.zone)
+    if (filters.zones.length) params.set('zones', filters.zones.join(','))
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
     if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.minBudget) params.set('minBudget', filters.minBudget)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
     if (filters.since) params.set('since', filters.since)
+    if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
+    if (filters.dateTo) params.set('dateTo', filters.dateTo)
+    if (filters.sort && filters.sort !== 'recent') params.set('sort', filters.sort)
 
     try {
       const res = await fetch(`/api/pedidos?${params}`)
       const json = await res.json()
       const data = json.data || []
-      const noFilterApplied = !filters.zone && !filters.types.length && !filters.financing && !filters.maxBudget
+      const noFilterApplied = !filters.zones.length && !filters.types.length && !filters.financing && !filters.maxBudget
       if (data.length === 0 && page === 1 && noFilterApplied) {
         setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
         setTotalPages(1)
@@ -491,8 +508,10 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zone: '', types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '' })
+              setFilters({ zones: [], types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
+              setZoneDropdownOpen(false)
               setTypeDropdownOpen(false)
+              setDateDropdownOpen(false)
               setPage(1)
             }}
             className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
@@ -507,22 +526,62 @@ export default function PedidosFeed({
       {/* Filter bar */}
       <div className="flex items-center gap-2 flex-wrap mb-6">
 
-        {/* Zona */}
-        <div className="shrink-0 w-48">
-          <Select value={filters.zone || 'todos'} onValueChange={(v) => handleFilterChange('zone', v)}>
-            <SelectTrigger className={`${pillBase} ${filters.zone ? pillActive : pillInactive} px-4`}>
-              <span className="flex items-center gap-1 truncate text-left">
-                <span className="shrink-0 font-medium">📍 Zona:</span>
-                <span className="truncate">{filters.zone || 'todas'}</span>
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todos">Todas las zonas</SelectItem>
-              {ZONES_CORDOBA.map((z) => (
-                <SelectItem key={z} value={z}>{z}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        {/* Zona — multi-select */}
+        <div className="shrink-0 relative">
+          <button
+            onClick={() => { setZoneDropdownOpen(v => !v); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.zones.length ? pillActive : pillInactive}`}
+          >
+            <span className="font-medium">📍 Zona:</span>
+            {filters.zones.length === 0 ? 'todas' : filters.zones.length === 1 ? filters.zones[0] : `${filters.zones.length} zonas`}
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          </button>
+          {zoneDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setZoneDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
+                <div className="px-3 pt-2.5 pb-1.5 border-b border-gray-100">
+                  <input
+                    type="text"
+                    placeholder="🔍 Buscar zona..."
+                    value={zoneSearch}
+                    onChange={e => setZoneSearch(e.target.value)}
+                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                  />
+                </div>
+                {zoneSearch === '' && (
+                  <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                    <input
+                      type="checkbox"
+                      checked={filters.zones.length === ZONES_CORDOBA.length}
+                      onChange={(e) => {
+                        setFilters(f => ({ ...f, zones: e.target.checked ? [...ZONES_CORDOBA] : [] }))
+                        setPage(1)
+                      }}
+                      className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                    />
+                    Todas las zonas
+                  </label>
+                )}
+                <div className="max-h-56 overflow-y-auto py-1">
+                  {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((z) => (
+                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={filters.zones.includes(z)}
+                        onChange={() => {
+                          setFilters(f => ({ ...f, zones: f.zones.includes(z) ? f.zones.filter(x => x !== z) : [...f.zones, z] }))
+                          setPage(1)
+                        }}
+                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                      />
+                      {z}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Tipo — multi-select for property, single for car */}
@@ -647,34 +706,107 @@ export default function PedidosFeed({
           </div>
         )}
 
-        {/* Fecha */}
-        <div className="shrink-0 w-48">
-          <Select value={filters.since || 'todas'} onValueChange={(v) => handleFilterChange('since', v)}>
-            <SelectTrigger className={`${pillBase} ${filters.since ? pillActive : pillInactive} px-4`}>
-              <span className="flex items-center gap-1 truncate text-left">
-                <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                <span className="shrink-0 font-medium ml-0.5">Fecha:</span>
-                <span className="truncate">{
-                  filters.since === '24h' ? 'hoy'
-                  : filters.since === '7d' ? 'esta semana'
-                  : filters.since === '30d' ? 'este mes'
-                  : 'cualquiera'
-                }</span>
-              </span>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="todas">Cualquier fecha</SelectItem>
-              <SelectItem value="24h">🔥 Últimas 24 horas</SelectItem>
-              <SelectItem value="7d">📅 Última semana</SelectItem>
-              <SelectItem value="30d">🗓️ Último mes</SelectItem>
-            </SelectContent>
-          </Select>
+        {/* Fecha — presets + rango personalizado */}
+        <div className="shrink-0 relative">
+          <button
+            onClick={() => { setDateDropdownOpen(v => !v); setZoneDropdownOpen(false); setSortDropdownOpen(false) }}
+            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${(filters.since || filters.dateFrom || filters.dateTo) ? pillActive : pillInactive}`}
+          >
+            <CalendarDays className="h-3.5 w-3.5 shrink-0" />
+            <span className="font-medium">Fecha:</span>
+            {filters.dateFrom || filters.dateTo
+              ? `${filters.dateFrom || '…'} → ${filters.dateTo || '…'}`
+              : filters.since === '24h' ? 'hoy'
+              : filters.since === '7d' ? 'esta semana'
+              : filters.since === '30d' ? 'este mes'
+              : 'cualquiera'}
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          </button>
+          {dateDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setDateDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-3">
+                {/* Presets */}
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rápido</p>
+                <div className="grid grid-cols-2 gap-1.5 mb-3">
+                  {[
+                    { id: '24h', label: '🔥 Hoy' },
+                    { id: '7d',  label: '📅 Esta semana' },
+                    { id: '30d', label: '🗓️ Este mes' },
+                    { id: '',    label: '✖ Cualquiera' },
+                  ].map(opt => (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        setFilters(f => ({ ...f, since: opt.id, dateFrom: '', dateTo: '' }))
+                        setPage(1)
+                        setDateDropdownOpen(false)
+                      }}
+                      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors text-left ${filters.since === opt.id && !filters.dateFrom ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+                {/* Custom range */}
+                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rango personalizado</p>
+                <div className="space-y-2">
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Desde</label>
+                    <input
+                      type="date"
+                      value={filters.dateFrom}
+                      onChange={e => { setFilters(f => ({ ...f, dateFrom: e.target.value, since: '' })); setPage(1) }}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500 mb-1 block">Hasta</label>
+                    <input
+                      type="date"
+                      value={filters.dateTo}
+                      onChange={e => { setFilters(f => ({ ...f, dateTo: e.target.value, since: '' })); setPage(1) }}
+                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    />
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Ordenar */}
+        <div className="shrink-0 relative">
+          <button
+            onClick={() => { setSortDropdownOpen(v => !v); setZoneDropdownOpen(false); setDateDropdownOpen(false) }}
+            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.sort !== 'recent' ? pillActive : pillInactive}`}
+          >
+            <span className="font-medium">↕ Ordenar:</span>
+            {SORT_OPTIONS.find(o => o.id === filters.sort)?.label.replace(/^[^\s]+\s/, '') || 'recientes'}
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          </button>
+          {sortDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setSortDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-52 py-1">
+                {SORT_OPTIONS.map(opt => (
+                  <button
+                    key={opt.id}
+                    onClick={() => { setFilters(f => ({ ...f, sort: opt.id })); setPage(1); setSortDropdownOpen(false) }}
+                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${filters.sort === opt.id ? 'text-orange-600 font-semibold bg-orange-50' : 'text-gray-700'}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zone: '', types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '' })
+              setFilters({ zones: [], types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
               setPage(1)
             }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
