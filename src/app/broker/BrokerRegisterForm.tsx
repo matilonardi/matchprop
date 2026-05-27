@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, CheckCircle2 } from 'lucide-react'
+import { Loader2, CheckCircle2, Gift } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -186,6 +186,17 @@ export default function BrokerRegisterForm() {
       {error && (
         <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
       )}
+
+      {/* Free credits banner */}
+      <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
+        <div className="shrink-0 bg-orange-100 rounded-full p-1.5">
+          <Gift className="h-4 w-4 text-orange-600" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-orange-800">2 créditos gratis al registrarte</p>
+          <p className="text-xs text-orange-600">Desbloqueá 2 contactos de compradores sin pagar nada.</p>
+        </div>
+      </div>
 
       <Button
         type="submit"
