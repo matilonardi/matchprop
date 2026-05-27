@@ -173,11 +173,11 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
       href={isDemo ? '#' : `/pedidos/${req.id}`}
       onClick={isDemo ? (e) => e.preventDefault() : undefined}
     >
-      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-blue-100 transition-all duration-200 cursor-pointer h-full flex flex-col group">
+      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
 
         {/* Visual header */}
         <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
-          <span className="text-7xl select-none opacity-75">{emoji}</span>
+          <span className="text-7xl select-none opacity-75 group-hover:scale-110 group-hover:opacity-90 transition-all duration-500">{emoji}</span>
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
           <div className="absolute top-3 right-3">
@@ -293,10 +293,10 @@ function CarRequestCard({ req, isDemo }: { req: PublicBuyerRequest & CarFields; 
 
   return (
     <Link href={isDemo ? '#' : `/pedidos/${req.id}`} onClick={isDemo ? (e) => e.preventDefault() : undefined}>
-      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-blue-100 transition-all duration-200 cursor-pointer h-full flex flex-col group">
+      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
         {/* Same header pattern as RequestCard but with car gradient */}
         <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
-          <span className="text-7xl select-none opacity-75">{emoji}</span>
+          <span className="text-7xl select-none opacity-75 group-hover:scale-110 group-hover:opacity-90 transition-all duration-500">{emoji}</span>
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
           <div className="absolute top-3 right-3">
             <span className="bg-white/95 backdrop-blur-sm text-green-600 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">✓ Activa</span>
@@ -403,6 +403,7 @@ export default function PedidosFeed({
   const [activeTab, setActiveTab] = useState<'property' | 'car'>('property')
   const [requests, setRequests] = useState<(PublicBuyerRequest & CarFields)[]>([])
   const [loading, setLoading] = useState(true)
+  const [gridKey, setGridKey] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
@@ -483,6 +484,7 @@ export default function PedidosFeed({
       setShowingDemo(true)
     }
     setLoading(false)
+    setGridKey((k) => k + 1)
   }, [page, filters, activeTab])
 
   useEffect(() => {
@@ -534,7 +536,7 @@ export default function PedidosFeed({
       </div>
 
       {/* Filter bar */}
-      <div className="flex items-center gap-2 flex-wrap mb-6">
+      <div key={activeTab} className="animate-tab-fade flex items-center gap-2 flex-wrap mb-6">
 
         {/* Zona — multi-select */}
         <div className="shrink-0 relative">
@@ -977,21 +979,25 @@ export default function PedidosFeed({
           <p className="text-sm text-gray-500">Probá con otros criterios o eliminá los filtros</p>
         </div>
       ) : (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {requests.map((req) => (
-            activeTab === 'car' ? (
-              <CarRequestCard
-                key={req.id}
-                req={req}
-                isDemo={(req as PublicBuyerRequest & CarFields & { demo?: boolean }).demo}
-              />
-            ) : (
-              <RequestCard
-                key={req.id}
-                req={req}
-                isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
-              />
-            )
+        <div key={gridKey} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          {requests.map((req, i) => (
+            <div
+              key={req.id}
+              className="animate-card-enter"
+              style={{ animationDelay: `${Math.min(i * 55, 400)}ms` }}
+            >
+              {activeTab === 'car' ? (
+                <CarRequestCard
+                  req={req}
+                  isDemo={(req as PublicBuyerRequest & CarFields & { demo?: boolean }).demo}
+                />
+              ) : (
+                <RequestCard
+                  req={req}
+                  isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
+                />
+              )}
+            </div>
           ))}
         </div>
       )}

@@ -197,3 +197,21 @@
   background-size: 300% 300%;
   animation: gradient-shift 12s ease infinite;
 }
+
+/* ── Feed card entrance ── */
+@keyframes card-enter {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+.animate-card-enter {
+  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* ── Tab fade ── */
+@keyframes tab-fade {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-tab-fade {
+  animation: tab-fade 0.3s ease both;
+}
