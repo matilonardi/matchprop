@@ -1,19 +1,27 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Loader2, LogIn } from 'lucide-react'
+import { Loader2, LogIn, UserPlus } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
+import { ZONES_CORDOBA } from '@/lib/constants'
 
 export default function BrokerLoginForm() {
-  const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+
+  // "Complete profile" state — shown when auth succeeds but no broker_profile exists
+  const [needsProfile, setNeedsProfile] = useState(false)
+  const [pendingUserId, setPendingUserId] = useState('')
+  const [profileName, setProfileName] = useState('')
+  const [profileAgency, setProfileAgency] = useState('')
+  const [profilePhone, setProfilePhone] = useState('')
+  const [profileZones, setProfileZones] = useState<string[]>([])
+  const [zonesOpen, setZonesOpen] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -25,14 +33,13 @@ export default function BrokerLoginForm() {
         setError('Email o contraseña incorrectos. Verificá tus datos.')
         return
       }
-      // Verify this user has a broker profile before navigating
       const res = await fetch(`/api/broker/me?userId=${data.user.id}`)
       if (!res.ok) {
-        await supabase.auth.signOut()
-        setError('No encontramos una cuenta de broker con ese email. ¿Querés crear una cuenta?')
+        // Authenticated but no broker_profile — ask them to complete it
+        setPendingUserId(data.user.id)
+        setNeedsProfile(true)
         return
       }
-      // Hard navigation to ensure session cookie is set before dashboard loads
       window.location.href = '/broker/dashboard'
     } catch {
       setError('Error de conexión. Intentá de nuevo.')
@@ -41,6 +48,131 @@ export default function BrokerLoginForm() {
     }
   }
 
+  async function handleCompleteProfile(e: React.FormEvent) {
+    e.preventDefault()
+    if (!profileName.trim() || profileZones.length === 0) {
+      setError('Completá tu nombre y seleccioná al menos una zona.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/broker/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: pendingUserId,
+          email,
+          name: profileName.trim(),
+          agency_name: profileAgency.trim() || null,
+          phone: profilePhone.trim(),
+          zones: profileZones,
+          skipAuthCreate: true, // signal to API to skip creating auth user
+        }),
+      })
+      if (!res.ok) {
+        const d = await res.json()
+        setError(d.error || 'No se pudo crear el perfil. Intentá de nuevo.')
+        return
+      }
+      window.location.href = '/broker/dashboard'
+    } catch {
+      setError('Error de conexión. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  function toggleZone(zone: string) {
+    setProfileZones((prev) =>
+      prev.includes(zone) ? prev.filter((z) => z !== zone) : [...prev, zone]
+    )
+  }
+
+  // ── Complete-profile form ──
+  if (needsProfile) {
+    return (
+      <form onSubmit={handleCompleteProfile} className="space-y-4">
+        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+          <p className="font-semibold mb-1">Completá tu perfil de broker</p>
+          <p className="text-blue-600">Tu cuenta existe pero le faltan algunos datos. Completá los campos para continuar.</p>
+        </div>
+
+        <div>
+          <Label className="text-sm mb-1 block">Nombre completo *</Label>
+          <Input
+            value={profileName}
+            onChange={(e) => setProfileName(e.target.value)}
+            placeholder="Juan García"
+            required
+          />
+        </div>
+
+        <div>
+          <Label className="text-sm mb-1 block">Inmobiliaria / Agencia</Label>
+          <Input
+            value={profileAgency}
+            onChange={(e) => setProfileAgency(e.target.value)}
+            placeholder="Opcional"
+          />
+        </div>
+
+        <div>
+          <Label className="text-sm mb-1 block">Teléfono / WhatsApp</Label>
+          <Input
+            value={profilePhone}
+            onChange={(e) => setProfilePhone(e.target.value)}
+            placeholder="+54 9 351 xxx xxxx"
+          />
+        </div>
+
+        <div>
+          <Label className="text-sm mb-1 block">Zonas de trabajo *</Label>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setZonesOpen((o) => !o)}
+              className="w-full flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2 text-sm bg-white hover:bg-gray-50 transition-colors"
+            >
+              <span className={profileZones.length ? 'text-gray-900' : 'text-gray-400'}>
+                {profileZones.length ? `${profileZones.length} zona${profileZones.length > 1 ? 's' : ''} seleccionada${profileZones.length > 1 ? 's' : ''}` : 'Seleccioná tus zonas'}
+              </span>
+              <span className="text-gray-400">▾</span>
+            </button>
+            {zonesOpen && (
+              <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
+                {ZONES_CORDOBA.map((zone) => (
+                  <label key={zone} className="flex items-center gap-2 px-3 py-2 hover:bg-orange-50 cursor-pointer text-sm">
+                    <input
+                      type="checkbox"
+                      checked={profileZones.includes(zone)}
+                      onChange={() => toggleZone(zone)}
+                      className="accent-orange-500"
+                    />
+                    {zone}
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
+        )}
+
+        <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
+          {loading ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Guardando...</>
+          ) : (
+            <><UserPlus className="h-4 w-4 mr-2" />Completar y entrar al dashboard</>
+          )}
+        </Button>
+      </form>
+    )
+  }
+
+  // ── Login form ──
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>

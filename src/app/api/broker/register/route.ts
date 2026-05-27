@@ -4,7 +4,28 @@ import { Resend } from 'resend'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { name, agency_name, phone, email, password, zones } = body
+  const { name, agency_name, phone, email, password, zones, userId: existingUserId, skipAuthCreate } = body
+
+  // skipAuthCreate = true when login succeeded but profile was missing
+  if (skipAuthCreate) {
+    if (!name || !email || !zones?.length || !existingUserId) {
+      return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
+    }
+    const supabase = createServerClient()
+    const { error: profileError } = await supabase.from('broker_profiles').insert({
+      user_id: existingUserId,
+      name,
+      agency_name: agency_name || null,
+      phone: phone || '',
+      email,
+      zones,
+      credits: 2,
+    })
+    if (profileError) {
+      return Response.json({ error: profileError.message }, { status: 500 })
+    }
+    return Response.json({ success: true }, { status: 201 })
+  }
 
   if (!name || !email || !password || !phone || !zones?.length) {
     return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
