@@ -12,8 +12,8 @@ export default function HomePage() {
 
       {/* ── Hero ── */}
       <section className="relative min-h-[620px] flex items-center pt-16 overflow-hidden">
-        {/* Dark gradient background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950" />
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 hero-bg-animated" />
         {/* Subtle dot grid overlay */}
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -22,29 +22,32 @@ export default function HomePage() {
             backgroundSize: '32px 32px',
           }}
         />
+        {/* Ambient glow blobs */}
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-float-slow" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float-slow delay-1000" />
 
         <div className="relative w-full max-w-5xl mx-auto px-4 py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/30 text-yellow-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
+          <div className="animate-hero-fade-up inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/30 text-yellow-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
             <Star className="h-3.5 w-3.5 fill-current" />
             El marketplace al revés
           </div>
 
-          <h1 className="text-5xl md:text-7xl font-bold text-white leading-[1.08] mb-6 tracking-tight">
+          <h1 className="animate-hero-fade-up delay-200 text-5xl md:text-7xl font-bold text-white leading-[1.08] mb-6 tracking-tight">
             Publicá lo que buscás comprar
             <br />
             <span className="text-orange-400">y que te encuentren a vos</span>
           </h1>
 
-          <p className="text-xl text-orange-100/70 mb-10 max-w-2xl mx-auto leading-relaxed">
+          <p className="animate-hero-fade-up delay-400 text-xl text-orange-100/70 mb-10 max-w-2xl mx-auto leading-relaxed">
             Dejá de buscar entre miles de publicaciones. Contanos qué propiedad o auto querés
             y los vendedores de Córdoba vienen a ofrecerte lo que tienen.
           </p>
 
-          {/* CTA bar — search-bar inspired */}
-          <div className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
+          {/* CTA bar */}
+          <div className="animate-hero-fade-up delay-500 flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
             <Link
               href="/publicar"
-              className="flex-1 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 shadow-2xl transition-all hover:-translate-y-0.5 hover:shadow-orange-500/20"
+              className="flex-1 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 shadow-2xl transition-all hover:-translate-y-0.5 hover:shadow-orange-500/20 animate-pulse-glow"
             >
               📋 Publicar mi búsqueda — gratis
               <ArrowRight className="h-4 w-4 text-orange-500" />
@@ -53,20 +56,20 @@ export default function HomePage() {
               href="/pedidos"
               className="sm:w-auto bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 transition-all"
             >
-              Ver pedidos →
+              Ver búsquedas →
             </Link>
           </div>
 
-          <p className="mt-5 text-sm text-white/40">Gratis para compradores · Sin registro requerido</p>
+          <p className="animate-hero-fade-up delay-600 mt-5 text-sm text-white/40">Gratis para compradores · Sin registro requerido</p>
 
           {/* Floating preview cards */}
           <div className="mt-14 grid grid-cols-3 gap-3 max-w-2xl mx-auto opacity-60">
             {[
-              { type: 'Casa', zone: 'Mendiolaza', price: 'USD 230k', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡' },
-              { type: 'Departamento', zone: 'Nueva Córdoba', price: 'USD 70k', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢' },
-              { type: 'Casa / Duplex', zone: 'Villa Belgrano', price: 'USD 620k', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️' },
-            ].map(({ type, zone, price, gradient, emoji }) => (
-              <div key={type} className="bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10">
+              { type: 'Casa', zone: 'Mendiolaza', price: 'USD 230k', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: '' },
+              { type: 'Departamento', zone: 'Nueva Córdoba', price: 'USD 70k', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢', delay: 'delay-500' },
+              { type: 'Casa / Duplex', zone: 'Villa Belgrano', price: 'USD 620k', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️', delay: 'delay-1000' },
+            ].map(({ type, zone, price, gradient, emoji, delay }) => (
+              <div key={type} className={`animate-float ${delay} bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10`}>
                 <div className={`h-16 bg-gradient-to-br ${gradient} flex items-center justify-center text-2xl`}>
                   {emoji}
                 </div>
@@ -85,11 +88,11 @@ export default function HomePage() {
         <div className="max-w-5xl mx-auto px-4">
           <div className="grid grid-cols-3 gap-8 text-center">
             {[
-              { n: '100%', label: 'Gratis para compradores' },
-              { n: 'Leads', label: 'de altísima calidad para brokers' },
-              { n: 'Córdoba', label: 'foco inicial · expansión planificada' },
-            ].map(({ n, label }) => (
-              <div key={label}>
+              { n: '100%', label: 'Gratis para compradores', delay: '' },
+              { n: 'Leads', label: 'de altísima calidad para brokers', delay: 'delay-200' },
+              { n: 'Córdoba', label: 'foco inicial · expansión planificada', delay: 'delay-400' },
+            ].map(({ n, label, delay }) => (
+              <div key={label} className={`animate-hero-fade-up ${delay}`}>
                 <div className="text-2xl md:text-3xl font-bold text-orange-500 mb-1">{n}</div>
                 <div className="text-sm text-gray-500">{label}</div>
               </div>
@@ -101,7 +104,7 @@ export default function HomePage() {
       {/* ── How it works ── */}
       <section className="py-20 px-4 bg-white">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-14">
+          <div className="text-center mb-14 animate-hero-fade-up">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">¿Cómo funciona?</h2>
             <p className="text-gray-500 text-lg">Tres pasos y la oferta viene a buscarte</p>
           </div>
@@ -112,21 +115,24 @@ export default function HomePage() {
                 step: '01',
                 title: 'Publicás tu búsqueda',
                 desc: 'Contás qué propiedad o auto querés, en qué zona y con qué presupuesto. Tarda menos de 3 minutos.',
+                delay: 'delay-100',
               },
               {
                 icon: <Bell className="h-6 w-6 text-blue-500" />,
                 step: '02',
                 title: 'Los vendedores te ven',
                 desc: 'Inmobiliarias, concesionarias y particulares reciben alertas automáticas. Solo ven tu búsqueda, no tu contacto.',
+                delay: 'delay-300',
               },
               {
                 icon: <Users className="h-6 w-6 text-yellow-500" />,
                 step: '03',
                 title: 'Te contactan con opciones reales',
                 desc: 'Cuando alguien tiene algo que te puede interesar, desbloquea tu contacto y te llama. Sin spam.',
+                delay: 'delay-500',
               },
-            ].map(({ icon, step, title, desc }) => (
-              <div key={step}>
+            ].map(({ icon, step, title, desc, delay }) => (
+              <div key={step} className={`animate-hero-fade-up ${delay}`}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0">
                     {icon}
@@ -145,24 +151,24 @@ export default function HomePage() {
       <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-5xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
-            <div>
+            <div className="animate-slide-left">
               <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para compradores</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-5">Tu búsqueda trabaja sola mientras vos hacés otra cosa</h2>
               <ul className="space-y-4">
                 {[
-                  'Completamente gratis, siempre',
-                  'Sin registro obligatorio',
-                  'Tu contacto solo lo ve quien paga — cero spam',
-                  'Sabés cuántas personas vieron tu pedido',
-                  'Podés cerrar tu búsqueda cuando quieras',
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3">
+                  { text: 'Completamente gratis, siempre', delay: 'delay-100' },
+                  { text: 'Sin registro obligatorio', delay: 'delay-200' },
+                  { text: 'Tu contacto solo lo ve quien paga — cero spam', delay: 'delay-300' },
+                  { text: 'Sabés cuántas personas vieron tu pedido', delay: 'delay-400' },
+                  { text: 'Podés cerrar tu búsqueda cuando quieras', delay: 'delay-500' },
+                ].map(({ text, delay }) => (
+                  <li key={text} className={`flex items-center gap-3 animate-hero-fade-up ${delay}`}>
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{item}</span>
+                    <span className="text-gray-700">{text}</span>
                   </li>
                 ))}
               </ul>
-              <Link href="/publicar" className="mt-8 inline-block">
+              <Link href="/publicar" className="mt-8 inline-block animate-hero-fade-up delay-600">
                 <Button className="bg-orange-500 hover:bg-orange-600">
                   Publicar mi búsqueda gratis
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -171,7 +177,7 @@ export default function HomePage() {
             </div>
 
             {/* Two mock cards — property + car */}
-            <div className="flex flex-col gap-4 max-w-sm mx-auto w-full">
+            <div className="flex flex-col gap-4 max-w-sm mx-auto w-full animate-slide-right delay-200">
 
               {/* Property card */}
               <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100">
@@ -248,11 +254,11 @@ export default function HomePage() {
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="order-2 md:order-1 space-y-3">
               {[
-                { label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡' },
-                { label: 'Casa · Villa Belgrano · USD 620k', badge: 'Nuevo', time: 'hace 3h', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️' },
-                { label: 'Depto · Nueva Córdoba · USD 70k', badge: '', time: 'hace 6h', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢' },
-              ].map(({ label, badge, time, gradient, emoji }) => (
-                <div key={label} className="flex items-center gap-4 bg-gray-50 rounded-2xl p-3 border border-gray-100">
+                { label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: 'delay-100' },
+                { label: 'Casa · Villa Belgrano · USD 620k', badge: 'Nuevo', time: 'hace 3h', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️', delay: 'delay-300' },
+                { label: 'Depto · Nueva Córdoba · USD 70k', badge: '', time: 'hace 6h', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢', delay: 'delay-500' },
+              ].map(({ label, badge, time, gradient, emoji, delay }) => (
+                <div key={label} className={`animate-slide-left ${delay} flex items-center gap-4 bg-gray-50 rounded-2xl p-3 border border-gray-100`}>
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl shrink-0`}>
                     {emoji}
                   </div>
@@ -269,24 +275,24 @@ export default function HomePage() {
                 </div>
               ))}
             </div>
-            <div className="order-1 md:order-2">
+            <div className="order-1 md:order-2 animate-slide-right">
               <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para vendedores</div>
               <h2 className="text-3xl font-bold text-gray-900 mb-5">Compradores que ya saben lo que quieren</h2>
               <ul className="space-y-4">
                 {[
-                  'Ves el pedido completo antes de pagar',
-                  'Solo pagás cuando hay match real con lo que tenés',
-                  'Alertas automáticas por zona — propiedades y autos',
-                  'Sin suscripción forzada — comprás créditos cuando los necesitás',
-                  'Dashboard con todos tus contactos desbloqueados',
-                ].map((item) => (
-                  <li key={item} className="flex items-center gap-3">
+                  { text: 'Ves el pedido completo antes de pagar', delay: 'delay-100' },
+                  { text: 'Solo pagás cuando hay match real con lo que tenés', delay: 'delay-200' },
+                  { text: 'Alertas automáticas por zona — propiedades y autos', delay: 'delay-300' },
+                  { text: 'Sin suscripción forzada — comprás créditos cuando los necesitás', delay: 'delay-400' },
+                  { text: 'Dashboard con todos tus contactos desbloqueados', delay: 'delay-500' },
+                ].map(({ text, delay }) => (
+                  <li key={text} className={`flex items-center gap-3 animate-hero-fade-up ${delay}`}>
                     <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{item}</span>
+                    <span className="text-gray-700">{text}</span>
                   </li>
                 ))}
               </ul>
-              <Link href="/broker" className="mt-8 inline-block">
+              <Link href="/broker" className="mt-8 inline-block animate-hero-fade-up delay-600">
                 <Button className="bg-orange-500 hover:bg-orange-600">
                   Crear mi cuenta gratis
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -300,21 +306,21 @@ export default function HomePage() {
       {/* ── Pricing ── */}
       <section className="py-20 px-4 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950">
         <div className="max-w-4xl mx-auto text-center text-white">
-          <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70" />
-          <h2 className="text-3xl font-bold mb-4">Un crédito = un contacto real</h2>
-          <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto">
+          <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70 animate-float" />
+          <h2 className="text-3xl font-bold mb-4 animate-hero-fade-up">Un crédito = un contacto real</h2>
+          <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto animate-hero-fade-up delay-200">
             Comprás créditos solo cuando los necesitás. Ves el pedido completo antes de decidir si vale la pena desbloquearlo.
           </p>
           <div className="grid sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-10">
             {[
-              { credits: '3 créditos', price: '$80.000', per: '$26.667 c/u', popular: false, unlimited: false },
-              { credits: '5 créditos', price: '$100.000', per: '$20.000 c/u', popular: true, unlimited: false },
-              { credits: '10 créditos', price: '$180.000', per: '$18.000 c/u', popular: false, unlimited: false },
-              { credits: 'Ilimitado', price: '$350.000', per: 'por mes', popular: false, unlimited: true },
-            ].map(({ credits, price, per, popular, unlimited }) => (
+              { credits: '3 créditos', price: '$80.000', per: '$26.667 c/u', popular: false, unlimited: false, delay: 'delay-100' },
+              { credits: '5 créditos', price: '$100.000', per: '$20.000 c/u', popular: true, unlimited: false, delay: 'delay-200' },
+              { credits: '10 créditos', price: '$180.000', per: '$18.000 c/u', popular: false, unlimited: false, delay: 'delay-300' },
+              { credits: 'Ilimitado', price: '$350.000', per: 'por mes', popular: false, unlimited: true, delay: 'delay-400' },
+            ].map(({ credits, price, per, popular, unlimited, delay }) => (
               <div
                 key={credits}
-                className={`rounded-2xl p-5 border transition-all ${
+                className={`animate-hero-fade-up ${delay} rounded-2xl p-5 border transition-all ${
                   unlimited
                     ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white border-orange-400 shadow-xl'
                     : popular
@@ -334,8 +340,8 @@ export default function HomePage() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-white/40 mb-8">Precios en pesos argentinos · créditos válidos 30 días</p>
-          <Link href="/broker">
+          <p className="text-xs text-white/40 mb-8 animate-hero-fade-up delay-500">Precios en pesos argentinos · créditos válidos 30 días</p>
+          <Link href="/broker" className="animate-hero-fade-up delay-600 inline-block">
             <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 rounded-2xl">
               Empezar ahora
             </Button>

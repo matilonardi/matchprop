@@ -20,12 +20,20 @@ export default function BrokerLoginForm() {
     setLoading(true)
     setError('')
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password })
+      const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password })
       if (authError) {
         setError('Email o contraseña incorrectos. Verificá tus datos.')
         return
       }
-      router.push('/broker/dashboard')
+      // Verify this user has a broker profile before navigating
+      const res = await fetch(`/api/broker/me?userId=${data.user.id}`)
+      if (!res.ok) {
+        await supabase.auth.signOut()
+        setError('No encontramos una cuenta de broker con ese email. ¿Querés crear una cuenta?')
+        return
+      }
+      // Hard navigation to ensure session cookie is set before dashboard loads
+      window.location.href = '/broker/dashboard'
     } catch {
       setError('Error de conexión. Intentá de nuevo.')
     } finally {

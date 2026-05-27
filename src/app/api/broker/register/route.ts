@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
             <div style="text-align:center;margin:24px 0;">
               <a href="${appUrl}/pedidos"
                  style="background:#2563eb;color:white;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:15px;display:inline-block;">
-                Ver pedidos activos →
+                Ver búsquedas activas →
               </a>
             </div>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;"/>

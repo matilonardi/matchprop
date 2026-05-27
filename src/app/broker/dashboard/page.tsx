@@ -36,6 +36,7 @@ interface Lead {
 export default function BrokerDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [broker, setBroker] = useState<Broker | null>(null)
   const [leads, setLeads] = useState<Lead[]>([])
 
@@ -43,13 +44,14 @@ export default function BrokerDashboard() {
     async function load() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) {
-        router.replace('/broker')
+        router.replace('/broker?login=1')
         return
       }
 
       const res = await fetch(`/api/broker/me?userId=${user.id}`)
       if (!res.ok) {
-        router.replace('/broker')
+        setLoadError('No encontramos un perfil de broker para esta cuenta. Si acabás de registrarte, esperá unos segundos y recargá la página.')
+        setLoading(false)
         return
       }
 
@@ -69,10 +71,26 @@ export default function BrokerDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-3" />
-          <p className="text-sm text-gray-500">Cargando tu dashboard...</p>
-        </div>
+        {loadError ? (
+          <div className="max-w-md text-center px-6">
+            <div className="text-4xl mb-4">⚠️</div>
+            <p className="text-gray-700 font-medium mb-2">No se pudo cargar el dashboard</p>
+            <p className="text-sm text-gray-500 mb-6">{loadError}</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => window.location.reload()} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+                Reintentar
+              </button>
+              <a href="/broker?login=1" className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
+                Volver al login
+              </a>
+            </div>
+          </div>
+        ) : (
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-3" />
+            <p className="text-sm text-gray-500">Cargando tu dashboard...</p>
+          </div>
+        )}
       </div>
     )
   }
@@ -159,7 +177,7 @@ export default function BrokerDashboard() {
                       {zone}
                     </div>
                     <span className="text-xs text-orange-500 group-hover:translate-x-0.5 transition-transform">
-                      Ver pedidos →
+                      Ver búsquedas →
                     </span>
                   </Link>
                 ))}
@@ -167,7 +185,7 @@ export default function BrokerDashboard() {
                   href="/pedidos"
                   className="flex items-center justify-center gap-1.5 w-full mt-1 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
                 >
-                  Ver todos los pedidos activos
+                  Ver todas las búsquedas activas
                 </Link>
               </div>
             </div>
@@ -190,7 +208,7 @@ export default function BrokerDashboard() {
                   <p className="text-sm text-gray-500 mb-3">Todavía no desbloqueaste ningún contacto.</p>
                   <Link href="/pedidos">
                     <Button size="sm" variant="outline" className="text-xs">
-                      Ver pedidos activos
+                      Ver búsquedas activas
                     </Button>
                   </Link>
                 </div>

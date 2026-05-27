@@ -35,7 +35,7 @@ export default function Navbar() {
           {/* Desktop */}
           <div className="hidden md:flex items-center gap-6">
             <Link href="/pedidos" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-              Ver pedidos
+              Ver búsquedas
             </Link>
 
             {user ? (
@@ -81,7 +81,7 @@ export default function Navbar() {
       {open && (
         <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 flex flex-col gap-4">
           <Link href="/pedidos" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
-            Ver pedidos activos
+            Ver búsquedas activas
           </Link>
           {user ? (
             <Link

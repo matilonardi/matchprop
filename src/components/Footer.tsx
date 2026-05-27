@@ -8,7 +8,7 @@ export default function Footer() {
           <span className="text-orange-500">Match</span>Prop
         </div>
         <div className="flex flex-wrap gap-6 justify-center">
-          <Link href="/pedidos" className="hover:text-gray-700 transition-colors">Ver pedidos</Link>
+          <Link href="/pedidos" className="hover:text-gray-700 transition-colors">Ver búsquedas</Link>
           <Link href="/publicar" className="hover:text-gray-700 transition-colors">Publicar búsqueda</Link>
           <Link href="/broker" className="hover:text-gray-700 transition-colors">Para vendedores</Link>
           <Link href="/terminos" className="hover:text-gray-700 transition-colors">Términos</Link>
