@@ -1,4 +1,6 @@
 import Navbar from '@/components/Navbar'
+import Footer from '@/components/Footer'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import PublicarWizard from './PublicarWizard'
 
 export default function PublicarPage() {
@@ -18,6 +20,8 @@ export default function PublicarPage() {
           <PublicarWizard />
         </div>
       </div>
+      <Footer />
+      <WhatsAppButton />
     </div>
   )
 }
