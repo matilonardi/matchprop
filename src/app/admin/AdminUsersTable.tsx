@@ -66,7 +66,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
           <h2 className="font-semibold text-gray-900">
             Brokers registrados ({brokers.length})
           </h2>
-          <p className="text-xs text-gray-400">Revenue estimado a ~$4 USD / crédito</p>
+          <p className="text-xs text-gray-400">Revenue estimado a ~$20.000 ARS / crédito</p>
         </div>
 
         <div className="overflow-x-auto">
@@ -142,7 +142,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                   <td className="px-4 py-3">
                     {b.revenue_estimate > 0 ? (
                       <span className="font-semibold text-emerald-600">
-                        ~USD {b.revenue_estimate}
+                        ~${b.revenue_estimate.toLocaleString('es-AR')}
                       </span>
                     ) : (
                       <span className="text-gray-400 text-xs">$0</span>
@@ -193,8 +193,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
               </strong>
             </span>
             <span className="flex items-center gap-1.5 text-emerald-600 font-semibold">
-              Revenue total: ~USD{' '}
-              {brokers.reduce((s, b) => s + b.revenue_estimate, 0)}
+              Revenue total: ~${brokers.reduce((s, b) => s + b.revenue_estimate, 0).toLocaleString('es-AR')} ARS
             </span>
           </div>
         )}

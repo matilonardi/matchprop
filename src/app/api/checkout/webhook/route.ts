@@ -44,16 +44,25 @@ export async function POST(request: NextRequest) {
 
   if (!broker) return Response.json({ ok: true })
 
-  // Add credits
+  // Expiry: 30 days from now
+  const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+
+  // For unlimited plan: set to 999 credits (effectively unlimited for 30 days)
+  const newCredits = pack.unlimited
+    ? 999
+    : broker.credits + pack.credits
+
   await supabase
     .from('broker_profiles')
-    .update({ credits: broker.credits + pack.credits })
+    .update({ credits: newCredits })
     .eq('id', broker.id)
 
   await supabase.from('credit_transactions').insert({
     broker_id: broker.id,
     amount: pack.credits,
-    description: `Compra: ${pack.label}`,
+    description: pack.unlimited
+      ? `Plan Ilimitado mensual — vence ${new Date(expiresAt).toLocaleDateString('es-AR')}`
+      : `Compra: ${pack.label} — vencen ${new Date(expiresAt).toLocaleDateString('es-AR')}`,
     mp_payment_id: String(paymentId),
   })
 

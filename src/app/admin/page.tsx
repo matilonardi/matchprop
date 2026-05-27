@@ -96,8 +96,8 @@ export default async function AdminPage({
     const purchases = purchasesByBroker.get(b.id) || { count: 0, creditsSpent: 0 }
     const creditsSpent = purchases.creditsSpent
     const creditsTotal = b.credits + creditsSpent
-    // Estimated revenue: $4/credit average (between the $5 and $3 packs)
-    const revenueEstimate = creditsTotal > 0 ? Math.round(creditsTotal * 4) : 0
+    // Estimated revenue: ~$20.000 ARS/credit average across packs
+    const revenueEstimate = creditsTotal > 0 ? creditsTotal * 20000 : 0
     return {
       ...b,
       leads_unlocked: purchases.count,

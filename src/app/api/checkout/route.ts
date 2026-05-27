@@ -22,10 +22,12 @@ export async function POST(request: NextRequest) {
     items: [
       {
         title: `MatchProp – ${pack.label}`,
-        description: `${pack.credits} créditos para desbloquear contactos de compradores`,
+        description: pack.unlimited
+          ? 'Acceso ilimitado por 30 días para desbloquear contactos de compradores'
+          : `${pack.credits} créditos (válidos 30 días) para desbloquear contactos de compradores`,
         quantity: 1,
         currency_id: 'ARS',
-        unit_price: pack.price_usd * 1000, // rough ARS conversion — replace with real FX at launch
+        unit_price: pack.price_ars,
       },
     ],
     back_urls: {

@@ -303,16 +303,19 @@ export default function HomePage() {
           <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto">
             Comprás créditos solo cuando los necesitás. Ves el pedido completo antes de decidir si vale la pena desbloquearlo.
           </p>
-          <div className="grid sm:grid-cols-3 gap-4 max-w-2xl mx-auto mb-10">
+          <div className="grid sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-10">
             {[
-              { credits: '5 créditos', price: 'USD 25', per: 'USD 5 c/u', popular: false },
-              { credits: '20 créditos', price: 'USD 80', per: 'USD 4 c/u', popular: true },
-              { credits: '50 créditos', price: 'USD 150', per: 'USD 3 c/u', popular: false },
-            ].map(({ credits, price, per, popular }) => (
+              { credits: '3 créditos', price: '$80.000', per: '$26.667 c/u', popular: false, unlimited: false },
+              { credits: '5 créditos', price: '$100.000', per: '$20.000 c/u', popular: true, unlimited: false },
+              { credits: '10 créditos', price: '$180.000', per: '$18.000 c/u', popular: false, unlimited: false },
+              { credits: 'Ilimitado', price: '$350.000', per: 'por mes', popular: false, unlimited: true },
+            ].map(({ credits, price, per, popular, unlimited }) => (
               <div
                 key={credits}
                 className={`rounded-2xl p-5 border transition-all ${
-                  popular
+                  unlimited
+                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white border-orange-400 shadow-xl'
+                    : popular
                     ? 'bg-white text-gray-900 border-white shadow-xl scale-105'
                     : 'bg-white/10 text-white border-white/20 hover:bg-white/15'
                 }`}
@@ -320,12 +323,16 @@ export default function HomePage() {
                 {popular && (
                   <div className="text-xs font-bold uppercase tracking-wide text-orange-500 mb-2">★ Más popular</div>
                 )}
+                {unlimited && (
+                  <div className="text-xs font-bold uppercase tracking-wide text-white/80 mb-2">∞ Plan Pro</div>
+                )}
                 <div className="font-semibold text-sm mb-1">{credits}</div>
-                <div className="text-3xl font-bold">{price}</div>
-                <div className={`text-xs mt-1 ${popular ? 'text-orange-400' : 'text-orange-200/60'}`}>{per}</div>
+                <div className="text-2xl font-bold">{price}</div>
+                <div className={`text-xs mt-1 ${popular ? 'text-orange-400' : 'text-orange-200/70'}`}>{per}</div>
               </div>
             ))}
           </div>
+          <p className="text-xs text-white/40 mb-8">Precios en pesos argentinos · créditos válidos 30 días</p>
           <Link href="/broker">
             <Button size="lg" className="bg-orange-500 hover:bg-orange-600 text-white font-bold px-10 rounded-2xl">
               Empezar ahora
