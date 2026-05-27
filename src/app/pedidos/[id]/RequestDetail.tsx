@@ -59,6 +59,8 @@ export default function RequestDetail({
   const [closing, setClosing] = useState(false)
   const [closeError, setCloseError] = useState('')
   const [closed, setClosed] = useState(false)
+  const [showCloseModal, setShowCloseModal] = useState(false)
+  const [closeReason, setCloseReason] = useState<'found' | 'not_found' | null>(null)
 
   // Messaging state
   type Msg = { id: string; sender_type: string; content: string; created_at: string; read_at: string | null; broker_id?: string | null; broker_name?: string | null }
@@ -93,21 +95,21 @@ export default function RequestDetail({
     }
   }
 
-  async function handleClose() {
-    if (!confirm('¿Cerrar tu búsqueda? Los brokers ya no podrán verla.')) return
+  async function handleClose(reason: 'found' | 'not_found') {
     setClosing(true)
     setCloseError('')
     try {
       const res = await fetch(`/api/pedidos/${request.id}/close`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ close_token: closeToken }),
+        body: JSON.stringify({ close_token: closeToken, close_reason: reason }),
       })
       if (!res.ok) {
         const data = await res.json()
         setCloseError(data.error || 'Error al cerrar la búsqueda')
         return
       }
+      setShowCloseModal(false)
       setClosed(true)
     } catch {
       setCloseError('Error de conexión')
@@ -570,25 +572,66 @@ export default function RequestDetail({
               {closeError && (
                 <p className="text-xs text-red-600 mb-2">{closeError}</p>
               )}
-              <button
-                onClick={handleClose}
-                disabled={closing}
-                className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
-              >
-                {closing ? (
-                  <><Loader2 className="h-4 w-4 animate-spin" />Cerrando...</>
-                ) : (
-                  <><XCircle className="h-4 w-4" />Cerrar mi búsqueda</>
-                )}
-              </button>
+              {!showCloseModal ? (
+                <button
+                  onClick={() => setShowCloseModal(true)}
+                  className="inline-flex items-center gap-2 text-sm text-red-600 hover:text-red-700 font-medium"
+                >
+                  <XCircle className="h-4 w-4" />Cerrar mi búsqueda
+                </button>
+              ) : (
+                <div className="mt-2 space-y-3">
+                  <p className="text-sm font-semibold text-gray-800">¿Por qué cerrás la búsqueda?</p>
+                  <button
+                    onClick={() => { setCloseReason('found'); handleClose('found') }}
+                    disabled={closing}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all disabled:opacity-50 ${
+                      closeReason === 'found'
+                        ? 'border-green-500 bg-green-50'
+                        : 'border-gray-200 hover:border-green-400 hover:bg-green-50'
+                    }`}
+                  >
+                    <span className="text-2xl">🎉</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">¡Sí, lo conseguí!</p>
+                      <p className="text-xs text-gray-500">Encontré lo que buscaba y lo estoy comprando</p>
+                    </div>
+                    {closing && closeReason === 'found' && <Loader2 className="h-4 w-4 animate-spin ml-auto text-green-600" />}
+                  </button>
+                  <button
+                    onClick={() => { setCloseReason('not_found'); handleClose('not_found') }}
+                    disabled={closing}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border-2 text-left transition-all disabled:opacity-50 ${
+                      closeReason === 'not_found'
+                        ? 'border-gray-400 bg-gray-50'
+                        : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'
+                    }`}
+                  >
+                    <span className="text-2xl">🔕</span>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-800">No, solo quiero cerrarla</p>
+                      <p className="text-xs text-gray-500">Cambié de planes o ya no estoy buscando</p>
+                    </div>
+                    {closing && closeReason === 'not_found' && <Loader2 className="h-4 w-4 animate-spin ml-auto text-gray-500" />}
+                  </button>
+                  <button
+                    onClick={() => setShowCloseModal(false)}
+                    className="text-xs text-gray-400 hover:text-gray-600"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         )}
 
         {closed && (
           <div className="px-6 pb-4 pt-0">
-            <div className="bg-gray-100 rounded-xl p-4 text-center text-sm text-gray-600">
-              ✅ Búsqueda cerrada. Ya no aparece en el feed.
+            <div className={`rounded-xl p-4 text-center text-sm ${closeReason === 'found' ? 'bg-green-50 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
+              {closeReason === 'found'
+                ? '🎉 ¡Felicitaciones! Búsqueda cerrada. Esperamos que hayas encontrado tu lugar ideal.'
+                : '✅ Búsqueda cerrada. Ya no aparece en el feed.'}
             </div>
           </div>
         )}

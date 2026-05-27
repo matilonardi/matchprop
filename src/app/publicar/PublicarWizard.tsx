@@ -39,6 +39,8 @@ interface FormData {
   contact_phone: string
   contact_email: string
   contact_password: string
+  publisher_type: 'particular' | 'inmobiliaria' | ''
+  agency_name: string
   // Property dimensions (optional)
   area_cubierta_min: string
   area_cubierta_max: string
@@ -104,6 +106,8 @@ export default function PublicarWizard() {
     contact_phone: '',
     contact_email: '',
     contact_password: '',
+    publisher_type: '',
+    agency_name: '',
     area_cubierta_min: '',
     area_cubierta_max: '',
     area_terreno_min: '',
@@ -117,6 +121,7 @@ export default function PublicarWizard() {
   })
 
   const progress = ((step - 1) / (STEPS.length - 1)) * 100
+  const isTerrenoOnly = form.property_types.length > 0 && form.property_types.every(t => t === 'terreno')
 
   function toggleArrayItem<T extends string>(arr: T[], item: T): T[] {
     return arr.includes(item) ? arr.filter((x) => x !== item) : [...arr, item]
@@ -126,12 +131,13 @@ export default function PublicarWizard() {
     switch (step) {
       case 1: return form.property_types.length > 0
       case 2: return form.zones.length > 0
-      case 3: return !!form.bedrooms_min
+      case 3: return isTerrenoOnly || !!form.bedrooms_min
       case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
       case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10
       case 6: return !!form.contact_name && !!form.contact_phone &&
         !!form.contact_email && form.contact_email.includes('@') &&
-        form.contact_password.length >= 8 && acceptedTerms
+        form.contact_password.length >= 8 && acceptedTerms &&
+        (form.publisher_type !== 'inmobiliaria' || !!form.agency_name.trim())
       default: return false
     }
   }
@@ -195,6 +201,8 @@ export default function PublicarWizard() {
           terreno_fondo_max: floatOrNull(form.terreno_fondo_max),
           cocheras_min: intOrNull(form.cocheras_min),
           seguridad_tipos: form.seguridad_tipos,
+          publisher_type: form.publisher_type || 'particular',
+          agency_name: form.agency_name || null,
         }),
       })
       if (!res.ok) {
@@ -254,7 +262,7 @@ export default function PublicarWizard() {
       <div className="px-6 pt-6 pb-4 border-b border-gray-100">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-900">
-            Paso {step} de {STEPS.length}: {STEPS[step - 1].title}
+            Paso {step} de {STEPS.length}: {step === 3 && isTerrenoOnly ? 'Superficie' : STEPS[step - 1].title}
           </span>
           <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
         </div>
@@ -337,6 +345,12 @@ export default function PublicarWizard() {
         {/* Step 3: Rooms */}
         {step === 3 && (
           <div className="space-y-6">
+            {isTerrenoOnly && (
+              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
+                <span className="text-green-700 text-sm">🌿 Para terrenos no aplican dormitorios, baños ni cocheras. Completá las medidas si las tenés.</span>
+              </div>
+            )}
+            {!isTerrenoOnly && (<>
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
                 Dormitorios mínimos <span className="text-red-500">*</span>
@@ -432,6 +446,7 @@ export default function PublicarWizard() {
                 ))}
               </div>
             </div>
+            </>)}
 
             {/* Superficie cubierta */}
             <div>
@@ -788,6 +803,47 @@ export default function PublicarWizard() {
               <p className="font-semibold mb-1">📋 Último paso: creá tu cuenta gratis</p>
               <p className="text-orange-700">Así podés ver los mensajes de los brokers y gestionar tus búsquedas.</p>
             </div>
+
+            {/* Publisher type */}
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                ¿Quién publica?
+              </Label>
+              <div className="flex gap-3">
+                {([
+                  { id: 'particular', label: '🙋 Particular' },
+                  { id: 'inmobiliaria', label: '🏢 Inmobiliaria' },
+                ] as const).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setForm((f) => ({ ...f, publisher_type: id, agency_name: id === 'particular' ? '' : f.agency_name }))}
+                    className={`flex-1 py-3 rounded-xl border-2 font-medium text-sm transition-all ${
+                      form.publisher_type === id
+                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Agency name — only if inmobiliaria */}
+            {form.publisher_type === 'inmobiliaria' && (
+              <div>
+                <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Nombre de la inmobiliaria <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  placeholder="Ej: Coelgas, RE/MAX, etc."
+                  value={form.agency_name}
+                  onChange={(e) => setForm((f) => ({ ...f, agency_name: e.target.value }))}
+                />
+              </div>
+            )}
+
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
                 Tu nombre <span className="text-red-500">*</span>

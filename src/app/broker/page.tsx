@@ -83,9 +83,10 @@ export default async function BrokerPage({
                 <p className="font-semibold text-blue-900 mb-3">Precios transparentes</p>
                 <div className="space-y-2 text-sm">
                   {[
-                    { label: '5 créditos', price: 'USD 25', per: 'USD 5 por contacto' },
-                    { label: '20 créditos', price: 'USD 80', per: 'USD 4 por contacto', popular: true },
-                    { label: '50 créditos', price: 'USD 150', per: 'USD 3 por contacto' },
+                    { label: '3 créditos', price: '$80.000', per: '$26.667 por contacto' },
+                    { label: '5 créditos', price: '$100.000', per: '$20.000 por contacto', popular: true },
+                    { label: '10 créditos', price: '$180.000', per: '$18.000 por contacto' },
+                    { label: 'Ilimitado mensual', price: '$350.000', per: 'sin límite' },
                   ].map(({ label, price, per, popular }) => (
                     <div key={label} className="flex items-center justify-between">
                       <span className="text-blue-800">

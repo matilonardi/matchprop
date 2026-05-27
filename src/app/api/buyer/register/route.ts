@@ -47,6 +47,8 @@ export async function POST(request: NextRequest) {
     terreno_fondo_max,
     cocheras_min,
     seguridad_tipos,
+    publisher_type,
+    agency_name,
     // Car-specific
     car_brands,
     car_body_styles,
@@ -155,6 +157,8 @@ export async function POST(request: NextRequest) {
       terreno_fondo_max: terreno_fondo_max || null,
       cocheras_min: cocheras_min || null,
       seguridad_tipos: seguridad_tipos || [],
+      publisher_type: publisher_type || 'particular',
+      agency_name: agency_name || null,
       // Car-specific
       car_brands: car_brands || [],
       car_body_styles: car_body_styles || [],

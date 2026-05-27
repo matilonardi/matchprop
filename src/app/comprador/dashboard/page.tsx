@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { PROPERTY_TYPE_LABELS, CAR_BODY_STYLE_LABELS } from '@/lib/constants'
+import Footer from '@/components/Footer'
+import WhatsAppButton from '@/components/WhatsAppButton'
 
 interface MyRequest {
   id: string
@@ -185,25 +187,41 @@ export default function BuyerDashboard() {
                       <Eye className="h-3.5 w-3.5" />
                       {req.views_count} vista{req.views_count !== 1 ? 's' : ''}
                     </span>
-                    <span className="flex items-center gap-1">
-                      <MessageCircle className="h-3.5 w-3.5" />
-                      {(req.unread_count ?? 0) > 0
-                        ? <span className="text-orange-600 font-medium">{req.unread_count} mensaje{(req.unread_count ?? 0) > 1 ? 's' : ''} sin leer</span>
-                        : 'Sin mensajes nuevos'
-                      }
-                    </span>
+                    {(req.unread_count ?? 0) > 0 ? (
+                      <span className="flex items-center gap-1.5 text-orange-600 font-semibold">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        {req.unread_count} mensaje{(req.unread_count ?? 0) > 1 ? 's' : ''} sin leer
+                        <span className="inline-block w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                      </span>
+                    ) : (
+                      <span className="flex items-center gap-1 text-gray-400">
+                        <MessageCircle className="h-3.5 w-3.5" />
+                        Sin mensajes nuevos
+                      </span>
+                    )}
                   </div>
 
                   <div className="flex items-center gap-2">
                     <Link
                       href={`/pedidos/${req.id}`}
-                      className="inline-flex items-center gap-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors"
+                      className={`inline-flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
+                        (req.unread_count ?? 0) > 0
+                          ? 'bg-orange-500 hover:bg-orange-600 ring-2 ring-orange-300'
+                          : 'bg-orange-500 hover:bg-orange-600'
+                      }`}
                     >
-                      {(req.unread_count ?? 0) > 0 ? '💬 Ver mensajes' : 'Ver mi búsqueda →'}
+                      <MessageCircle className="h-4 w-4" />
+                      {(req.unread_count ?? 0) > 0 ? `Chatear (${req.unread_count} nuevo${(req.unread_count ?? 0) > 1 ? 's' : ''})` : 'Chatear'}
+                    </Link>
+                    <Link
+                      href={`/pedidos/${req.id}`}
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-white border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-lg transition-colors"
+                    >
+                      Ver búsqueda
                     </Link>
                     <Link
                       href={`/pedidos/${req.id}/editar`}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-800 bg-white border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-lg transition-colors"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 bg-white border border-gray-200 hover:border-gray-300 px-3 py-2 rounded-lg transition-colors"
                     >
                       <Pencil className="h-3.5 w-3.5" />
                       Editar
@@ -215,6 +233,8 @@ export default function BuyerDashboard() {
           </div>
         )}
       </div>
+      <Footer />
+      <WhatsAppButton />
     </main>
   )
 }

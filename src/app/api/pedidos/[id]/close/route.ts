@@ -13,7 +13,7 @@ export async function POST(
 ) {
   const { id } = await params
   const body = await request.json()
-  const { close_token } = body
+  const { close_token, close_reason } = body
 
   if (!close_token) {
     return Response.json({ error: 'Token requerido' }, { status: 400 })
@@ -36,7 +36,10 @@ export async function POST(
 
   const { error } = await supabase
     .from('buyer_requests')
-    .update({ status: 'closed' })
+    .update({
+      status: 'closed',
+      close_reason: close_reason || null,
+    })
     .eq('id', id)
     .eq('status', 'active') // Only close active requests
 

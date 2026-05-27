@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS } from '@/lib/constants'
+import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 
 // ---------------------------------------------------------------------------
@@ -412,6 +412,10 @@ export default function PedidosFeed({
     zones: initialZone ? [initialZone] : [] as string[],
     types: initialType ? [initialType] : [] as string[],
     carCondition: '',
+    carBrands: [] as string[],
+    carTransmission: '',
+    carFuels: [] as string[],
+    carKmMax: '',
     financing: initialFinancing,
     minBudget: '',
     maxBudget: initialMaxBudget,
@@ -425,8 +429,10 @@ export default function PedidosFeed({
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false)
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
+  const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
+  const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.carCondition || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent')
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent')
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -442,6 +448,10 @@ export default function PedidosFeed({
     if (filters.zones.length) params.set('zones', filters.zones.join(','))
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
     if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
+    if (activeTab === 'car' && filters.carBrands.length) params.set('carBrands', filters.carBrands.join(','))
+    if (activeTab === 'car' && filters.carTransmission) params.set('carTransmission', filters.carTransmission)
+    if (activeTab === 'car' && filters.carFuels.length) params.set('carFuels', filters.carFuels.join(','))
+    if (activeTab === 'car' && filters.carKmMax) params.set('carKmMax', filters.carKmMax)
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.minBudget) params.set('minBudget', filters.minBudget)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
@@ -508,7 +518,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
+              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
               setZoneDropdownOpen(false)
               setTypeDropdownOpen(false)
               setDateDropdownOpen(false)
@@ -621,8 +631,9 @@ export default function PedidosFeed({
               </>
             )}
           </div>
-        ) : (
-          <div className="shrink-0 w-48">
+        ) : (<>
+          {/* Condición */}
+          <div className="shrink-0 w-44">
             <Select value={filters.carCondition || 'todos'} onValueChange={(v) => handleFilterChange('carCondition', v)}>
               <SelectTrigger className={`${pillBase} ${filters.carCondition ? pillActive : pillInactive} px-4`}>
                 <span className="flex items-center gap-1 truncate text-left">
@@ -637,7 +648,111 @@ export default function PedidosFeed({
               </SelectContent>
             </Select>
           </div>
-        )}
+
+          {/* Marca — multi-select dropdown */}
+          <div className="shrink-0 relative">
+            <button
+              onClick={() => { setCarBrandDropdownOpen(v => !v); setCarFuelDropdownOpen(false); setZoneDropdownOpen(false); setDateDropdownOpen(false); setSortDropdownOpen(false) }}
+              className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.carBrands.length ? pillActive : pillInactive}`}
+            >
+              <span className="font-medium">🏷️ Marca:</span>
+              {filters.carBrands.length === 0 ? 'todas' : filters.carBrands.length === 1 ? filters.carBrands[0] : `${filters.carBrands.length} marcas`}
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+            </button>
+            {carBrandDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setCarBrandDropdownOpen(false)} />
+                <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-48 py-2 max-h-64 overflow-y-auto">
+                  {CAR_BRANDS.map((brand) => (
+                    <label key={brand} className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${filters.carBrands.includes(brand) ? 'bg-orange-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={filters.carBrands.includes(brand)}
+                        onChange={() => {
+                          setFilters(f => ({ ...f, carBrands: f.carBrands.includes(brand) ? f.carBrands.filter(x => x !== brand) : [...f.carBrands, brand] }))
+                          setPage(1)
+                        }}
+                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                      />
+                      {brand}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* Transmisión */}
+          <div className="shrink-0 w-44">
+            <Select value={filters.carTransmission || 'todos'} onValueChange={(v) => handleFilterChange('carTransmission', v)}>
+              <SelectTrigger className={`${pillBase} ${filters.carTransmission ? pillActive : pillInactive} px-4`}>
+                <span className="flex items-center gap-1 truncate text-left">
+                  <span className="shrink-0 font-medium">⚙️ Caja:</span>
+                  <span className="truncate">{filters.carTransmission === 'manual' ? 'Manual' : filters.carTransmission === 'automatico' ? 'Auto.' : 'todas'}</span>
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Cualquier caja</SelectItem>
+                {CAR_TRANSMISSION_OPTIONS.filter(o => o.id !== 'cualquiera').map(o => (
+                  <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Combustible — multi-select dropdown */}
+          <div className="shrink-0 relative">
+            <button
+              onClick={() => { setCarFuelDropdownOpen(v => !v); setCarBrandDropdownOpen(false); setZoneDropdownOpen(false); setDateDropdownOpen(false); setSortDropdownOpen(false) }}
+              className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.carFuels.length ? pillActive : pillInactive}`}
+            >
+              <span className="font-medium">⛽ Combustible:</span>
+              {filters.carFuels.length === 0 ? 'todos' : filters.carFuels.length === 1 ? CAR_FUEL_TYPES.find(f => f.id === filters.carFuels[0])?.label || filters.carFuels[0] : `${filters.carFuels.length} tipos`}
+              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+            </button>
+            {carFuelDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setCarFuelDropdownOpen(false)} />
+                <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-44 py-2">
+                  {CAR_FUEL_TYPES.map(({ id, label }) => (
+                    <label key={id} className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${filters.carFuels.includes(id) ? 'bg-orange-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={filters.carFuels.includes(id)}
+                        onChange={() => {
+                          setFilters(f => ({ ...f, carFuels: f.carFuels.includes(id) ? f.carFuels.filter(x => x !== id) : [...f.carFuels, id] }))
+                          setPage(1)
+                        }}
+                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* KM máximos — solo para usados */}
+          {(filters.carCondition === 'usado' || !filters.carCondition) && (
+            <div
+              className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.carKmMax ? pillActive : pillInactive}`}
+              style={{ width: '12rem' }}
+            >
+              <span className="shrink-0 font-medium">🔢 KM máx:</span>
+              <input
+                type="number"
+                min="0"
+                step="10000"
+                placeholder="libre"
+                value={filters.carKmMax || ''}
+                onChange={(e) => { setFilters(f => ({ ...f, carKmMax: e.target.value || '' })); setPage(1) }}
+                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+                className="w-full min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+            </div>
+          )}
+        </>)}
 
         {/* Presupuesto Desde */}
         <div
@@ -806,7 +921,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], types: [], carCondition: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
+              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
               setPage(1)
             }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"

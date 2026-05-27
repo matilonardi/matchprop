@@ -22,6 +22,12 @@ export async function GET(request: NextRequest) {
   const sort = searchParams.get('sort') || 'recent' // 'recent' | 'oldest' | 'budget_asc' | 'budget_desc'
   const requestType = searchParams.get('requestType') // 'property' | 'car'
   const condition = searchParams.get('condition') // car condition filter
+  const carBrandsParam = searchParams.get('carBrands')
+  const carBrands = carBrandsParam ? carBrandsParam.split(',').filter(Boolean) : []
+  const carTransmission = searchParams.get('carTransmission')
+  const carFuelsParam = searchParams.get('carFuels')
+  const carFuels = carFuelsParam ? carFuelsParam.split(',').filter(Boolean) : []
+  const carKmMax = searchParams.get('carKmMax')
   const page = parseInt(searchParams.get('page') || '1')
   const limit = 20
 
@@ -50,6 +56,10 @@ export async function GET(request: NextRequest) {
   else if (zones.length > 1) query = query.overlaps('zones', zones)
   if (types.length && requestType !== 'car') query = query.overlaps('property_types', types)
   if (condition && requestType === 'car') query = query.eq('car_condition', condition)
+  if (carBrands.length && requestType === 'car') query = query.overlaps('car_brands', carBrands)
+  if (carTransmission && requestType === 'car') query = query.eq('car_transmission', carTransmission)
+  if (carFuels.length && requestType === 'car') query = query.overlaps('car_fuel_types', carFuels)
+  if (carKmMax && requestType === 'car') query = query.lte('car_km_max', parseInt(carKmMax))
   if (since) {
     const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }
     const days = sinceMap[since]
