@@ -94,23 +94,33 @@ export async function GET(
       .eq('sender_type', 'broker')
       .is('read_at', null)
   } else {
-    // Must be authenticated broker
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) return Response.json({ error: 'No autorizado' }, { status: 401 })
+    // Broker auth: accept broker_user_id as query param (client-side) or session cookie
+    const brokerUserId = request.nextUrl.searchParams.get('broker_user_id')
 
-    const { data: broker } = await supabase
-      .from('broker_profiles')
-      .select('id')
-      .eq('user_id', user.id)
-      .single()
+    let resolvedBrokerId: string | null = null
 
-    if (!broker) return Response.json({ error: 'No autorizado' }, { status: 401 })
+    if (brokerUserId) {
+      // Passed explicitly by the client (avoids session-cookie dependency)
+      const { data: bp } = await supabase
+        .from('broker_profiles').select('id').eq('user_id', brokerUserId).single()
+      resolvedBrokerId = bp?.id ?? null
+    } else {
+      // Fallback: session cookie (works in SSR contexts)
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: bp } = await supabase
+          .from('broker_profiles').select('id').eq('user_id', user.id).single()
+        resolvedBrokerId = bp?.id ?? null
+      }
+    }
+
+    if (!resolvedBrokerId) return Response.json({ error: 'No autorizado' }, { status: 401 })
 
     // Verify they've unlocked this request
     const { data: purchase } = await supabase
       .from('lead_purchases')
       .select('id')
-      .eq('broker_id', broker.id)
+      .eq('broker_id', resolvedBrokerId)
       .eq('request_id', requestId)
       .single()
 
@@ -121,7 +131,7 @@ export async function GET(
       .from('messages')
       .update({ read_at: new Date().toISOString() })
       .eq('request_id', requestId)
-      .eq('broker_id', broker.id)
+      .eq('broker_id', resolvedBrokerId)
       .eq('sender_type', 'buyer')
       .is('read_at', null)
   }
@@ -136,12 +146,22 @@ export async function GET(
   // When fetched by buyer (closeToken), return all messages
   // When fetched by broker, filter to their conversation only
   if (!closeToken) {
-    // broker view — get broker id from auth (already verified above)
-    const { data: { user } } = await supabase.auth.getUser()
-    const { data: brokerProfile } = await supabase
-      .from('broker_profiles').select('id').eq('user_id', user!.id).single()
-    if (brokerProfile) {
-      msgsQuery = msgsQuery.eq('broker_id', brokerProfile.id) as typeof msgsQuery
+    const brokerUserId = request.nextUrl.searchParams.get('broker_user_id')
+    let brokerId: string | null = null
+    if (brokerUserId) {
+      const { data: bp } = await supabase
+        .from('broker_profiles').select('id').eq('user_id', brokerUserId).single()
+      brokerId = bp?.id ?? null
+    } else {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: bp } = await supabase
+          .from('broker_profiles').select('id').eq('user_id', user.id).single()
+        brokerId = bp?.id ?? null
+      }
+    }
+    if (brokerId) {
+      msgsQuery = msgsQuery.eq('broker_id', brokerId) as typeof msgsQuery
     }
   }
 

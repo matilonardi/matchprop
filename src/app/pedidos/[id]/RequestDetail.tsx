@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
@@ -65,6 +65,7 @@ export default function RequestDetail({
   // Messaging state
   type Msg = { id: string; sender_type: string; content: string; created_at: string; read_at: string | null; broker_id?: string | null; broker_name?: string | null }
   const [messages, setMessages] = useState<Msg[]>([])
+  const chatBottomRef = useRef<HTMLDivElement>(null)
   const [msgText, setMsgText] = useState('') // broker compose
   const [replyTexts, setReplyTexts] = useState<Record<string, string>>({}) // buyer compose per broker
   const [replyingToBrokerId, setReplyingToBrokerId] = useState<string | null>(null)
@@ -120,9 +121,14 @@ export default function RequestDetail({
 
   async function loadMessages() {
     try {
-      const url = closeToken
-        ? `/api/pedidos/${request.id}/messages?close_token=${closeToken}`
-        : `/api/pedidos/${request.id}/messages`
+      let url: string
+      if (closeToken) {
+        url = `/api/pedidos/${request.id}/messages?close_token=${closeToken}`
+      } else if (userId) {
+        url = `/api/pedidos/${request.id}/messages?broker_user_id=${userId}`
+      } else {
+        return
+      }
       const res = await fetch(url)
       if (res.ok) {
         const data = await res.json()
@@ -138,21 +144,40 @@ export default function RequestDetail({
     if (!msgText.trim()) return
     setSendingMsg(true)
     setMsgError('')
+    const textToSend = msgText
+    setMsgText('') // clear input immediately
+
+    // Optimistic update — show the message right away so user gets instant feedback
+    const optimisticId = `optimistic-${Date.now()}`
+    const optimisticMsg: Msg = {
+      id: optimisticId,
+      sender_type: 'broker',
+      content: textToSend,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    }
+    setMessages(prev => [...prev, optimisticMsg])
+
     try {
       const res = await fetch(`/api/pedidos/${request.id}/messages`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: msgText, broker_user_id: userId }),
+        body: JSON.stringify({ content: textToSend, broker_user_id: userId }),
       })
       if (!res.ok) {
         const data = await res.json()
         setMsgError(data.error || 'Error al enviar')
+        // Roll back optimistic message and restore text
+        setMessages(prev => prev.filter(m => m.id !== optimisticId))
+        setMsgText(textToSend)
         return
       }
-      setMsgText('')
+      // Replace optimistic message with server-confirmed data
       await loadMessages()
     } catch {
       setMsgError('Error de conexión')
+      setMessages(prev => prev.filter(m => m.id !== optimisticId))
+      setMsgText(textToSend)
     } finally {
       setSendingMsg(false)
     }
@@ -185,6 +210,11 @@ export default function RequestDetail({
       setReplyingToBrokerId(null)
     }
   }
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
 
   // Load messages for buyer (close_token in URL) on mount
   useEffect(() => {
@@ -695,13 +725,15 @@ export default function RequestDetail({
                                   : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                               }`}>
                                 <p>{msg.content}</p>
-                                <p className={`text-xs mt-1 ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
+                                <p className={`text-xs mt-1 flex items-center gap-1 ${isMine ? 'text-orange-200 justify-end' : 'text-gray-400'}`}>
                                   {timeAgo(msg.created_at)}
+                                  {isMine && <span title="Enviado">✓</span>}
                                 </p>
                               </div>
                             </div>
                           )
                         })}
+                        <div ref={chatBottomRef} />
                       </div>
                       {/* Reply box */}
                       <div className="p-3 bg-gray-50 border-t border-gray-100">
@@ -818,22 +850,25 @@ export default function RequestDetail({
                       ) : (
                         messages.map((msg) => {
                           const isMine = msg.sender_type === 'broker'
+                          const isOptimistic = msg.id.startsWith('optimistic-')
                           return (
                             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
+                              <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed transition-opacity ${
                                 isMine
                                   ? 'bg-orange-500 text-white rounded-br-sm'
                                   : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
-                              }`}>
+                              } ${isOptimistic ? 'opacity-70' : 'opacity-100'}`}>
                                 <p>{msg.content}</p>
-                                <p className={`text-xs mt-1 ${isMine ? 'text-orange-200' : 'text-gray-400'}`}>
-                                  {timeAgo(msg.created_at)}
+                                <p className={`text-xs mt-1 flex items-center gap-1 ${isMine ? 'text-orange-200 justify-end' : 'text-gray-400'}`}>
+                                  {isOptimistic ? 'Enviando…' : timeAgo(msg.created_at)}
+                                  {isMine && !isOptimistic && <span title="Enviado">✓</span>}
                                 </p>
                               </div>
                             </div>
                           )
                         })
                       )}
+                      <div ref={chatBottomRef} />
                     </div>
                     <div className="p-3 bg-white border-t border-gray-100">
                       {msgError && (
