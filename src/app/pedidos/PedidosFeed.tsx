@@ -550,8 +550,8 @@ export default function PedidosFeed({
           </button>
           {zoneDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setZoneDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
+              <div className="fixed inset-0 z-40" onClick={() => setZoneDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
                 <div className="px-3 pt-2.5 pb-1.5 border-b border-gray-100">
                   <input
                     type="text"
@@ -616,8 +616,8 @@ export default function PedidosFeed({
             </button>
             {typeDropdownOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setTypeDropdownOpen(false)} />
-                <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-52">
+                <div className="fixed inset-0 z-40" onClick={() => setTypeDropdownOpen(false)} />
+                <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-52">
                   {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
                     <label key={k} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm">
                       <input
@@ -663,8 +663,8 @@ export default function PedidosFeed({
             </button>
             {carBrandDropdownOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setCarBrandDropdownOpen(false)} />
-                <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-48 py-2 max-h-64 overflow-y-auto">
+                <div className="fixed inset-0 z-40" onClick={() => setCarBrandDropdownOpen(false)} />
+                <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-48 py-2 max-h-64 overflow-y-auto">
                   {CAR_BRANDS.map((brand) => (
                     <label key={brand} className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${filters.carBrands.includes(brand) ? 'bg-orange-50' : ''}`}>
                       <input
@@ -714,8 +714,8 @@ export default function PedidosFeed({
             </button>
             {carFuelDropdownOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setCarFuelDropdownOpen(false)} />
-                <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-44 py-2">
+                <div className="fixed inset-0 z-40" onClick={() => setCarFuelDropdownOpen(false)} />
+                <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-44 py-2">
                   {CAR_FUEL_TYPES.map(({ id, label }) => (
                     <label key={id} className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${filters.carFuels.includes(id) ? 'bg-orange-50' : ''}`}>
                       <input
@@ -841,8 +841,8 @@ export default function PedidosFeed({
           </button>
           {dateDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setDateDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-3">
+              <div className="fixed inset-0 z-40" onClick={() => setDateDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-3">
                 {/* Presets */}
                 <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rápido</p>
                 <div className="grid grid-cols-2 gap-1.5 mb-3">
@@ -904,8 +904,8 @@ export default function PedidosFeed({
           </button>
           {sortDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-10" onClick={() => setSortDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg w-52 py-1">
+              <div className="fixed inset-0 z-40" onClick={() => setSortDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-52 py-1">
                 {SORT_OPTIONS.map(opt => (
                   <button
                     key={opt.id}
