@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin, MessageCircle } from 'lucide-react'
+import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin, MessageCircle, FileSearch } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
@@ -32,6 +32,9 @@ interface Lead {
     contact_name: string
     contact_phone: string
     contact_email?: string
+    bedrooms_min?: number | null
+    bedrooms_max?: number | null
+    description?: string | null
   } | null
 }
 
@@ -233,6 +236,7 @@ export default function BrokerDashboard() {
                     const typeLabel = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t).join(' / ')
                     return (
                       <div key={lead.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
+                        {/* Contact header */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{req.contact_name}</p>
@@ -243,11 +247,34 @@ export default function BrokerDashboard() {
                               <p className="text-xs text-gray-400">{req.contact_email}</p>
                             )}
                           </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-xs text-gray-500">{typeLabel}</p>
-                            <p className="text-xs text-gray-500">{req.zones[0]}</p>
-                            <p className="text-xs font-medium text-gray-700">USD {req.budget_usd.toLocaleString()}</p>
-                          </div>
+                          <span className="text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-lg px-2 py-1 shrink-0">
+                            USD {req.budget_usd.toLocaleString()}
+                          </span>
+                        </div>
+
+                        {/* Search summary */}
+                        <div className="mt-2 p-2 bg-white border border-gray-100 rounded-lg space-y-1">
+                          <p className="text-xs text-gray-500">
+                            <span className="font-medium text-gray-700">{typeLabel}</span>
+                            {(req.bedrooms_min || req.bedrooms_max) && (
+                              <span className="ml-1 text-gray-400">
+                                · {req.bedrooms_min === req.bedrooms_max
+                                  ? `${req.bedrooms_min} dorm.`
+                                  : req.bedrooms_min && req.bedrooms_max
+                                    ? `${req.bedrooms_min}–${req.bedrooms_max} dorm.`
+                                    : req.bedrooms_min ? `+${req.bedrooms_min} dorm.` : `hasta ${req.bedrooms_max} dorm.`}
+                              </span>
+                            )}
+                          </p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1">
+                            <MapPin className="h-3 w-3 shrink-0 text-gray-400" />
+                            {req.zones.join(', ')}
+                          </p>
+                          {req.description && (
+                            <p className="text-xs text-gray-400 italic line-clamp-2">
+                              "{req.description}"
+                            </p>
+                          )}
                         </div>
 
                         {/* Actions row */}
@@ -263,6 +290,14 @@ export default function BrokerDashboard() {
 
                           <Link
                             href={`/pedidos/${lead.request_id}`}
+                            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 hover:underline font-medium"
+                          >
+                            <FileSearch className="h-3 w-3" />
+                            Ver búsqueda
+                          </Link>
+
+                          <Link
+                            href={`/pedidos/${lead.request_id}#mensajes`}
                             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
                           >
                             <MessageCircle className="h-3 w-3" />

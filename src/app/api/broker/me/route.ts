@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     const [{ data: requestsData }, { data: messagesData }] = await Promise.all([
       supabase
         .from('buyer_requests')
-        .select('id, property_types, zones, budget_usd, contact_name, contact_phone, contact_email')
+        .select('id, property_types, zones, budget_usd, contact_name, contact_phone, contact_email, bedrooms_min, bedrooms_max, description')
         .in('id', requestIds),
       supabase
         .from('messages')
