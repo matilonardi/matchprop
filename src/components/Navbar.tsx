@@ -10,18 +10,38 @@ import type { User } from '@supabase/supabase-js'
 export default function Navbar() {
   const [open, setOpen] = useState(false)
   const [user, setUser] = useState<User | null>(null)
+  // 'broker' | 'buyer' | null — resolved from DB, not user_metadata
+  const [userRole, setUserRole] = useState<'broker' | 'buyer' | null>(null)
+
+  async function resolveRole(uid: string) {
+    // Broker profile takes priority — if it exists, the user is a broker
+    const { data: brokerProfile } = await supabase
+      .from('broker_profiles')
+      .select('id')
+      .eq('user_id', uid)
+      .maybeSingle()
+    setUserRole(brokerProfile ? 'broker' : 'buyer')
+  }
 
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getUser().then(({ data }) => setUser(data.user))
+    supabase.auth.getUser().then(({ data }) => {
+      setUser(data.user)
+      if (data.user) resolveRole(data.user.id)
+    })
 
-    // Listen for auth changes (login / logout)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null)
+      if (session?.user) {
+        resolveRole(session.user.id)
+      } else {
+        setUserRole(null)
+      }
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const dashboardHref = userRole === 'broker' ? '/broker/dashboard' : '/comprador/dashboard'
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
@@ -39,9 +59,9 @@ export default function Navbar() {
             </Link>
 
             {user ? (
-              // Logged in: route to buyer or broker dashboard based on role
+              // Logged in: route determined by DB profile lookup, not user_metadata
               <Link
-                href={user.user_metadata?.role === 'buyer' ? '/comprador/dashboard' : '/broker/dashboard'}
+                href={dashboardHref}
                 className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
               >
                 <LayoutDashboard className="h-4 w-4" />
@@ -85,7 +105,7 @@ export default function Navbar() {
           </Link>
           {user ? (
             <Link
-              href={user.user_metadata?.role === 'buyer' ? '/comprador/dashboard' : '/broker/dashboard'}
+              href={dashboardHref}
               className="text-sm font-semibold text-orange-500"
               onClick={() => setOpen(false)}
             >
