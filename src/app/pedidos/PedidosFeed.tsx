@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
+import { buildZonaPropUrl } from '@/lib/zonaprop'
 
 // ---------------------------------------------------------------------------
 // Car extra fields (not in PublicBuyerRequest type yet)
@@ -164,16 +166,15 @@ function urgencyLabel(urgency?: string): string {
 // Cards
 // ---------------------------------------------------------------------------
 function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolean }) {
+  const router = useRouter()
   const primaryType = req.property_types[0]
   const { gradient, emoji } = TYPE_CONFIG[primaryType] || { gradient: 'from-blue-400 to-blue-600', emoji: '🏠' }
   const typeLabels = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
 
   return (
-    <Link
-      href={isDemo ? '#' : `/pedidos/${req.id}`}
-      onClick={isDemo ? (e) => e.preventDefault() : undefined}
-    >
-      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
+      <article
+        onClick={() => { if (!isDemo) router.push(`/pedidos/${req.id}`) }}
+        className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
 
         {/* Visual header */}
         <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
@@ -270,7 +271,7 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
           )}
 
           {/* CTA */}
-          <div className="mt-auto pt-1">
+          <div className="mt-auto pt-1 flex flex-col gap-2">
             <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
               isDemo
                 ? 'bg-gray-100 text-gray-400'
@@ -279,10 +280,22 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
               <Lock className="h-3.5 w-3.5" />
               {isDemo ? 'Contacto oculto · ejemplo' : 'Ver contacto · 1 crédito'}
             </div>
+
+            {/* ZonaProp search link */}
+            {!isDemo && (
+              <a
+                href={buildZonaPropUrl(req)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-100 transition-colors"
+              >
+                🔍 Buscar oferta en ZonaProp
+              </a>
+            )}
           </div>
         </div>
       </article>
-    </Link>
   )
 }
 
