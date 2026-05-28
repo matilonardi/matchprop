@@ -805,29 +805,24 @@ export default function PublicarWizard() {
             </div>
 
             {/* Publisher type */}
-            <div>
-              <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                ¿Quién publica?
-              </Label>
-              <div className="flex gap-3">
-                {([
-                  { id: 'particular', label: '🙋 Particular' },
-                  { id: 'inmobiliaria', label: '🏢 Inmobiliaria' },
-                ] as const).map(({ id, label }) => (
-                  <button
-                    key={id}
-                    type="button"
-                    onClick={() => setForm((f) => ({ ...f, publisher_type: id, agency_name: id === 'particular' ? '' : f.agency_name }))}
-                    className={`flex-1 py-3 rounded-xl border-2 font-medium text-sm transition-all ${
-                      form.publisher_type === id
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
-                        : 'border-gray-200 text-gray-700 hover:border-gray-300'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+            <div className="flex gap-3">
+              {([
+                { id: 'particular', label: '🙋 Soy Particular' },
+                { id: 'inmobiliaria', label: '🏢 Soy Inmobiliaria' },
+              ] as const).map(({ id, label }) => (
+                <button
+                  key={id}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, publisher_type: id, agency_name: id === 'particular' ? '' : f.agency_name }))}
+                  className={`flex-1 py-3 rounded-xl border-2 font-medium text-sm transition-all ${
+                    form.publisher_type === id
+                      ? 'border-orange-500 bg-orange-50 text-orange-600'
+                      : 'border-gray-200 text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
 
             {/* Agency name — only if inmobiliaria */}
