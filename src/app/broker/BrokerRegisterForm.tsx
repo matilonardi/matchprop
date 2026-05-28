@@ -10,6 +10,14 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { ZONES_CORDOBA } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 
+type Specialty = 'propiedades' | 'vehiculos' | 'ambos'
+
+const SPECIALTIES: { value: Specialty; label: string; sublabel: string; icon: string }[] = [
+  { value: 'propiedades', label: 'Propiedades',  sublabel: 'Casas, deptos, terrenos', icon: '🏠' },
+  { value: 'vehiculos',   label: 'Vehículos',    sublabel: 'Autos, motos, camiones', icon: '🚗' },
+  { value: 'ambos',       label: 'Ambos',         sublabel: 'Todo tipo de activos',   icon: '✨' },
+]
+
 export default function BrokerRegisterForm() {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
@@ -18,6 +26,7 @@ export default function BrokerRegisterForm() {
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [zoneSearch, setZoneSearch] = useState('')
   const [showZones, setShowZones] = useState(false)
+  const [specialty, setSpecialty] = useState<Specialty>('propiedades')
 
   const [form, setForm] = useState({
     name: '',
@@ -49,7 +58,7 @@ export default function BrokerRegisterForm() {
       const res = await fetch('/api/broker/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, zones: selectedZones }),
+        body: JSON.stringify({ ...form, zones: selectedZones, specialty }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -119,6 +128,31 @@ export default function BrokerRegisterForm() {
           minLength={8}
           required
         />
+      </div>
+
+      {/* Specialty selector */}
+      <div>
+        <Label className="text-sm mb-2 block">¿En qué te especializás? *</Label>
+        <div className="grid grid-cols-3 gap-2">
+          {SPECIALTIES.map(({ value, label, sublabel, icon }) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setSpecialty(value)}
+              className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-center transition-all duration-150 ${
+                specialty === value
+                  ? 'border-orange-400 bg-orange-50 shadow-sm'
+                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+              }`}
+            >
+              <span className="text-2xl leading-none">{icon}</span>
+              <span className={`text-sm font-semibold leading-tight ${specialty === value ? 'text-orange-700' : 'text-gray-800'}`}>
+                {label}
+              </span>
+              <span className="text-[10px] leading-tight text-gray-400">{sublabel}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Zone selector */}

@@ -15,12 +15,20 @@ export default function BrokerLoginForm() {
   const [password, setPassword] = useState('')
 
   // "Complete profile" state — shown when auth succeeds but no broker_profile exists
+  type Specialty = 'propiedades' | 'vehiculos' | 'ambos'
+  const SPECIALTIES: { value: Specialty; label: string; sublabel: string; icon: string }[] = [
+    { value: 'propiedades', label: 'Propiedades',  sublabel: 'Casas, deptos, terrenos', icon: '🏠' },
+    { value: 'vehiculos',   label: 'Vehículos',    sublabel: 'Autos, motos, camiones', icon: '🚗' },
+    { value: 'ambos',       label: 'Ambos',         sublabel: 'Todo tipo de activos',   icon: '✨' },
+  ]
+
   const [needsProfile, setNeedsProfile] = useState(false)
   const [pendingUserId, setPendingUserId] = useState('')
   const [profileName, setProfileName] = useState('')
   const [profileAgency, setProfileAgency] = useState('')
   const [profilePhone, setProfilePhone] = useState('')
   const [profileZones, setProfileZones] = useState<string[]>([])
+  const [profileSpecialty, setProfileSpecialty] = useState<Specialty>('propiedades')
   const [zonesOpen, setZonesOpen] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
@@ -67,6 +75,7 @@ export default function BrokerLoginForm() {
           agency_name: profileAgency.trim() || null,
           phone: profilePhone.trim(),
           zones: profileZones,
+          specialty: profileSpecialty,
           skipAuthCreate: true, // signal to API to skip creating auth user
         }),
       })
@@ -124,6 +133,30 @@ export default function BrokerLoginForm() {
             onChange={(e) => setProfilePhone(e.target.value)}
             placeholder="+54 9 351 xxx xxxx"
           />
+        </div>
+
+        <div>
+          <Label className="text-sm mb-2 block">¿En qué te especializás? *</Label>
+          <div className="grid grid-cols-3 gap-2">
+            {SPECIALTIES.map(({ value, label, sublabel, icon }) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setProfileSpecialty(value)}
+                className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-center transition-all duration-150 ${
+                  profileSpecialty === value
+                    ? 'border-orange-400 bg-orange-50 shadow-sm'
+                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                <span className="text-2xl leading-none">{icon}</span>
+                <span className={`text-sm font-semibold leading-tight ${profileSpecialty === value ? 'text-orange-700' : 'text-gray-800'}`}>
+                  {label}
+                </span>
+                <span className="text-[10px] leading-tight text-gray-400">{sublabel}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div>

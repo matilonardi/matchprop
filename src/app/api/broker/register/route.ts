@@ -4,7 +4,7 @@ import { Resend } from 'resend'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
-  const { name, agency_name, phone, email, password, zones, userId: existingUserId, skipAuthCreate } = body
+  const { name, agency_name, phone, email, password, zones, userId: existingUserId, skipAuthCreate, specialty } = body
 
   // skipAuthCreate = true when login succeeded but profile was missing
   if (skipAuthCreate) {
@@ -20,6 +20,7 @@ export async function POST(request: NextRequest) {
       email,
       zones,
       credits: 2,
+      specialty: specialty || 'propiedades',
     })
     if (profileError) {
       return Response.json({ error: profileError.message }, { status: 500 })
@@ -67,6 +68,7 @@ export async function POST(request: NextRequest) {
     email,
     zones,
     credits: 2,
+    specialty: specialty || 'propiedades',
   })
 
   if (profileError) {
