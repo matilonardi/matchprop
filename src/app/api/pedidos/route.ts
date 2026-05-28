@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
   const carFuelsParam = searchParams.get('carFuels')
   const carFuels = carFuelsParam ? carFuelsParam.split(',').filter(Boolean) : []
   const carKmMax = searchParams.get('carKmMax')
+  const publisherType = searchParams.get('publisherType') // 'particular' | 'inmobiliaria'
   const page = parseInt(searchParams.get('page') || '1')
   const limit = 20
 
@@ -36,7 +37,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission',
+      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
       { count: 'exact' }
     )
     .eq('status', 'active')
@@ -60,6 +61,7 @@ export async function GET(request: NextRequest) {
   if (carTransmission && requestType === 'car') query = query.eq('car_transmission', carTransmission)
   if (carFuels.length && requestType === 'car') query = query.overlaps('car_fuel_types', carFuels)
   if (carKmMax && requestType === 'car') query = query.lte('car_km_max', parseInt(carKmMax))
+  if (publisherType) query = query.eq('publisher_type', publisherType)
   if (since) {
     const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }
     const days = sinceMap[since]

@@ -44,6 +44,8 @@ export interface BuyerRequest {
   car_km_max?: number
   car_fuel_types?: string[]
   car_transmission?: string
+  publisher_type?: 'particular' | 'inmobiliaria'
+  agency_name?: string | null
   contact_name: string
   contact_phone: string
   contact_email?: string

@@ -326,11 +326,20 @@ export default function RequestDetail({
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
                 <h1 className="text-2xl font-bold text-gray-900">
                   {typeLabels.join(' / ')}
                 </h1>
                 <Badge className="bg-green-100 text-green-700 border-0">Activa</Badge>
+                {request.publisher_type === 'inmobiliaria' ? (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
+                    🏢 Inmobiliaria{request.agency_name ? ` · ${request.agency_name}` : ''}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">
+                    🙋 Particular
+                  </span>
+                )}
               </div>
               <div className="mt-2">
                 <p className="text-xs text-gray-400 mb-1.5 flex items-center gap-1">

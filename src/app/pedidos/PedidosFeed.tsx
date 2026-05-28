@@ -424,6 +424,7 @@ export default function PedidosFeed({
     dateFrom: '',
     dateTo: '',
     sort: 'recent',
+    publisherType: '',
   })
   const [zoneSearch, setZoneSearch] = useState('')
   const [zoneDropdownOpen, setZoneDropdownOpen] = useState(false)
@@ -433,7 +434,7 @@ export default function PedidosFeed({
   const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
   const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent')
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -460,6 +461,7 @@ export default function PedidosFeed({
     if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
     if (filters.dateTo) params.set('dateTo', filters.dateTo)
     if (filters.sort && filters.sort !== 'recent') params.set('sort', filters.sort)
+    if (filters.publisherType) params.set('publisherType', filters.publisherType)
 
     try {
       const res = await fetch(`/api/pedidos?${params}`)
@@ -520,7 +522,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
+              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
               setZoneDropdownOpen(false)
               setTypeDropdownOpen(false)
               setDateDropdownOpen(false)
@@ -823,6 +825,29 @@ export default function PedidosFeed({
           </div>
         )}
 
+        {/* Quién publica (solo propiedades) */}
+        {activeTab === 'property' && (
+          <div className="shrink-0">
+            <Select value={filters.publisherType || 'todos'} onValueChange={(v) => handleFilterChange('publisherType', v === 'todos' ? '' : v)}>
+              <SelectTrigger className={`${pillBase} ${filters.publisherType ? pillActive : pillInactive} px-4`}>
+                <span className="flex items-center gap-1 truncate text-left">
+                  <span className="shrink-0 font-medium">👤 Publica:</span>
+                  <span className="truncate">{
+                    filters.publisherType === 'particular' ? 'Particular'
+                    : filters.publisherType === 'inmobiliaria' ? 'Inmobiliaria'
+                    : 'cualquiera'
+                  }</span>
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Cualquiera</SelectItem>
+                <SelectItem value="particular">🙋 Particular</SelectItem>
+                <SelectItem value="inmobiliaria">🏢 Inmobiliaria</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Fecha — presets + rango personalizado */}
         <div className="shrink-0 relative">
           <button
@@ -923,7 +948,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent' })
+              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
               setPage(1)
             }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
