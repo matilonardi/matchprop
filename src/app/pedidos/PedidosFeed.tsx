@@ -536,7 +536,7 @@ export default function PedidosFeed({
       </div>
 
       {/* Filter bar */}
-      <div key={activeTab} className="animate-tab-fade flex items-center gap-2 flex-wrap mb-6">
+      <div key={activeTab} className="animate-tab-fade relative z-10 flex items-center gap-2 flex-wrap mb-6">
 
         {/* Zona — multi-select */}
         <div className="shrink-0 relative">
@@ -955,7 +955,7 @@ export default function PedidosFeed({
 
       {/* Grid */}
       {loading ? (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="relative isolate grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {Array.from({ length: 6 }).map((_, i) => (
             <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse shadow-sm">
               <div className="h-44 bg-gray-200" />
@@ -979,7 +979,7 @@ export default function PedidosFeed({
           <p className="text-sm text-gray-500">Probá con otros criterios o eliminá los filtros</p>
         </div>
       ) : (
-        <div key={gridKey} className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div key={gridKey} className="relative isolate grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {requests.map((req, i) => (
             <div
               key={req.id}
