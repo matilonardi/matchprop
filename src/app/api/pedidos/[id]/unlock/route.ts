@@ -22,6 +22,46 @@ function checkIpLimit(ip: string): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// GET — check if broker already unlocked this request (no credit deducted)
+// ---------------------------------------------------------------------------
+export async function GET(
+  request: NextRequest,
+  props: { params: Promise<{ id: string }> }
+) {
+  const { id: requestId } = await props.params
+  const brokerUserId = request.nextUrl.searchParams.get('broker_user_id')
+
+  if (!brokerUserId) return Response.json({ unlocked: false })
+
+  const supabase = createServerClient()
+
+  const { data: broker } = await supabase
+    .from('broker_profiles')
+    .select('id')
+    .eq('user_id', brokerUserId)
+    .single()
+
+  if (!broker) return Response.json({ unlocked: false })
+
+  const { data: purchase } = await supabase
+    .from('lead_purchases')
+    .select('id')
+    .eq('broker_id', broker.id)
+    .eq('request_id', requestId)
+    .single()
+
+  if (!purchase) return Response.json({ unlocked: false })
+
+  const { data: req } = await supabase
+    .from('buyer_requests')
+    .select('contact_name, contact_phone, contact_email')
+    .eq('id', requestId)
+    .single()
+
+  return Response.json({ unlocked: true, contact: req })
+}
+
+// ---------------------------------------------------------------------------
 // Route
 // ---------------------------------------------------------------------------
 export async function POST(

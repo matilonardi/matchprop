@@ -74,13 +74,34 @@ export default function RequestDetail({
   const [showChat, setShowChat] = useState(false)
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       const uid = data.user?.id ?? null
       setIsLoggedIn(!!data.user)
       setUserId(uid)
+
       // Detect if the logged-in user owns this request
       if (uid && request.buyer_user_id && uid === request.buyer_user_id) {
         setIsOwner(true)
+        return
+      }
+
+      // If broker is logged in, check if they already unlocked this contact
+      if (uid) {
+        const res = await fetch(`/api/pedidos/${request.id}/unlock?broker_user_id=${uid}`)
+        if (res.ok) {
+          const data = await res.json()
+          if (data.unlocked && data.contact) {
+            setContact(data.contact)
+            // Auto-open chat and load messages
+            const openChat = typeof window !== 'undefined' && window.location.hash === '#mensajes'
+            setShowChat(openChat)
+            // Always load messages in background so unread badge is ready
+            fetch(`/api/pedidos/${request.id}/messages?broker_user_id=${uid}`)
+              .then(r => r.ok ? r.json() : null)
+              .then(d => { if (d?.messages) setMessages(d.messages) })
+              .catch(() => {})
+          }
+        }
       }
     })
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
@@ -827,7 +848,14 @@ export default function RequestDetail({
               {/* In-app chat */}
               <div className="mt-2">
                 <button
-                  onClick={() => { setShowChat(!showChat); if (!showChat) loadMessages() }}
+                  onClick={() => {
+                    const next = !showChat
+                    setShowChat(next)
+                    if (next) {
+                      loadMessages()
+                      setTimeout(() => chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 100)
+                    }
+                  }}
                   className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
