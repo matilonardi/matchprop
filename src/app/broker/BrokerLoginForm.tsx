@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, LogIn, UserPlus } from 'lucide-react'
+import { Loader2, LogIn, UserPlus, ArrowLeft, Mail } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -21,6 +21,10 @@ export default function BrokerLoginForm() {
     { value: 'vehiculos',   label: 'Vehículos',    sublabel: 'Autos, motos, camiones', icon: '🚗' },
     { value: 'ambos',       label: 'Ambos',         sublabel: 'Todo tipo de activos',   icon: '✨' },
   ]
+
+  const [forgotPassword, setForgotPassword] = useState(false)
+  const [resetEmail, setResetEmail] = useState('')
+  const [resetSent, setResetSent] = useState(false)
 
   const [needsProfile, setNeedsProfile] = useState(false)
   const [pendingUserId, setPendingUserId] = useState('')
@@ -87,6 +91,23 @@ export default function BrokerLoginForm() {
       window.location.href = '/broker/dashboard'
     } catch {
       setError('Error de conexión. Intentá de nuevo.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleForgotPassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!resetEmail.trim()) return
+    setLoading(true)
+    setError('')
+    try {
+      const redirectTo = `${window.location.origin}/broker/reset-password`
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo })
+      if (resetError) throw resetError
+      setResetSent(true)
+    } catch {
+      setError('No pudimos enviar el email. Verificá la dirección e intentá de nuevo.')
     } finally {
       setLoading(false)
     }
@@ -205,6 +226,80 @@ export default function BrokerLoginForm() {
     )
   }
 
+  // ── Forgot password screen ──
+  if (forgotPassword) {
+    if (resetSent) {
+      return (
+        <div className="space-y-4 text-center">
+          <div className="flex justify-center">
+            <div className="bg-green-100 rounded-full p-4">
+              <Mail className="h-8 w-8 text-green-600" />
+            </div>
+          </div>
+          <div>
+            <p className="font-semibold text-gray-900 text-lg">¡Email enviado!</p>
+            <p className="text-sm text-gray-500 mt-1">
+              Revisá <span className="font-medium text-gray-700">{resetEmail}</span>.
+              Te mandamos un link para crear una nueva contraseña.
+            </p>
+            <p className="text-xs text-gray-400 mt-2">Si no lo ves, revisá la carpeta de spam.</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => { setForgotPassword(false); setResetSent(false); setResetEmail('') }}
+            className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mx-auto transition-colors"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" /> Volver al inicio de sesión
+          </button>
+        </div>
+      )
+    }
+
+    return (
+      <form onSubmit={handleForgotPassword} className="space-y-4">
+        <button
+          type="button"
+          onClick={() => { setForgotPassword(false); setError('') }}
+          className="flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" /> Volver
+        </button>
+
+        <div>
+          <p className="font-semibold text-gray-900">Recuperar contraseña</p>
+          <p className="text-sm text-gray-500 mt-0.5">
+            Ingresá tu email y te mandamos un link para crear una nueva.
+          </p>
+        </div>
+
+        <div>
+          <Label className="text-sm mb-1 block">Email</Label>
+          <Input
+            type="email"
+            placeholder="juan@email.com"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            required
+            autoFocus
+            autoComplete="email"
+          />
+        </div>
+
+        {error && (
+          <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
+        )}
+
+        <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
+          {loading ? (
+            <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
+          ) : (
+            <><Mail className="h-4 w-4 mr-2" />Enviar instrucciones</>
+          )}
+        </Button>
+      </form>
+    )
+  }
+
   // ── Login form ──
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -221,7 +316,16 @@ export default function BrokerLoginForm() {
       </div>
 
       <div>
-        <Label className="text-sm mb-1 block">Contraseña</Label>
+        <div className="flex items-center justify-between mb-1">
+          <Label className="text-sm">Contraseña</Label>
+          <button
+            type="button"
+            onClick={() => { setForgotPassword(true); setError(''); setResetEmail(email) }}
+            className="text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+          >
+            ¿Olvidaste tu contraseña?
+          </button>
+        </div>
         <Input
           type="password"
           placeholder="Tu contraseña"
