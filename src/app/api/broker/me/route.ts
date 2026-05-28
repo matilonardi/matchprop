@@ -30,14 +30,34 @@ export async function GET(request: NextRequest) {
   let leads: object[] = []
   if (purchases && purchases.length > 0) {
     const requestIds = purchases.map((p) => p.request_id)
-    const { data: requestsData } = await supabase
-      .from('buyer_requests')
-      .select('id, property_types, zones, budget_usd, contact_name, contact_phone, contact_email')
-      .in('id', requestIds)
+
+    const [{ data: requestsData }, { data: messagesData }] = await Promise.all([
+      supabase
+        .from('buyer_requests')
+        .select('id, property_types, zones, budget_usd, contact_name, contact_phone, contact_email')
+        .in('id', requestIds),
+      supabase
+        .from('messages')
+        .select('request_id, sender_type, read_at')
+        .in('request_id', requestIds)
+        .eq('broker_id', broker.id),
+    ])
+
+    // Build per-request message stats
+    const msgStats: Record<string, { total: number; unread: number }> = {}
+    for (const m of messagesData || []) {
+      if (!msgStats[m.request_id]) msgStats[m.request_id] = { total: 0, unread: 0 }
+      msgStats[m.request_id].total++
+      if (m.sender_type === 'buyer' && !m.read_at) {
+        msgStats[m.request_id].unread++
+      }
+    }
 
     leads = purchases.map((p) => ({
       ...p,
       request: requestsData?.find((r) => r.id === p.request_id) || null,
+      total_messages: msgStats[p.request_id]?.total ?? 0,
+      unread_count: msgStats[p.request_id]?.unread ?? 0,
     }))
   }
 

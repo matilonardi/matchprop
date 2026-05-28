@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin } from 'lucide-react'
+import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin, MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
@@ -23,6 +23,8 @@ interface Lead {
   request_id: string
   credits_spent: number
   purchased_at: string
+  total_messages: number
+  unread_count: number
   request: {
     property_types: string[]
     zones: string[]
@@ -138,19 +140,30 @@ export default function BrokerDashboard() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-8">
-            {[
-              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500' },
-              { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600' },
-              { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600' },
-            ].map(({ label, value, icon, color }) => (
-              <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center gap-3 mb-2">
-                  {icon}
-                  <span className="text-sm text-gray-500">{label}</span>
+            {(() => {
+              const totalUnread = leads.reduce((sum, l) => sum + (l.unread_count || 0), 0)
+              return [
+                { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500', badge: null },
+                { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600', badge: totalUnread > 0 ? totalUnread : null },
+                { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600', badge: null },
+              ].map(({ label, value, icon, color, badge }) => (
+                <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
+                  <div className="flex items-center gap-3 mb-2">
+                    {icon}
+                    <span className="text-sm text-gray-500">{label}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <p className={`text-3xl font-bold ${color}`}>{value}</p>
+                    {badge !== null && (
+                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+                        <MessageCircle className="h-3 w-3" />
+                        {badge} nuevo{badge !== 1 ? 's' : ''}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <p className={`text-3xl font-bold ${color}`}>{value}</p>
-              </div>
-            ))}
+              ))
+            })()}
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -236,14 +249,42 @@ export default function BrokerDashboard() {
                             <p className="text-xs font-medium text-gray-700">USD {req.budget_usd.toLocaleString()}</p>
                           </div>
                         </div>
-                        <a
-                          href={`https://wa.me/${req.contact_phone.replace(/\D/g, '')}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-2 inline-flex items-center gap-1 text-xs text-green-600 hover:underline font-medium"
-                        >
-                          💬 Contactar por WhatsApp
-                        </a>
+
+                        {/* Actions row */}
+                        <div className="mt-2 flex items-center gap-3 flex-wrap">
+                          <a
+                            href={`https://wa.me/${req.contact_phone.replace(/\D/g, '')}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-green-600 hover:underline font-medium"
+                          >
+                            💬 WhatsApp
+                          </a>
+
+                          <Link
+                            href={`/pedidos/${lead.request_id}`}
+                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
+                          >
+                            <MessageCircle className="h-3 w-3" />
+                            {lead.total_messages > 0 ? 'Ver chat' : 'Iniciar chat'}
+                            {lead.unread_count > 0 && (
+                              <span className="inline-flex items-center justify-center bg-orange-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 leading-none">
+                                {lead.unread_count}
+                              </span>
+                            )}
+                          </Link>
+                        </div>
+
+                        {/* Message status hint */}
+                        {lead.unread_count > 0 ? (
+                          <p className="mt-1 text-[11px] text-orange-600 font-medium">
+                            ● {lead.unread_count === 1 ? 'Tenés 1 respuesta nueva' : `Tenés ${lead.unread_count} respuestas nuevas`}
+                          </p>
+                        ) : lead.total_messages > 0 ? (
+                          <p className="mt-1 text-[11px] text-gray-400">
+                            {lead.total_messages} {lead.total_messages === 1 ? 'mensaje enviado' : 'mensajes'} · Sin respuesta pendiente
+                          </p>
+                        ) : null}
                       </div>
                     )
                   })}
