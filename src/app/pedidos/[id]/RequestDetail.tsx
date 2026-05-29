@@ -322,6 +322,10 @@ export default function RequestDetail({
         Volver a pedidos
       </Link>
 
+      <div className="lg:grid lg:grid-cols-3 lg:gap-8 lg:items-start">
+
+      {/* ── LEFT: request details (2/3) ────────────────────────────────────── */}
+      <div className="lg:col-span-2">
       <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
         {/* Header */}
         <div className="p-6 border-b border-gray-100">
@@ -646,6 +650,13 @@ export default function RequestDetail({
             </a>
           )}
         </div>
+      </div>{/* end left col card */}
+      </div>{/* end lg:col-span-2 */}
+
+      {/* ── RIGHT: sticky action panel (1/3) ───────────────────────────────── */}
+      <div className="mt-6 lg:mt-0 lg:col-span-1">
+      <div className="lg:sticky lg:top-24 space-y-3">
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
 
         {/* Close request — only shown to the original buyer via close_token */}
         {closeToken && !closed && (
@@ -1027,7 +1038,11 @@ export default function RequestDetail({
             </div>
           )}
         </div>}
-      </div>
+      </div>{/* end action panel card */}
+      </div>{/* end lg:sticky */}
+      </div>{/* end lg:col-span-1 */}
+
+      </div>{/* end lg:grid */}
     </div>
   )
 }

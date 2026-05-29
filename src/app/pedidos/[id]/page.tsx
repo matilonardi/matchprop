@@ -13,7 +13,7 @@ export default async function PedidoPage(props: PageProps<'/pedidos/[id]'>) {
   const { data: request, error } = await supabase
     .from('buyer_requests')
     .select(
-      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, expires_at, buyer_user_id, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission'
+      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, expires_at, buyer_user_id, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name'
     )
     .eq('id', id)
     .eq('status', 'active')
@@ -33,7 +33,7 @@ export default async function PedidoPage(props: PageProps<'/pedidos/[id]'>) {
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       <div className="pt-20 pb-16 px-4">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           <RequestDetail request={request as PublicBuyerRequest} isNew={isNew} closeToken={closeToken} />
         </div>
       </div>
