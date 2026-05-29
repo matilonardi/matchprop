@@ -1,5 +1,3 @@
-import type { PublicBuyerRequest } from './supabase'
-
 /** Remove accents and slugify a string for use in ZonaProp URLs */
 function slugify(text: string): string {
   return text
@@ -21,36 +19,40 @@ const TYPE_TO_ZONAPROP: Record<string, string> = {
   local: 'locales',
 }
 
+export interface ZonaPropParams {
+  property_types: string[]
+  zones: string[]
+  budget_usd?: number | null
+  bedrooms_min?: number | null
+}
+
 /**
- * Build a ZonaProp search URL from a MatchProp buyer request.
- * URL pattern: /{types}-venta-{location}-{price}-dolar-{bedrooms}-habitaciones.html
+ * Build a ZonaProp search URL.
+ * Pattern: /{types}-venta-{zone1}-{zone2}-...-{price}-dolar-{bedrooms}-habitaciones.html
+ * All zones are included so multi-zone requests search across all neighborhoods.
  */
-export function buildZonaPropUrl(request: PublicBuyerRequest): string {
+export function buildZonaPropUrl(req: ZonaPropParams): string {
   const base = 'https://www.zonaprop.com.ar'
 
   // ── Property types ──────────────────────────────────────────────────────────
-  const typeSlugs = (request.property_types ?? [])
+  const typeSlugs = (req.property_types ?? [])
     .map(t => TYPE_TO_ZONAPROP[t])
     .filter(Boolean)
   const typeSegment = typeSlugs.length > 0 ? typeSlugs.join('-') : 'inmuebles'
 
-  // ── Location — use first zone (most specific) ───────────────────────────────
-  const zoneSlug = slugify(request.zones?.[0] ?? 'cordoba')
+  // ── All zones joined — ZonaProp supports multiple neighborhoods in the path ─
+  const zonesSegment = (req.zones ?? [])
+    .map(z => slugify(z))
+    .filter(Boolean)
+    .join('-') || 'cordoba'
 
   // ── Optional filter segments ────────────────────────────────────────────────
   const parts: string[] = []
 
-  // Price ceiling in USD (ZonaProp format: "0-{max}-dolar")
-  if (request.budget_usd) {
-    parts.push(`0-${request.budget_usd}-dolar`)
-  }
-
-  // Minimum bedrooms
-  if (request.bedrooms_min) {
-    parts.push(`${request.bedrooms_min}-habitaciones`)
-  }
+  if (req.budget_usd) parts.push(`0-${req.budget_usd}-dolar`)
+  if (req.bedrooms_min) parts.push(`${req.bedrooms_min}-habitaciones`)
 
   const filterSegment = parts.length > 0 ? `-${parts.join('-')}` : ''
 
-  return `${base}/${typeSegment}-venta-${zoneSlug}${filterSegment}.html`
+  return `${base}/${typeSegment}-venta-${zonesSegment}${filterSegment}.html`
 }

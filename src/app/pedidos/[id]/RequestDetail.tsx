@@ -13,7 +13,6 @@ import { Badge } from '@/components/ui/badge'
 import { PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { PublicBuyerRequest } from '@/lib/supabase'
-import { buildZonaPropUrl } from '@/lib/zonaprop'
 
 interface Contact {
   contact_name: string
@@ -626,29 +625,7 @@ export default function RequestDetail({
             <span>{timeAgo(request.created_at)}</span>
           </div>
 
-          {/* ZonaProp search link — visible to brokers (not buyers via closeToken) */}
-          {!closeToken && (
-            <a
-              href={buildZonaPropUrl(request)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-between w-full mt-1 px-4 py-3 bg-blue-50 hover:bg-blue-100 border border-blue-100 rounded-xl transition-colors group"
-            >
-              <div className="flex items-center gap-2.5">
-                <span className="text-lg leading-none">🔍</span>
-                <div>
-                  <p className="text-sm font-semibold text-blue-800">Buscar oferta en ZonaProp</p>
-                  <p className="text-xs text-blue-500">
-                    {request.property_types.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(' / ')}
-                    {' · '}{request.zones[0]}
-                    {request.budget_usd ? ` · hasta USD ${request.budget_usd.toLocaleString()}` : ''}
-                    {request.bedrooms_min ? ` · ${request.bedrooms_min}+ dorm.` : ''}
-                  </p>
-                </div>
-              </div>
-              <span className="text-blue-400 text-sm group-hover:translate-x-0.5 transition-transform shrink-0">→</span>
-            </a>
-          )}
+          {/* ZonaProp search link is shown in the broker dashboard after unlock, not here */}
         </div>
       </div>{/* end left col card */}
       </div>{/* end lg:col-span-2 */}

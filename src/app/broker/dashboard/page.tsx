@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin, MessageCircle, FileSearch } from 'lucide-react'
+import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin, MessageCircle, FileSearch, Search } from 'lucide-react'
+import { buildZonaPropUrl } from '@/lib/zonaprop'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
@@ -295,6 +296,21 @@ export default function BrokerDashboard() {
                             <FileSearch className="h-3 w-3" />
                             Ver búsqueda
                           </Link>
+
+                          <a
+                            href={buildZonaPropUrl({
+                              property_types: req.property_types,
+                              zones: req.zones,
+                              budget_usd: req.budget_usd,
+                              bedrooms_min: req.bedrooms_min,
+                            })}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline font-medium"
+                          >
+                            <Search className="h-3 w-3" />
+                            ZonaProp
+                          </a>
 
                           <Link
                             href={`/pedidos/${lead.request_id}#mensajes`}
