@@ -3,7 +3,11 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2, MapPin, MessageCircle, FileSearch, Search } from 'lucide-react'
+import {
+  Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2,
+  MapPin, MessageCircle, FileSearch, Search, Flame, Zap,
+  BarChart2, Target, ChevronRight, AlertCircle,
+} from 'lucide-react'
 import { buildZonaPropUrl } from '@/lib/zonaprop'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
@@ -39,12 +43,38 @@ interface Lead {
   } | null
 }
 
+interface ZoneStat {
+  zone: string
+  count: number
+  avgBudget: number
+}
+
+interface MarketStats {
+  zoneStats: ZoneStat[]
+  typeBreakdown: Record<string, number>
+  newThisWeek: number
+  avgBudget: number
+  totalActive: number
+  unlockedOpportunities: { zone: string; count: number }[]
+  totalUnlocked: number
+}
+
+// Color por intensidad (posición en el ranking)
+function heatColor(rank: number, total: number): string {
+  const pct = 1 - rank / total
+  if (pct > 0.75) return 'bg-red-500'
+  if (pct > 0.5)  return 'bg-orange-500'
+  if (pct > 0.25) return 'bg-orange-300'
+  return 'bg-blue-300'
+}
+
 export default function BrokerDashboard() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [broker, setBroker] = useState<Broker | null>(null)
   const [leads, setLeads] = useState<Lead[]>([])
+  const [marketStats, setMarketStats] = useState<MarketStats | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -65,6 +95,13 @@ export default function BrokerDashboard() {
       setBroker(data.broker)
       setLeads(data.leads || [])
       setLoading(false)
+
+      // Market stats (fire after broker loads)
+      const zonesParam = encodeURIComponent((data.broker.zones as string[]).join(','))
+      fetch(`/api/broker/market-stats?broker_id=${data.broker.id}&zones=${zonesParam}`)
+        .then(r => r.json())
+        .then(setMarketStats)
+        .catch(() => {/* silently fail */})
     }
     load()
   }, [router])
@@ -102,6 +139,14 @@ export default function BrokerDashboard() {
   }
 
   if (!broker) return null
+
+  const totalUnread = leads.reduce((sum, l) => sum + (l.unread_count || 0), 0)
+  const maxZoneCount = marketStats?.zoneStats[0]?.count ?? 1
+
+  // Top property type
+  const topType = marketStats
+    ? Object.entries(marketStats.typeBreakdown).sort((a, b) => b[1] - a[1])[0]
+    : null
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -144,33 +189,31 @@ export default function BrokerDashboard() {
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-8">
-            {(() => {
-              const totalUnread = leads.reduce((sum, l) => sum + (l.unread_count || 0), 0)
-              return [
-                { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500', badge: null },
-                { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600', badge: totalUnread > 0 ? totalUnread : null },
-                { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600', badge: null },
-              ].map(({ label, value, icon, color, badge }) => (
-                <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
-                  <div className="flex items-center gap-3 mb-2">
-                    {icon}
-                    <span className="text-sm text-gray-500">{label}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <p className={`text-3xl font-bold ${color}`}>{value}</p>
-                    {badge !== null && (
-                      <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
-                        <MessageCircle className="h-3 w-3" />
-                        {badge} nuevo{badge !== 1 ? 's' : ''}
-                      </span>
-                    )}
-                  </div>
+            {[
+              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500', badge: null },
+              { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600', badge: totalUnread > 0 ? totalUnread : null },
+              { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600', badge: null },
+            ].map(({ label, value, icon, color, badge }) => (
+              <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  {icon}
+                  <span className="text-sm text-gray-500">{label}</span>
                 </div>
-              ))
-            })()}
+                <div className="flex items-center gap-2">
+                  <p className={`text-3xl font-bold ${color}`}>{value}</p>
+                  {badge !== null && (
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+                      <MessageCircle className="h-3 w-3" />
+                      {badge} nuevo{badge !== 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6">
+          {/* Personal activity grid */}
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
             {/* New requests in zones */}
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
@@ -237,7 +280,6 @@ export default function BrokerDashboard() {
                     const typeLabel = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t).join(' / ')
                     return (
                       <div key={lead.id} className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                        {/* Contact header */}
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{req.contact_name}</p>
@@ -253,7 +295,6 @@ export default function BrokerDashboard() {
                           </span>
                         </div>
 
-                        {/* Search summary */}
                         <div className="mt-2 p-2 bg-white border border-gray-100 rounded-lg space-y-1">
                           <p className="text-xs text-gray-500">
                             <span className="font-medium text-gray-700">{typeLabel}</span>
@@ -278,7 +319,6 @@ export default function BrokerDashboard() {
                           )}
                         </div>
 
-                        {/* Actions row */}
                         <div className="mt-2 flex items-center gap-3 flex-wrap">
                           <a
                             href={`https://wa.me/${req.contact_phone.replace(/\D/g, '')}`}
@@ -288,7 +328,6 @@ export default function BrokerDashboard() {
                           >
                             💬 WhatsApp
                           </a>
-
                           <Link
                             href={`/pedidos/${lead.request_id}`}
                             className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-700 hover:underline font-medium"
@@ -296,7 +335,6 @@ export default function BrokerDashboard() {
                             <FileSearch className="h-3 w-3" />
                             Ver búsqueda
                           </Link>
-
                           <a
                             href={buildZonaPropUrl({
                               property_types: req.property_types,
@@ -311,7 +349,6 @@ export default function BrokerDashboard() {
                             <Search className="h-3 w-3" />
                             ZonaProp
                           </a>
-
                           <Link
                             href={`/pedidos/${lead.request_id}#mensajes`}
                             className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
@@ -326,7 +363,6 @@ export default function BrokerDashboard() {
                           </Link>
                         </div>
 
-                        {/* Message status hint */}
                         {lead.unread_count > 0 ? (
                           <p className="mt-1 text-[11px] text-orange-600 font-medium">
                             ● {lead.unread_count === 1 ? 'Tenés 1 respuesta nueva' : `Tenés ${lead.unread_count} respuestas nuevas`}
@@ -344,17 +380,225 @@ export default function BrokerDashboard() {
             </div>
           </div>
 
-          {/* Market insights */}
-          <div className="mt-6 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-2xl p-5 text-white">
-            <div className="flex items-center gap-3 mb-2">
-              <TrendingUp className="h-5 w-5" />
-              <h3 className="font-semibold">Inteligencia de mercado</h3>
-              <span className="text-xs bg-white/20 px-2 py-0.5 rounded-full">Próximamente</span>
+          {/* ── MARKET INTELLIGENCE ─────────────────────────────────────────── */}
+          <div className="rounded-2xl border border-gray-100 overflow-hidden">
+
+            {/* Header */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <TrendingUp className="h-5 w-5 text-white" />
+                <h3 className="font-bold text-white text-lg">Inteligencia de mercado</h3>
+              </div>
+              {marketStats && (
+                <span className="text-xs text-blue-200 bg-white/10 px-3 py-1 rounded-full">
+                  {marketStats.totalActive} búsquedas activas en Córdoba
+                </span>
+              )}
             </div>
-            <p className="text-blue-100/80 text-sm">
-              Pronto vas a ver qué zonas tienen más demanda, tickets promedio por barrio,
-              y qué requisitos están siendo más pedidos esta semana.
-            </p>
+
+            <div className="bg-white p-6 space-y-6">
+
+              {/* Market summary stats */}
+              {marketStats ? (
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Zap className="h-4 w-4 text-orange-500" />
+                      <span className="text-xs font-medium text-orange-700">Nuevos esta semana</span>
+                    </div>
+                    <p className="text-3xl font-bold text-orange-600">{marketStats.newThisWeek}</p>
+                    <p className="text-xs text-orange-500 mt-0.5">pedidos publicados</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <BarChart2 className="h-4 w-4 text-blue-500" />
+                      <span className="text-xs font-medium text-blue-700">Ticket promedio</span>
+                    </div>
+                    <p className="text-3xl font-bold text-blue-700">
+                      {marketStats.avgBudget > 0 ? `${Math.round(marketStats.avgBudget / 1000)}k` : '—'}
+                    </p>
+                    <p className="text-xs text-blue-500 mt-0.5">USD en el mercado</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-100">
+                    <div className="flex items-center gap-2 mb-1">
+                      <Target className="h-4 w-4 text-purple-500" />
+                      <span className="text-xs font-medium text-purple-700">Más buscado</span>
+                    </div>
+                    <p className="text-3xl font-bold text-purple-700 capitalize">
+                      {topType ? (PROPERTY_TYPE_LABELS[topType[0]] || topType[0]) : '—'}
+                    </p>
+                    <p className="text-xs text-purple-500 mt-0.5">
+                      {topType ? `${topType[1]} búsquedas activas` : ''}
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-3 gap-4">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="bg-gray-50 rounded-xl p-4 h-24 animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              {/* Two-column: Opportunities + Zone heatmap */}
+              <div className="grid md:grid-cols-2 gap-6">
+
+                {/* Opportunities FOMO panel */}
+                <div className="rounded-xl border border-gray-100 overflow-hidden">
+                  <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3 flex items-center gap-2">
+                    <AlertCircle className="h-4 w-4 text-white" />
+                    <span className="font-semibold text-white text-sm">Oportunidades en tus zonas</span>
+                  </div>
+
+                  {!marketStats ? (
+                    <div className="p-4 space-y-2">
+                      {[0, 1, 2].map(i => <div key={i} className="h-10 bg-gray-100 rounded-lg animate-pulse" />)}
+                    </div>
+                  ) : marketStats.totalUnlocked === 0 ? (
+                    <div className="p-6 text-center">
+                      <div className="text-3xl mb-2">🎯</div>
+                      <p className="text-sm font-medium text-gray-700">¡Tenés todo al día!</p>
+                      <p className="text-xs text-gray-400 mt-1">Desbloqueaste todos los pedidos en tus zonas.</p>
+                    </div>
+                  ) : (
+                    <div className="p-4">
+                      {/* Big FOMO number */}
+                      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-center">
+                        <p className="text-4xl font-black text-orange-600">{marketStats.totalUnlocked}</p>
+                        <p className="text-sm text-orange-700 font-medium mt-0.5">
+                          {marketStats.totalUnlocked === 1
+                            ? 'pedido sin desbloquear en tus zonas'
+                            : 'pedidos sin desbloquear en tus zonas'}
+                        </p>
+                      </div>
+
+                      {/* Per-zone breakdown */}
+                      <div className="space-y-2">
+                        {marketStats.unlockedOpportunities.slice(0, 5).map(({ zone, count }) => (
+                          <Link
+                            key={zone}
+                            href={`/pedidos?zone=${encodeURIComponent(zone)}`}
+                            className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-orange-50 border border-gray-100 hover:border-orange-200 transition-colors group"
+                          >
+                            <div className="flex items-center gap-2">
+                              <MapPin className="h-3.5 w-3.5 text-orange-400" />
+                              <span className="text-sm font-medium text-gray-700">{zone}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
+                                {count} {count === 1 ? 'pedido' : 'pedidos'}
+                              </span>
+                              <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+
+                      <Link href="/pedidos">
+                        <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-sm">
+                          Ver todas las oportunidades →
+                        </Button>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+
+                {/* Zone heatmap */}
+                <div className="rounded-xl border border-gray-100 overflow-hidden">
+                  <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 flex items-center gap-2">
+                    <Flame className="h-4 w-4 text-orange-500" />
+                    <span className="font-semibold text-gray-800 text-sm">Zonas con más demanda</span>
+                  </div>
+
+                  {!marketStats ? (
+                    <div className="p-4 space-y-2">
+                      {[0,1,2,3,4].map(i => <div key={i} className="h-8 bg-gray-100 rounded animate-pulse" />)}
+                    </div>
+                  ) : (
+                    <div className="p-4 space-y-2">
+                      {marketStats.zoneStats.slice(0, 8).map((z, i) => {
+                        const widthPct = Math.max(8, Math.round((z.count / maxZoneCount) * 100))
+                        const color = heatColor(i, marketStats.zoneStats.length)
+                        return (
+                          <Link
+                            key={z.zone}
+                            href={`/pedidos?zone=${encodeURIComponent(z.zone)}`}
+                            className="flex items-center gap-3 group"
+                          >
+                            {/* Rank */}
+                            <span className="text-xs font-bold text-gray-400 w-5 shrink-0 text-right">
+                              {i + 1}
+                            </span>
+
+                            {/* Bar + label */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-0.5">
+                                <span className="text-xs font-medium text-gray-700 truncate group-hover:text-blue-600 transition-colors">
+                                  {z.zone}
+                                </span>
+                                <div className="flex items-center gap-2 ml-2 shrink-0">
+                                  <span className="text-xs font-bold text-gray-900">{z.count}</span>
+                                  {z.avgBudget > 0 && (
+                                    <span className="text-[10px] text-gray-400">
+                                      ~USD {Math.round(z.avgBudget / 1000)}k
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full ${color} rounded-full transition-all`}
+                                  style={{ width: `${widthPct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </Link>
+                        )
+                      })}
+
+                      <p className="text-[11px] text-gray-400 text-center pt-1">
+                        Basado en {marketStats.totalActive} pedidos activos
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Property type breakdown */}
+              {marketStats && (
+                <div>
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                    Distribución por tipo de propiedad
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(marketStats.typeBreakdown)
+                      .sort((a, b) => b[1] - a[1])
+                      .map(([type, count]) => {
+                        const total = Object.values(marketStats.typeBreakdown).reduce((a, b) => a + b, 0)
+                        const pct = Math.round((count / total) * 100)
+                        return (
+                          <Link
+                            key={type}
+                            href={`/pedidos?type=${type}`}
+                            className="flex items-center gap-2 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 rounded-xl px-3 py-2 transition-colors group"
+                          >
+                            <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">
+                              {PROPERTY_TYPE_LABELS[type] || type}
+                            </span>
+                            <span className="text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5">
+                              {pct}%
+                            </span>
+                            <span className="text-xs text-gray-400">{count}</span>
+                          </Link>
+                        )
+                      })}
+                  </div>
+                </div>
+              )}
+
+            </div>
           </div>
 
         </div>
