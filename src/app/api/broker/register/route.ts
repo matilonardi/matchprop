@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
     }
     const supabase = createServerClient()
-    const { error: profileError } = await supabase.from('broker_profiles').insert({
+    const profilePayload: Record<string, unknown> = {
       user_id: existingUserId,
       name,
       agency_name: agency_name || null,
@@ -20,8 +20,11 @@ export async function POST(request: NextRequest) {
       email,
       zones,
       credits: 2,
-      specialty: specialty || 'propiedades',
-    })
+    }
+    // specialty column requires migration 006 — include only if present
+    if (specialty) profilePayload.specialty = specialty
+
+    const { error: profileError } = await supabase.from('broker_profiles').insert(profilePayload)
     if (profileError) {
       return Response.json({ error: profileError.message }, { status: 500 })
     }
@@ -60,7 +63,7 @@ export async function POST(request: NextRequest) {
 
   // Create broker profile
   const supabase = createServerClient()
-  const { error: profileError } = await supabase.from('broker_profiles').insert({
+  const profilePayload: Record<string, unknown> = {
     user_id: userId,
     name,
     agency_name: agency_name || null,
@@ -68,8 +71,11 @@ export async function POST(request: NextRequest) {
     email,
     zones,
     credits: 2,
-    specialty: specialty || 'propiedades',
-  })
+  }
+  // specialty column requires migration 006 — include only if present
+  if (specialty) profilePayload.specialty = specialty
+
+  const { error: profileError } = await supabase.from('broker_profiles').insert(profilePayload)
 
   if (profileError) {
     return Response.json({ error: profileError.message }, { status: 500 })
