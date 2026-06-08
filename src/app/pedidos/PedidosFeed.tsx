@@ -409,6 +409,7 @@ export default function PedidosFeed({
   const [filters, setFilters] = useState({
     zones: initialZone ? [initialZone] : [] as string[],
     types: initialType ? [initialType] : [] as string[],
+    bedroomsMin: '',
     carCondition: '',
     carBrands: [] as string[],
     carTransmission: '',
@@ -431,7 +432,7 @@ export default function PedidosFeed({
   const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
   const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType)
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -446,6 +447,7 @@ export default function PedidosFeed({
     params.set('requestType', activeTab)
     if (filters.zones.length) params.set('zones', filters.zones.join(','))
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
+    if (activeTab === 'property' && filters.bedroomsMin) params.set('bedroomsMin', filters.bedroomsMin)
     if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
     if (activeTab === 'car' && filters.carBrands.length) params.set('carBrands', filters.carBrands.join(','))
     if (activeTab === 'car' && filters.carTransmission) params.set('carTransmission', filters.carTransmission)
@@ -519,7 +521,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setFilters({ zones: [], types: [], bedroomsMin: '', carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
               setZoneDropdownOpen(false)
               setTypeDropdownOpen(false)
               setDateDropdownOpen(false)
@@ -755,6 +757,27 @@ export default function PedidosFeed({
           )}
         </>)}
 
+        {/* Dormitorios — solo propiedades */}
+        {activeTab === 'property' && (
+          <div className="shrink-0 w-44">
+            <Select value={filters.bedroomsMin || 'todos'} onValueChange={(v) => handleFilterChange('bedroomsMin', v)}>
+              <SelectTrigger className={`${pillBase} ${filters.bedroomsMin ? pillActive : pillInactive} px-4`}>
+                <span className="flex items-center gap-1 truncate text-left">
+                  <span className="shrink-0 font-medium">🛏 Dorm.:</span>
+                  <span className="truncate">{filters.bedroomsMin ? `${filters.bedroomsMin}+` : 'todos'}</span>
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Cualquier cantidad</SelectItem>
+                <SelectItem value="1">1+ dormitorio</SelectItem>
+                <SelectItem value="2">2+ dormitorios</SelectItem>
+                <SelectItem value="3">3+ dormitorios</SelectItem>
+                <SelectItem value="4">4+ dormitorios</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Presupuesto Desde */}
         <div
           className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudget ? pillActive : pillInactive}`}
@@ -945,7 +968,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], types: [], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setFilters({ zones: [], types: [], bedroomsMin: '', carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
               setPage(1)
             }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
