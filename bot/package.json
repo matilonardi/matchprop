@@ -1,0 +1,19 @@
+{
+  "name": "matchprop-whatsapp-bot",
+  "version": "1.0.0",
+  "description": "Bot que escucha grupos de WhatsApp de brokers y crea pedidos en MatchProp",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.5",
+    "openai": "^4.47.0",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
