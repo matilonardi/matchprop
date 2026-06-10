@@ -86,9 +86,10 @@ client.on('ready', async () => {
 })
 
 // ── Procesamiento de mensajes ─────────────────────────────────
+// IMPORTANTE: el bot NUNCA escribe en los grupos — solo lee en silencio.
 const processedIds = new Set()
 
-client.on('message_create', async msg => {
+client.on('message', async msg => {
   try {
     // Solo mensajes de grupo
     if (!msg.from.endsWith('@g.us')) return
@@ -106,7 +107,7 @@ client.on('message_create', async msg => {
       processedIds.delete(first)
     }
 
-    // Ignorar mensajes propios
+    // Ignorar mensajes propios (doble seguridad — el evento 'message' ya los filtra)
     if (msg.fromMe) return
 
     // Ignorar mensajes muy cortos
@@ -132,7 +133,7 @@ client.on('message_create', async msg => {
 
     // Crear pedido en MatchProp
     const body = {
-      request_type:    parsed.request_type    || 'property',
+      request_type:    'property',   // estos grupos son solo propiedades
       property_types:  parsed.property_types  || [],
       zones:           parsed.zones           || [],
       bedrooms_min:    parsed.bedrooms_min    || null,
