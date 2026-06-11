@@ -622,7 +622,9 @@ export default function RequestDetail({
               <Eye className="h-4 w-4" />
               {request.views_count} {request.views_count === 1 ? 'persona lo vio' : 'personas lo vieron'}
             </span>
-            <span>{timeAgo(request.created_at)}</span>
+            <span title={new Date(request.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })}>
+              {new Date(request.created_at).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })} · {timeAgo(request.created_at)}
+            </span>
           </div>
 
           {/* ZonaProp search link is shown in the broker dashboard after unlock, not here */}
