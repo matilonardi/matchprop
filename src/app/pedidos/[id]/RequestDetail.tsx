@@ -844,7 +844,9 @@ export default function RequestDetail({
                 Contacto desbloqueado
               </div>
               <div className="bg-white rounded-xl p-4 border border-green-200 space-y-2">
-                <p className="font-semibold text-gray-900">{contact.contact_name}</p>
+                {contact.contact_name && !/^\d{10,}$/.test(contact.contact_name) && (
+                  <p className="font-semibold text-gray-900">{contact.contact_name}</p>
+                )}
                 <a
                   href={`tel:${contact.contact_phone}`}
                   className="text-orange-500 font-medium hover:underline block"
