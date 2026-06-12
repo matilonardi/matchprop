@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
+import { usePostHog } from '@/components/PostHogProvider'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
   CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar,
@@ -49,6 +50,7 @@ export default function RequestDetail({
   closeToken?: string
   // buyer_user_id is embedded in the request object itself
 }) {
+  const posthog = usePostHog()
   const [contact, setContact] = useState<Contact | null>(null)
   const [unlocking, setUnlocking] = useState(false)
   const [unlockError, setUnlockError] = useState('')
@@ -279,6 +281,14 @@ export default function RequestDetail({
       setContact(c)
       loadMessages()
       setShowChat(true)
+      // Track conversion event
+      posthog?.capture('contact_unlocked', {
+        request_id: request.id,
+        property_types: request.property_types,
+        zones: request.zones,
+        budget_usd: request.budget_usd,
+        publisher_type: request.publisher_type,
+      })
     } catch {
       setUnlockError('Error de conexión')
     } finally {
