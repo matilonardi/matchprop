@@ -39,6 +39,20 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServerClient()
 
+  // Anti-duplicado: si ya existe un pedido del mismo teléfono en las últimas 2 horas, rechazar
+  const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
+  const { data: existing } = await supabase
+    .from('buyer_requests')
+    .select('id, created_at')
+    .eq('contact_phone', contact_phone)
+    .gte('created_at', twoHoursAgo)
+    .limit(1)
+    .maybeSingle()
+
+  if (existing) {
+    return Response.json({ id: existing.id, duplicate: true }, { status: 200 })
+  }
+
   const { data, error } = await supabase
     .from('buyer_requests')
     .insert({
