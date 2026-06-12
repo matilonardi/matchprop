@@ -22,40 +22,64 @@ export default async function AdminPage({
   const tab = params.tab || 'requests'
   const supabase = createServerClient()
 
+  const weekAgo  = new Date(Date.now() - 7  * 24 * 3600 * 1000).toISOString()
+  const monthAgo = new Date(Date.now() - 30 * 24 * 3600 * 1000).toISOString()
+
   const [
     { data: requests },
     { data: brokers },
     { data: buyers },
     { data: leadPurchases },
     { count: buyerCount },
+    { count: pedidosWeek },
+    { count: pedidosMonth },
+    { count: leadsWeek },
+    { count: brokersWeek },
   ] = await Promise.all([
-    // All buyer requests
     supabase
       .from('buyer_requests')
-      .select(
-        'id, request_type, contact_name, contact_email, contact_phone, zones, budget_usd, status, views_count, created_at'
-      )
+      .select('id, request_type, contact_name, contact_email, contact_phone, zones, budget_usd, status, views_count, created_at')
       .order('created_at', { ascending: false }),
 
-    // Brokers with their lead purchase counts
     supabase
       .from('broker_profiles')
       .select('id, name, agency_name, email, phone, zones, credits, created_at'),
 
-    // Buyer profiles with request counts
     supabase
       .from('buyer_profiles')
       .select('id, user_id, name, phone, created_at'),
 
-    // All lead purchases for calculating broker spend
     supabase
       .from('lead_purchases')
       .select('id, broker_id, credits_spent, purchased_at'),
 
-    // Buyer count
     supabase
       .from('buyer_profiles')
       .select('id', { count: 'exact', head: true }),
+
+    // Pedidos esta semana
+    supabase
+      .from('buyer_requests')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', weekAgo),
+
+    // Pedidos este mes
+    supabase
+      .from('buyer_requests')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', monthAgo),
+
+    // Desbloqueos esta semana
+    supabase
+      .from('lead_purchases')
+      .select('id', { count: 'exact', head: true })
+      .gte('purchased_at', weekAgo),
+
+    // Brokers nuevos esta semana
+    supabase
+      .from('broker_profiles')
+      .select('id', { count: 'exact', head: true })
+      .gte('created_at', weekAgo),
   ])
 
   // Aggregate lead purchases per broker
@@ -122,6 +146,19 @@ export default async function AdminPage({
   const totalCreditsSpent = (leadPurchases || []).reduce((s, p) => s + (p.credits_spent || 1), 0)
   const totalRevenueEstimate = Math.round(totalCreditsSpent * 4)
 
+  // ── Pulso metrics ─────────────────────────────────────────────
+  const totalViews = (requests || []).reduce((s, r) => s + (r.views_count || 0), 0)
+  const pedidosConVistas = (requests || []).filter(r => (r.views_count || 0) > 0).length
+  const conversionRate = totalRequests > 0 ? Math.round((pedidosConVistas / totalRequests) * 100) : 0
+  const pulsoScore = Math.min(100, Math.round(
+    ((pedidosWeek ?? 0) * 3) +
+    ((leadsWeek ?? 0) * 10) +
+    ((brokersWeek ?? 0) * 5) +
+    (totalViews > 0 ? 10 : 0)
+  ))
+  const pulsoLabel = pulsoScore >= 60 ? '🔥 Caliente' : pulsoScore >= 25 ? '🌤️ Tibio' : '❄️ Frío'
+  const pulsoColor = pulsoScore >= 60 ? 'text-red-600 bg-red-50 border-red-200' : pulsoScore >= 25 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-blue-600 bg-blue-50 border-blue-200'
+
   const stats = [
     { icon: FileText, label: 'Publicaciones', value: totalRequests, sub: `${activeRequests} activas`, color: 'blue' },
     { icon: Users, label: 'Brokers', value: totalBrokers, sub: `${totalLeads} leads vendidos`, color: 'purple' },
@@ -178,6 +215,7 @@ export default async function AdminPage({
         {/* Tabs */}
         <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
           {[
+            { id: 'pulso', label: '📡 Pulso', count: null },
             { id: 'requests', label: '📋 Publicaciones', count: totalRequests },
             { id: 'brokers', label: '🏠 Brokers', count: totalBrokers },
             { id: 'buyers', label: '🔍 Compradores', count: totalBuyers },
@@ -192,16 +230,113 @@ export default async function AdminPage({
               }`}
             >
               {t.label}
-              <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
+              {t.count !== null && <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
                 tab === t.id ? 'bg-orange-100 text-orange-600' : 'bg-gray-200 text-gray-500'
               }`}>
                 {t.count}
-              </span>
+              </span>}
             </a>
           ))}
         </div>
 
         {/* Tab content */}
+        {tab === 'pulso' && (
+          <div className="space-y-6">
+            {/* Temperatura general */}
+            <div className={`rounded-2xl border p-6 flex items-center gap-6 ${pulsoColor}`}>
+              <div className="text-5xl font-black">{pulsoScore}</div>
+              <div>
+                <div className="text-xl font-bold">{pulsoLabel}</div>
+                <div className="text-sm opacity-80 mt-0.5">Índice de actividad de la plataforma esta semana</div>
+              </div>
+              <div className="ml-auto text-right text-sm opacity-70">
+                <div>Pedidos + vistas + desbloqueos + brokers nuevos</div>
+              </div>
+            </div>
+
+            {/* KPIs esta semana */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Esta semana</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Pedidos nuevos', value: pedidosWeek ?? 0, sub: `${pedidosMonth ?? 0} este mes`, emoji: '📥', good: (pedidosWeek ?? 0) > 0 },
+                  { label: 'Contactos desbloqueados', value: leadsWeek ?? 0, sub: `${totalLeads} total`, emoji: '🔓', good: (leadsWeek ?? 0) > 0 },
+                  { label: 'Brokers nuevos', value: brokersWeek ?? 0, sub: `${totalBrokers} registrados`, emoji: '🏢', good: (brokersWeek ?? 0) > 0 },
+                  { label: 'Vistas del feed', value: totalViews, sub: `${conversionRate}% con vistas`, emoji: '👁️', good: totalViews > 0 },
+                ].map(k => (
+                  <div key={k.label} className="bg-white rounded-xl border border-gray-100 p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-2xl">{k.emoji}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${k.good ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                        {k.good ? '● activo' : '○ sin datos'}
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-gray-900">{k.value}</div>
+                    <div className="text-xs font-medium text-gray-600 mt-0.5">{k.label}</div>
+                    <div className="text-xs text-gray-400">{k.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* KPIs acumulados */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Acumulado total</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {[
+                  { label: 'Pedidos activos', value: activeRequests, sub: `${totalRequests} total`, emoji: '📋' },
+                  { label: 'Brokers registrados', value: totalBrokers, sub: 'en la plataforma', emoji: '🏢' },
+                  { label: 'Desbloqueos totales', value: totalLeads, sub: `${totalCreditsSpent} créditos gastados`, emoji: '🔓' },
+                  { label: 'Revenue estimado', value: `~USD ${totalRevenueEstimate}`, sub: 'a $4/crédito', emoji: '💰' },
+                ].map(k => (
+                  <div key={k.label} className="bg-white rounded-xl border border-gray-100 p-4">
+                    <div className="text-2xl mb-2">{k.emoji}</div>
+                    <div className="text-3xl font-bold text-gray-900">{k.value}</div>
+                    <div className="text-xs font-medium text-gray-600 mt-0.5">{k.label}</div>
+                    <div className="text-xs text-gray-400">{k.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Top pedidos con más vistas */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Pedidos más vistos</h2>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 border-b border-gray-100">
+                    <tr>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Pedido</th>
+                      <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Zona</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Vistas</th>
+                      <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Publicado</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {(requests || [])
+                      .filter(r => (r.views_count || 0) > 0)
+                      .sort((a, b) => (b.views_count || 0) - (a.views_count || 0))
+                      .slice(0, 8)
+                      .map(r => (
+                        <tr key={r.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3">
+                            <a href={`/pedidos/${r.id}`} target="_blank" className="text-orange-600 hover:underline font-medium">
+                              {r.contact_name || 'Sin nombre'}
+                            </a>
+                          </td>
+                          <td className="px-4 py-3 text-gray-500 text-xs">{(r.zones || []).slice(0,2).join(', ')}</td>
+                          <td className="px-4 py-3 text-right font-semibold text-gray-900">{r.views_count}</td>
+                          <td className="px-4 py-3 text-right text-gray-400 text-xs">
+                            {new Date(r.created_at).toLocaleDateString('es-AR')}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        )}
         {tab === 'requests' && (
           <AdminTable requests={requests ?? []} adminSecret={ADMIN_SECRET} />
         )}

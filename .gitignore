@@ -39,3 +39,13 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Bot files
+BACKUP_MATCHPROP.md
+bot/.wwebjs_cache/
+bot/bot.log
+bot/debug_lids.js
+bot/last_run.json
+bot/launchd.log
+bot/run_daily.sh
+bot/session/

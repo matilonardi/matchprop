@@ -51,10 +51,58 @@ Formato JSON:
   "description": "Resumen breve de la búsqueda en máx 150 caracteres"
 }`
 
+// ── Pre-filtro JavaScript (sin llamada a API) ─────────────────
+// Descarta mensajes que claramente NO son búsquedas de propiedad.
+// Ahorra tokens de Groq en mensajes obvios.
+const OFFER_KEYWORDS = [
+  'vendo ', 'vende ', 'en venta', 'a la venta', 'venta!', 'venta.',
+  'alquilo ', 'alquila ', 'en alquiler', 'para alquilar',
+  'ofrezco', 'ofrecemos', 'disponible', 'disponibles',
+  'tengo casa', 'tengo depto', 'tengo departamento', 'tengo duplex',
+  'tengo ph', 'tengo lote', 'tengo terreno', 'tengo local',
+  'tenemos casa', 'tenemos depto', 'tenemos departamento',
+  'comparto ', 'compartimos ',
+  'estrenar', 'a estrenar',
+  'precio:', 'precio ',
+  'permuto', 'permuta ',
+]
+
+const SEARCH_KEYWORDS = [
+  'busco', 'buscamos', 'busca', 'búsqueda', 'busqueda',
+  'necesito', 'necesita', 'necesitamos',
+  'cliente busca', 'cliente necesita', 'tengo comprador', 'tengo cliente',
+  'solicito', 'solicitamos',
+  'requerimiento', 'pedido',
+  'requiero', 'requiere',
+]
+
+function isObviousNonSearch(text) {
+  const t = text.toLowerCase()
+
+  // Descartar contactos vCard
+  if (t.includes('begin:vcard')) return true
+
+  // Descartar mensajes que son solo URLs (ficha.info, zonaprop, argenprop, etc.)
+  const lines = text.split('\n').map(l => l.trim()).filter(Boolean)
+  const urlPattern = /^https?:\/\//i
+  if (lines.every(l => urlPattern.test(l) || l.length < 5)) return true
+
+  // Si tiene palabras de oferta Y no tiene palabras de búsqueda → descartar
+  const hasOffer  = OFFER_KEYWORDS.some(k => t.includes(k))
+  const hasSearch = SEARCH_KEYWORDS.some(k => t.includes(k))
+
+  if (hasOffer && !hasSearch) return true
+
+  return false
+}
+
 async function parseMessage(text) {
+  // Pre-filtro rápido sin costo de API
+  if (isObviousNonSearch(text)) return null
+
   try {
     const response = await groq.chat.completions.create({
-      model: 'llama-3.3-70b-versatile',
+      model: 'llama-3.1-8b-instant',   // 500k tokens/día en free tier (5x más que 70b)
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: `Mensaje: "${text}"` },
