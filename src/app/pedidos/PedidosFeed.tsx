@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown } from 'lucide-react'
+import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown, Search } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
@@ -424,6 +424,9 @@ export default function PedidosFeed({
     sort: 'recent',
     publisherType: '',
   })
+  const [textSearch, setTextSearch] = useState('')
+  const [debouncedTextSearch, setDebouncedTextSearch] = useState('')
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [zoneSearch, setZoneSearch] = useState('')
   const [zoneDropdownOpen, setZoneDropdownOpen] = useState(false)
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
@@ -432,7 +435,17 @@ export default function PedidosFeed({
   const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
   const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType)
+  // Debounce text search 400ms
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current)
+    debounceRef.current = setTimeout(() => {
+      setDebouncedTextSearch(textSearch)
+      setPage(1)
+    }, 400)
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
+  }, [textSearch])
+
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -445,6 +458,7 @@ export default function PedidosFeed({
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
     params.set('requestType', activeTab)
+    if (debouncedTextSearch) params.set('q', debouncedTextSearch)
     if (filters.zones.length) params.set('zones', filters.zones.join(','))
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
     if (activeTab === 'property' && filters.bedroomsMin) params.set('bedroomsMin', filters.bedroomsMin)
@@ -486,7 +500,7 @@ export default function PedidosFeed({
     }
     setLoading(false)
     setGridKey((k) => k + 1)
-  }, [page, filters, activeTab])
+  }, [page, filters, activeTab, debouncedTextSearch])
 
   useEffect(() => {
     fetchRequests()
@@ -522,6 +536,8 @@ export default function PedidosFeed({
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
               setFilters({ zones: [], types: [], bedroomsMin: '', carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setTextSearch('')
+              setDebouncedTextSearch('')
               setZoneDropdownOpen(false)
               setTypeDropdownOpen(false)
               setDateDropdownOpen(false)
@@ -534,6 +550,26 @@ export default function PedidosFeed({
             {label}
           </button>
         ))}
+      </div>
+
+      {/* Text search */}
+      <div className="relative mb-4">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <input
+          type="text"
+          value={textSearch}
+          onChange={e => setTextSearch(e.target.value)}
+          placeholder="Buscar por descripción, zona, tipo de propiedad..."
+          className="w-full h-11 pl-11 pr-10 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 shadow-sm transition-all"
+        />
+        {textSearch && (
+          <button
+            onClick={() => { setTextSearch(''); setDebouncedTextSearch(''); setPage(1) }}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Filter bar */}
@@ -969,6 +1005,8 @@ export default function PedidosFeed({
           <button
             onClick={() => {
               setFilters({ zones: [], types: [], bedroomsMin: '', carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setTextSearch('')
+              setDebouncedTextSearch('')
               setPage(1)
             }}
             className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"

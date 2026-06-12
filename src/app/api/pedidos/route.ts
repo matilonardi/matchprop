@@ -32,6 +32,7 @@ export async function GET(request: NextRequest) {
   const publisherType = searchParams.get('publisherType') // 'particular' | 'inmobiliaria'
   const bedroomsMin = searchParams.get('bedroomsMin')
   const page = parseInt(searchParams.get('page') || '1')
+  const q    = searchParams.get('q')?.trim() || ''   // free-text search
   const limit = 20
 
   const supabase = createServerClient()
@@ -85,6 +86,7 @@ export async function GET(request: NextRequest) {
   if (bedroomsMin && requestType !== 'car') query = query.gte('bedrooms_min', parseInt(bedroomsMin))
   if (minBudget) query = query.gte('budget_usd', parseInt(minBudget))
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
+  if (q) query = query.or(`description.ilike.%${q}%,search_reason.ilike.%${q}%`)
 
   const { data, error, count } = await query
 
