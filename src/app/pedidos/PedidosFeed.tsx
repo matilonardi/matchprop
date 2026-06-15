@@ -405,6 +405,8 @@ export default function PedidosFeed({
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [showingDemo, setShowingDemo] = useState(false)
+  const [budgetFromFocused, setBudgetFromFocused] = useState(false)
+  const [budgetToFocused, setBudgetToFocused] = useState(false)
 
   const [filters, setFilters] = useState({
     zones: initialZone ? [initialZone] : [] as string[],
@@ -820,12 +822,20 @@ export default function PedidosFeed({
         >
           <span className="shrink-0 font-medium">💰 Desde: USD</span>
           <input
-            type="number"
+            type={budgetFromFocused ? 'number' : 'text'}
             min="0"
             step="5000"
             placeholder="libre"
-            value={filters.minBudget || ''}
-            onChange={(e) => handleFilterChange('minBudget', e.target.value || null)}
+            value={
+              budgetFromFocused
+                ? filters.minBudget || ''
+                : filters.minBudget
+                  ? Number(filters.minBudget).toLocaleString('es-AR')
+                  : ''
+            }
+            onFocus={() => setBudgetFromFocused(true)}
+            onBlur={() => setBudgetFromFocused(false)}
+            onChange={(e) => handleFilterChange('minBudget', e.target.value.replace(/\D/g, '') || null)}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
             className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
@@ -837,12 +847,20 @@ export default function PedidosFeed({
         >
           <span className="shrink-0 font-medium">💰 Hasta: USD</span>
           <input
-            type="number"
+            type={budgetToFocused ? 'number' : 'text'}
             min="0"
             step="5000"
             placeholder="libre"
-            value={filters.maxBudget || ''}
-            onChange={(e) => handleFilterChange('maxBudget', e.target.value || null)}
+            value={
+              budgetToFocused
+                ? filters.maxBudget || ''
+                : filters.maxBudget
+                  ? Number(filters.maxBudget).toLocaleString('es-AR')
+                  : ''
+            }
+            onFocus={() => setBudgetToFocused(true)}
+            onBlur={() => setBudgetToFocused(false)}
+            onChange={(e) => handleFilterChange('maxBudget', e.target.value.replace(/\D/g, '') || null)}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
             className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
@@ -1023,14 +1041,6 @@ export default function PedidosFeed({
       )}
 
       {/* Demo banner */}
-      {!loading && showingDemo && (
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-5 text-sm text-amber-800">
-          <p className="font-semibold mb-0.5">Estos son pedidos de ejemplo</p>
-          <p className="text-amber-700 text-xs">
-            Así se verá el feed cuando los compradores publiquen sus búsquedas. Los pedidos reales incluyen contacto desbloqueable con 1 crédito.
-          </p>
-        </div>
-      )}
 
       {/* Grid */}
       {loading ? (
