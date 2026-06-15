@@ -506,6 +506,10 @@ export default function PedidosFeed({
     fetchRequests()
   }, [fetchRequests])
 
+  function fmtMiles(raw: string) {
+    return raw ? raw.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
+  }
+
   function handleFilterChange(key: string, value: string | null) {
     setFilters((f) => ({ ...f, [key]: !value || value === 'todos' || value === 'todas' ? '' : value }))
     setPage(1)
@@ -823,7 +827,7 @@ export default function PedidosFeed({
             type="text"
             inputMode="numeric"
             placeholder="libre"
-            value={filters.minBudget ? Number(filters.minBudget).toLocaleString('es-AR') : ''}
+            value={fmtMiles(filters.minBudget)}
             onChange={(e) => {
               const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
               handleFilterChange('minBudget', raw || null)
@@ -842,7 +846,7 @@ export default function PedidosFeed({
             type="text"
             inputMode="numeric"
             placeholder="libre"
-            value={filters.maxBudget ? Number(filters.maxBudget).toLocaleString('es-AR') : ''}
+            value={fmtMiles(filters.maxBudget)}
             onChange={(e) => {
               const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
               handleFilterChange('maxBudget', raw || null)
