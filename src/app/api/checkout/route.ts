@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const body: Record<string, unknown> = {
     items: [
       {
-        title: `MatchProp – ${pack.label}`,
+        title: `Propi – ${pack.label}`,
         description: pack.unlimited
           ? 'Acceso ilimitado por 30 días para desbloquear contactos de compradores'
           : `${pack.credits} créditos (válidos 30 días) para desbloquear contactos de compradores`,

@@ -896,7 +896,7 @@ export default function RequestDetail({
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
                     <MessageCircle className="h-4 w-4 text-orange-500" />
-                    Mensajes por MatchProp
+                    Mensajes por Propi
                     {messages.length > 0 && (
                       <span className="text-gray-400 text-xs">({messages.length})</span>
                     )}

@@ -40,8 +40,7 @@ export default function BuyerLoginPage() {
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <Link href="/" className="text-2xl font-black">
-            <span className="text-orange-500">Match</span>
-            <span className="text-gray-900">Prop</span>
+            <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
           </Link>
           <h1 className="text-xl font-bold text-gray-900 mt-4">Ingresá a tu cuenta</h1>
           <p className="text-gray-500 text-sm mt-1">Compradores · Gestioná tus búsquedas</p>

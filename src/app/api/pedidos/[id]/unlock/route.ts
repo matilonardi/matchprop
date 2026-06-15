@@ -203,14 +203,14 @@ export async function POST(
       const requestUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.vercel.app'}/pedidos/${requestId}`
 
       await resend.emails.send({
-        from: 'MatchProp <alertas@matchprop.com.ar>',
+        from: 'Propi <alertas@matchprop.com.ar>',
         to: req.contact_email,
         subject: `📬 ${brokerDisplay} está interesado en tu búsqueda`,
         html: `
           <div style="font-family:Arial,sans-serif;max-width:560px;margin:0 auto;background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb;">
             <div style="background:linear-gradient(135deg,#1d4ed8,#2563eb);padding:28px 32px;">
               <p style="margin:0;font-size:22px;font-weight:800;color:#fff;">
-                <span style="color:#fb923c;">Match</span>Prop
+                <span style="color:#fb923c;">prop</span><span style="color:#f97316;">i</span>
               </p>
               <p style="margin:6px 0 0;color:#bfdbfe;font-size:14px;">Alguien desbloqueó tu contacto</p>
             </div>
@@ -238,7 +238,7 @@ export async function POST(
             </div>
             <div style="padding:16px 32px;background:#f9fafb;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;">
-                Recibís este mail porque publicaste una búsqueda en MatchProp. Si no fuiste vos, ignorá este mensaje.
+                Recibís este mail porque publicaste una búsqueda en Propi. Si no fuiste vos, ignorá este mensaje.
               </p>
             </div>
           </div>

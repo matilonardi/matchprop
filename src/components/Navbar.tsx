@@ -48,8 +48,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-xl font-bold text-orange-500">Match</span>
-            <span className="text-xl font-bold text-gray-900">Prop</span>
+            <span className="text-xl font-bold text-gray-900">prop</span><span className="text-xl font-bold text-orange-500">i</span>
           </Link>
 
           {/* Desktop */}

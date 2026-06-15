@@ -91,7 +91,7 @@ export async function POST(request: NextRequest) {
     // Admin notification (fire-and-forget, parallel)
     if (adminEmail) {
       resend.emails.send({
-        from: 'MatchProp <alertas@matchprop.com.ar>',
+        from: 'Propi <alertas@matchprop.com.ar>',
         to: adminEmail,
         subject: `🏠 Nuevo broker: ${name}`,
         html: `
@@ -117,13 +117,13 @@ export async function POST(request: NextRequest) {
     }
 
     await resend.emails.send({
-      from: 'MatchProp <alertas@matchprop.com.ar>',
+      from: 'Propi <alertas@matchprop.com.ar>',
       to: email,
-      subject: '¡Bienvenido a MatchProp! Tus 2 créditos gratis te esperan',
+      subject: '¡Bienvenido a Propi! Tus 2 créditos gratis te esperan',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2937;">
           <div style="background:#2563eb;padding:32px 24px;border-radius:12px 12px 0 0;text-align:center;">
-            <h1 style="color:white;margin:0;font-size:24px;">¡Bienvenido a MatchProp!</h1>
+            <h1 style="color:white;margin:0;font-size:24px;">¡Bienvenido a Propi!</h1>
           </div>
           <div style="background:#f9fafb;padding:28px 24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
             <p style="font-size:16px;">Hola <strong>${name}</strong>,</p>
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
             </div>
             <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;"/>
             <p style="color:#9ca3af;font-size:12px;margin:0;">
-              MatchProp · Córdoba, Argentina<br>
+              Propi · Córdoba, Argentina<br>
               <a href="${appUrl}/broker/dashboard" style="color:#6b7280;">Ir a mi dashboard</a>
             </p>
           </div>

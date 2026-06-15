@@ -7,7 +7,7 @@ import "./globals.css"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "MatchProp – Publicá lo que buscás",
+  title: "Propi – Publicá lo que buscás",
   description:
     "El marketplace donde los compradores publican qué propiedad o auto buscan, y los vendedores los encuentran a ellos. Córdoba, Argentina.",
 }

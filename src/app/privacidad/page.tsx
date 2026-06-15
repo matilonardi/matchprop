@@ -2,8 +2,8 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 
 export const metadata = {
-  title: 'Política de Privacidad – MatchProp',
-  description: 'Política de privacidad y tratamiento de datos personales de MatchProp.',
+  title: 'Política de Privacidad – Propi',
+  description: 'Política de privacidad y tratamiento de datos personales de Propi.',
 }
 
 export default function PrivacidadPage() {
@@ -21,7 +21,7 @@ export default function PrivacidadPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Responsable del tratamiento</h2>
                 <p>
-                  MatchProp (en adelante, "la plataforma") es responsable del tratamiento de los datos personales
+                  Propi (en adelante, "la plataforma") es responsable del tratamiento de los datos personales
                   recopilados a través de este sitio web, en cumplimiento de la Ley N.° 25.326 de Protección de
                   Datos Personales de la República Argentina y sus normas complementarias.
                 </p>
@@ -72,7 +72,7 @@ export default function PrivacidadPage() {
                   desbloqueado ese contacto mediante el uso de créditos.
                 </p>
                 <p className="mt-2">
-                  MatchProp <strong>no vende, cede ni alquila</strong> datos personales a terceros, salvo en los
+                  Propi <strong>no vende, cede ni alquila</strong> datos personales a terceros, salvo en los
                   siguientes casos:
                 </p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
@@ -89,7 +89,7 @@ export default function PrivacidadPage() {
                   contra accesos no autorizados, pérdida o alteración.
                 </p>
                 <p className="mt-2">
-                  No obstante, ningún sistema de transmisión por Internet es 100% seguro. MatchProp no puede
+                  No obstante, ningún sistema de transmisión por Internet es 100% seguro. Propi no puede
                   garantizar la seguridad absoluta de los datos transmitidos.
                 </p>
               </section>
@@ -121,7 +121,7 @@ export default function PrivacidadPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Cookies</h2>
                 <p>
-                  MatchProp utiliza cookies de sesión necesarias para el funcionamiento de la plataforma
+                  Propi utiliza cookies de sesión necesarias para el funcionamiento de la plataforma
                   (autenticación, preferencias). No utilizamos cookies de seguimiento publicitario de terceros.
                 </p>
               </section>

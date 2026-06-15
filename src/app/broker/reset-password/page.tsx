@@ -57,8 +57,7 @@ export default function ResetPasswordPage() {
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
         {/* Logo */}
         <p className="text-xl font-bold mb-6">
-          <span className="text-orange-500">Match</span>
-          <span className="text-gray-900">Prop</span>
+          <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
         </p>
 
         {done ? (

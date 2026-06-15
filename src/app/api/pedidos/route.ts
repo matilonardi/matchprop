@@ -207,7 +207,7 @@ export async function POST(request: NextRequest) {
         ? `USD ${Number(budget_usd).toLocaleString('es-AR')}`
         : 'A convenir'
       resend.emails.send({
-        from: 'MatchProp <alertas@matchprop.com.ar>',
+        from: 'Propi <alertas@matchprop.com.ar>',
         to: adminEmail,
         subject: `${isCarReq ? '🚗' : '🏠'} Nueva búsqueda: ${contact_name}`,
         html: `

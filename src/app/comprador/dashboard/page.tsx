@@ -103,8 +103,7 @@ export default function BuyerDashboard() {
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
             <Link href="/" className="text-lg font-black">
-              <span className="text-orange-500">Match</span>
-              <span className="text-gray-900">Prop</span>
+              <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
             </Link>
             <p className="text-xs text-gray-500 mt-0.5">Hola, {userName} 👋</p>
           </div>

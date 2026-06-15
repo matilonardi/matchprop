@@ -46,12 +46,12 @@ async function sendEmailNotification({
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'MatchProp <noreply@matchprop.com.ar>',
+      from: 'Propi <noreply@matchprop.com.ar>',
       to: [to],
       subject,
       html: `
         <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
-          <h2 style="color:#f97316;margin-bottom:4px">MatchProp</h2>
+          <h2 style="color:#f97316;margin-bottom:4px">Propi</h2>
           <p style="color:#374151">Hola <strong>${toName}</strong>,</p>
           <p style="color:#374151">${message}</p>
           <a href="${link}"
@@ -60,7 +60,7 @@ async function sendEmailNotification({
             Ver mensaje →
           </a>
           <p style="color:#9ca3af;font-size:12px;margin-top:24px">
-            MatchProp · Córdoba, Argentina
+            Propi · Córdoba, Argentina
           </p>
         </div>
       `,
@@ -240,7 +240,7 @@ export async function POST(
           await sendEmailNotification({
             to: broker.email,
             toName: broker.name,
-            subject: `Nueva respuesta de ${req?.contact_name || 'un comprador'} — MatchProp`,
+            subject: `Nueva respuesta de ${req?.contact_name || 'un comprador'} — Propi`,
             message: `El comprador respondió tu mensaje en la búsqueda que desbloqueaste. Hacé click para ver la conversación.`,
             requestId,
           })
@@ -297,8 +297,8 @@ export async function POST(
     await sendEmailNotification({
       to: req.contact_email,
       toName: req.contact_name,
-      subject: `Tenés un mensaje pendiente en tu búsqueda — MatchProp`,
-      message: `Un interesado en tu búsqueda te envió un mensaje a través de MatchProp. Hacé click para leerlo y responder.`,
+      subject: `Tenés un mensaje pendiente en tu búsqueda — Propi`,
+      message: `Un interesado en tu búsqueda te envió un mensaje a través de Propi. Hacé click para leerlo y responder.`,
       requestId,
       closeToken,
     })

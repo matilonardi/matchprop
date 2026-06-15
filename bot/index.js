@@ -116,6 +116,7 @@ const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './session' }),
   puppeteer: {
     headless: true,
+    protocolTimeout: 300000, // 5 minutos
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
            '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote',
            '--single-process', '--disable-gpu'],
@@ -134,29 +135,23 @@ client.on('auth_failure', msg => { console.error('❌ Error de autenticación:',
 client.on('ready', async () => {
   console.log('\n🤖 Bot conectado!\n')
 
-  const chats = await client.getChats()
-  const groups = chats.filter(c => c.isGroup)
-
   // ── Modo discovery: listar grupos ────────────────────────────
   if (TARGET_GROUP_IDS.length === 0) {
+    console.log('⚠️  TARGET_GROUP_IDS no configurado. Listando grupos...')
+    const chats = await client.getChats()
+    const groups = chats.filter(c => c.isGroup)
     console.log('━'.repeat(50))
-    console.log('⚠️  TARGET_GROUP_IDS no configurado.')
-    console.log('   Grupos de Nico:\n')
     groups.sort((a, b) => b.timestamp - a.timestamp).forEach((g, i) => {
       console.log(`  [${i + 1}] ${g.name}`)
       console.log(`      ID: ${g.id._serialized}`)
-      console.log(`      Participantes: ${g.participants?.length || '?'}`)
       console.log()
     })
     console.log('━'.repeat(50))
-    console.log('👉 Copiame los IDs de los 3 grupos de brokers')
-    console.log('   y los pongo en el .env:\n')
-    console.log('   TARGET_GROUP_IDS=id1@g.us,id2@g.us,id3@g.us\n')
     await client.destroy()
     return
   }
 
-  // ── Modo batch: procesar mensajes desde última ejecución ─────
+  // ── Modo batch: ir directo a los grupos por ID ───────────────
   const since    = getLastRun()
   const sinceStr = new Date(since).toLocaleString('es-AR')
   console.log(`📅 Procesando mensajes desde: ${sinceStr}\n`)
@@ -165,16 +160,19 @@ client.on('ready', async () => {
   let totalIgnorados = 0
 
   for (const groupId of TARGET_GROUP_IDS) {
-    const group = groups.find(g => g.id._serialized === groupId)
-    if (!group) {
+    let group
+    try {
+      group = await client.getChatById(groupId)
+    } catch {
       console.log(`⚠️  Grupo no encontrado: ${groupId}`)
       continue
     }
 
     console.log(`📂 ${group.name}`)
 
-    // Traer últimos 200 mensajes y filtrar por timestamp
-    const messages = await group.fetchMessages({ limit: 200 })
+    // Traer últimos 50 mensajes y filtrar por timestamp
+    // (50 es suficiente corriendo cada 2 horas; límite alto causa timeouts)
+    const messages = await group.fetchMessages({ limit: 50 })
     const nuevos = messages.filter(m => m.timestamp * 1000 > since && !m.fromMe)
 
     console.log(`   ${nuevos.length} mensajes nuevos desde la última vez`)
@@ -258,8 +256,8 @@ client.on('ready', async () => {
   const fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
   const emoji = totalCreados > 0 ? '🏠' : '😴'
   const msg = totalCreados > 0
-    ? `${emoji} <b>MatchProp Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados desde los grupos de WhatsApp.\n⏭ ${totalIgnorados} mensajes ignorados (ofertas, links, etc.)\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
-    : `${emoji} <b>MatchProp Bot — ${fecha}</b>\n\nSin pedidos nuevos hoy.\n⏭ ${totalIgnorados} mensajes procesados.`
+    ? `${emoji} <b>Propi Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados desde los grupos de WhatsApp.\n⏭ ${totalIgnorados} mensajes ignorados (ofertas, links, etc.)\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
+    : `${emoji} <b>Propi Bot — ${fecha}</b>\n\nSin pedidos nuevos hoy.\n⏭ ${totalIgnorados} mensajes procesados.`
   await sendTelegram(msg)
 
   console.log('\n🏁 Listo. Podés cerrar la terminal.\n')
@@ -268,5 +266,5 @@ client.on('ready', async () => {
   process.exit(0)
 })
 
-console.log('🚀 Iniciando MatchProp Bot...')
+console.log('🚀 Iniciando Propi Bot...')
 client.initialize()
