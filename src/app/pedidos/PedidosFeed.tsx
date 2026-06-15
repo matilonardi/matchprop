@@ -405,8 +405,6 @@ export default function PedidosFeed({
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
   const [showingDemo, setShowingDemo] = useState(false)
-  const [budgetFromFocused, setBudgetFromFocused] = useState(false)
-  const [budgetToFocused, setBudgetToFocused] = useState(false)
 
   const [filters, setFilters] = useState({
     zones: initialZone ? [initialZone] : [] as string[],
@@ -822,22 +820,16 @@ export default function PedidosFeed({
         >
           <span className="shrink-0 font-medium">💰 USD mín:</span>
           <input
-            type={budgetFromFocused ? 'number' : 'text'}
-            min="0"
-            step="5000"
+            type="text"
+            inputMode="numeric"
             placeholder="libre"
-            value={
-              budgetFromFocused
-                ? filters.minBudget || ''
-                : filters.minBudget
-                  ? Number(filters.minBudget).toLocaleString('es-AR')
-                  : ''
-            }
-            onFocus={() => setBudgetFromFocused(true)}
-            onBlur={() => setBudgetFromFocused(false)}
-            onChange={(e) => handleFilterChange('minBudget', e.target.value.replace(/\D/g, '') || null)}
+            value={filters.minBudget ? Number(filters.minBudget).toLocaleString('es-AR') : ''}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+              handleFilterChange('minBudget', raw || null)
+            }}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
           />
         </div>
 
@@ -847,22 +839,16 @@ export default function PedidosFeed({
         >
           <span className="shrink-0 font-medium">💰 USD máx:</span>
           <input
-            type={budgetToFocused ? 'number' : 'text'}
-            min="0"
-            step="5000"
+            type="text"
+            inputMode="numeric"
             placeholder="libre"
-            value={
-              budgetToFocused
-                ? filters.maxBudget || ''
-                : filters.maxBudget
-                  ? Number(filters.maxBudget).toLocaleString('es-AR')
-                  : ''
-            }
-            onFocus={() => setBudgetToFocused(true)}
-            onBlur={() => setBudgetToFocused(false)}
-            onChange={(e) => handleFilterChange('maxBudget', e.target.value.replace(/\D/g, '') || null)}
+            value={filters.maxBudget ? Number(filters.maxBudget).toLocaleString('es-AR') : ''}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+              handleFilterChange('maxBudget', raw || null)
+            }}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+            className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
           />
         </div>
 
