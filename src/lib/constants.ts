@@ -118,6 +118,7 @@ export const ZONES_CORDOBA = [
   'Las Delicias',
   'Las Margaritas',
   'Las Palmas',
+  'Las Rosas',
   'Las Veras',
   'Lofts',
   'Lomas de la Carolina',
