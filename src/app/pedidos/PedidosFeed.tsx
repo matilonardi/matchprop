@@ -468,8 +468,8 @@ export default function PedidosFeed({
     if (activeTab === 'car' && filters.carFuels.length) params.set('carFuels', filters.carFuels.join(','))
     if (activeTab === 'car' && filters.carKmMax) params.set('carKmMax', filters.carKmMax)
     if (filters.financing) params.set('financing', filters.financing)
-    if (filters.minBudget) params.set('minBudget', filters.minBudget)
-    if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
+    if (filters.minBudget) params.set('minBudget', String(parseInt(filters.minBudget) * 1000))
+    if (filters.maxBudget) params.set('maxBudget', String(parseInt(filters.maxBudget) * 1000))
     if (filters.since) params.set('since', filters.since)
     if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
     if (filters.dateTo) params.set('dateTo', filters.dateTo)
@@ -816,40 +816,40 @@ export default function PedidosFeed({
 
         {/* Presupuesto Desde */}
         <div
-          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudget ? pillActive : pillInactive}`}
-          style={{ width: '11rem' }}
+          className={`shrink-0 flex items-center gap-1 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudget ? pillActive : pillInactive}`}
+          style={{ width: '12rem' }}
         >
-          <span className="shrink-0 font-medium">💰 Desde:</span>
-          <span className="shrink-0">USD</span>
+          <span className="shrink-0 font-medium">💰 Desde: $</span>
           <input
             type="number"
             min="0"
-            step="1000"
+            step="10"
             placeholder="libre"
             value={filters.minBudget || ''}
             onChange={(e) => handleFilterChange('minBudget', e.target.value || null)}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
             className="w-full min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
+          <span className="shrink-0 text-xs opacity-60">k</span>
         </div>
 
         {/* Presupuesto Hasta */}
         <div
-          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudget ? pillActive : pillInactive}`}
-          style={{ width: '11rem' }}
+          className={`shrink-0 flex items-center gap-1 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudget ? pillActive : pillInactive}`}
+          style={{ width: '12rem' }}
         >
-          <span className="shrink-0 font-medium">💰 Hasta:</span>
-          <span className="shrink-0">USD</span>
+          <span className="shrink-0 font-medium">💰 Hasta: $</span>
           <input
             type="number"
             min="0"
-            step="1000"
+            step="10"
             placeholder="libre"
             value={filters.maxBudget || ''}
             onChange={(e) => handleFilterChange('maxBudget', e.target.value || null)}
             onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
             className="w-full min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           />
+          <span className="shrink-0 text-xs opacity-60">k</span>
         </div>
 
         {/* Financiación (solo propiedades) */}
