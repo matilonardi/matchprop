@@ -406,10 +406,14 @@ export default function PublicarWizardAuto({ onBack }: Props) {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">USD</span>
                 <Input
-                  type="number"
-                  placeholder="25000"
-                  value={budget_usd}
-                  onChange={(e) => setBudgetUsd(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="25.000"
+                  value={budget_usd ? budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                    setBudgetUsd(raw)
+                  }}
                   className="pl-12"
                 />
               </div>

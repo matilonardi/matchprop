@@ -571,10 +571,14 @@ export default function PublicarWizard() {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">USD</span>
                 <Input
-                  type="number"
-                  placeholder="230000"
-                  value={form.budget_usd}
-                  onChange={(e) => setForm((f) => ({ ...f, budget_usd: e.target.value }))}
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="230.000"
+                  value={form.budget_usd ? form.budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                  onChange={(e) => {
+                    const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                    setForm((f) => ({ ...f, budget_usd: raw }))
+                  }}
                   className="pl-12"
                 />
               </div>
