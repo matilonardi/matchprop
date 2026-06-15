@@ -9,7 +9,11 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "Propi – Publicá lo que buscás",
   description:
-    "El marketplace donde los compradores publican qué propiedad o auto buscan, y los vendedores los encuentran a ellos. Córdoba, Argentina.",
+    "El marketplace donde los compradores publican qué propiedad buscan, y los vendedores los encuentran a ellos. Córdoba, Argentina.",
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+  },
 }
 
 export default function RootLayout({

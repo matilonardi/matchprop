@@ -1,11 +1,12 @@
 import Link from 'next/link'
+import { PropiLogoFull } from '@/components/PropiLogo'
 
 export default function Footer() {
   return (
     <footer className="py-10 px-4 border-t border-gray-100 bg-white">
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
-        <div className="font-semibold text-gray-900">
-          <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
+        <div>
+          <PropiLogoFull iconSize={22} textSize="text-base" />
         </div>
         <div className="flex flex-wrap gap-6 justify-center">
           <Link href="/pedidos" className="hover:text-gray-700 transition-colors">Ver búsquedas</Link>
