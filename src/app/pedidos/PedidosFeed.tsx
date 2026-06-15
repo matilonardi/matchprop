@@ -820,7 +820,7 @@ export default function PedidosFeed({
         <div
           className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudget ? pillActive : pillInactive}`}
         >
-          <span className="shrink-0 font-medium">💰 Desde: USD</span>
+          <span className="shrink-0 font-medium">💰 USD mín:</span>
           <input
             type={budgetFromFocused ? 'number' : 'text'}
             min="0"
@@ -845,7 +845,7 @@ export default function PedidosFeed({
         <div
           className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudget ? pillActive : pillInactive}`}
         >
-          <span className="shrink-0 font-medium">💰 Hasta: USD</span>
+          <span className="shrink-0 font-medium">💰 USD máx:</span>
           <input
             type={budgetToFocused ? 'number' : 'text'}
             min="0"
