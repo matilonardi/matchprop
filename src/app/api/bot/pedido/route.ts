@@ -39,15 +39,22 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServerClient()
 
-  // Anti-duplicado: si ya existe un pedido del mismo teléfono en las últimas 2 horas, rechazar
+  // Anti-duplicado: mismo teléfono + misma zona principal + mismo tipo en las últimas 2 horas
+  // Permite que una persona publique múltiples búsquedas distintas
   const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString()
-  const { data: existing } = await supabase
+  const firstZone = zones?.[0] || ''
+  const firstType = property_types?.[0] || ''
+  const { data: allRecent } = await supabase
     .from('buyer_requests')
-    .select('id, created_at')
+    .select('id, zones, property_types, created_at')
     .eq('contact_phone', contact_phone)
     .gte('created_at', twoHoursAgo)
-    .limit(1)
-    .maybeSingle()
+
+  const existing = (allRecent || []).find((r) => {
+    const sameZone = r.zones?.includes(firstZone)
+    const sameType = !firstType || r.property_types?.includes(firstType)
+    return sameZone && sameType
+  })
 
   if (existing) {
     return Response.json({ id: existing.id, duplicate: true }, { status: 200 })
