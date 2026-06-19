@@ -1,25 +1,29 @@
 import { createServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
+import { cookies } from 'next/headers'
 import {
-  Users, FileText, ShoppingCart, BarChart3,
-  CreditCard, DollarSign, TrendingUp, UserCheck,
+  Users, FileText,
+  DollarSign, UserCheck,
 } from 'lucide-react'
 import AdminTable from './AdminTable'
 import AdminUsersTable from './AdminUsersTable'
+import { adminLogout } from './login/actions'
 
 export default async function AdminPage({
   searchParams,
 }: {
-  searchParams: Promise<{ key?: string; tab?: string }>
+  searchParams: Promise<{ tab?: string }>
 }) {
   const params = await searchParams
 
   const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
-  if (params.key !== ADMIN_SECRET) {
-    redirect('/?error=unauthorized')
+  const cookieStore = await cookies()
+  const session = cookieStore.get('matchprop_admin')?.value
+  if (session !== ADMIN_SECRET) {
+    redirect('/admin/login')
   }
 
-  const tab = params.tab || 'requests'
+  const tab = params.tab || 'pulso'
   const supabase = createServerClient()
 
   const weekAgo  = new Date(Date.now() - 7  * 24 * 3600 * 1000).toISOString()
@@ -175,9 +179,16 @@ export default async function AdminPage({
             <h1 className="text-2xl font-bold text-gray-900">Panel de Admin</h1>
             <p className="text-sm text-gray-500 mt-0.5">Propi · Gestión y métricas</p>
           </div>
-          <a href="/pedidos" className="text-sm text-orange-500 hover:underline">
-            ← Ver feed público
-          </a>
+          <div className="flex items-center gap-4">
+            <a href="/pedidos" className="text-sm text-orange-500 hover:underline">
+              ← Ver feed público
+            </a>
+            <form action={adminLogout}>
+              <button type="submit" className="text-sm text-gray-400 hover:text-gray-600">
+                Cerrar sesión
+              </button>
+            </form>
+          </div>
         </div>
 
         {/* Stats */}
@@ -222,7 +233,7 @@ export default async function AdminPage({
           ].map(t => (
             <a
               key={t.id}
-              href={`/admin?key=${ADMIN_SECRET}&tab=${t.id}`}
+              href={`/admin?tab=${t.id}`}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
                 tab === t.id
                   ? 'bg-white text-gray-900 shadow-sm'
