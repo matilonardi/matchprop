@@ -7,9 +7,13 @@ export async function adminLogin(formData: FormData) {
   const username = formData.get('username') as string
   const password = formData.get('password') as string
 
-  const validUser = process.env.ADMIN_USERNAME || 'matias'
-  const validPass = process.env.ADMIN_PASSWORD || 'matchprop2025'
-  const secret    = process.env.ADMIN_SECRET   || 'matchprop-admin-2025'
+  const validUser = process.env.ADMIN_USERNAME
+  const validPass = process.env.ADMIN_PASSWORD
+  const secret    = process.env.ADMIN_SECRET
+
+  if (!validUser || !validPass || !secret) {
+    redirect('/admin/login?error=1')
+  }
 
   if (username !== validUser || password !== validPass) {
     redirect('/admin/login?error=1')
