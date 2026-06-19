@@ -151,6 +151,19 @@ export default async function AdminPage({
   const totalCreditsSpent = (leadPurchases || []).reduce((s, p) => s + (p.credits_spent || 1), 0)
   const totalRevenueEstimate = Math.round(totalCreditsSpent * 4)
 
+  // ── Top zonas para el filtro del gráfico ─────────────────────
+  const zoneCounts: Record<string, number> = {}
+  for (const r of requests || []) {
+    for (const z of r.zones || []) {
+      zoneCounts[z] = (zoneCounts[z] || 0) + 1
+    }
+  }
+  const topZones = Object.entries(zoneCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 40)
+    .map(([z]) => z)
+    .sort((a, b) => a.localeCompare(b, 'es'))
+
   // ── Pulso metrics ─────────────────────────────────────────────
   const totalViews = (requests || []).reduce((s, r) => s + (r.views_count || 0), 0)
   const pedidosConVistas = (requests || []).filter(r => (r.views_count || 0) > 0).length
@@ -267,7 +280,7 @@ export default async function AdminPage({
             </div>
 
             {/* Gráfico publicaciones por día */}
-            <ChartPublicaciones />
+            <ChartPublicaciones topZones={topZones} />
 
             {/* KPIs esta semana */}
             <div>
