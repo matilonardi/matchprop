@@ -35,6 +35,7 @@ export default async function AdminPage({
     { data: brokers },
     { data: buyers },
     { data: leadPurchases },
+    { data: creditTxns },
     { count: buyerCount },
     { count: pedidosWeek },
     { count: pedidosMonth },
@@ -57,6 +58,13 @@ export default async function AdminPage({
     supabase
       .from('lead_purchases')
       .select('id, broker_id, credits_spent, purchased_at'),
+
+    // Compras de créditos vía MercadoPago
+    supabase
+      .from('credit_transactions')
+      .select('id, broker_id, amount, description, mp_payment_id, created_at')
+      .gt('amount', 0)
+      .order('created_at', { ascending: false }),
 
     supabase
       .from('buyer_profiles')
@@ -142,6 +150,14 @@ export default async function AdminPage({
     return { ...b, ...reqs }
   })
 
+  // ── Revenue real desde credit_transactions ──────────────────
+  const PACK_PRICES: Record<number, number> = { 3: 80000, 5: 100000, 10: 180000, 999: 350000 }
+  const txns = creditTxns || []
+  const totalCreditsBought = txns.reduce((s, t) => s + (t.amount === 999 ? 999 : t.amount), 0)
+  const totalRevenueARS    = txns.reduce((s, t) => s + (PACK_PRICES[t.amount] ?? 0), 0)
+  const txnsThisWeek       = txns.filter(t => t.created_at >= weekAgo)
+  const revenueThisWeek    = txnsThisWeek.reduce((s, t) => s + (PACK_PRICES[t.amount] ?? 0), 0)
+
   // ── Aggregate stats ──────────────────────────────────────────
   const totalRequests = requests?.length ?? 0
   const activeRequests = requests?.filter(r => r.status === 'active').length ?? 0
@@ -149,7 +165,6 @@ export default async function AdminPage({
   const totalLeads = leadPurchases?.length ?? 0
   const totalBuyers = buyerCount ?? 0
   const totalCreditsSpent = (leadPurchases || []).reduce((s, p) => s + (p.credits_spent || 1), 0)
-  const totalRevenueEstimate = Math.round(totalCreditsSpent * 4)
 
   // ── Top zonas para el filtro del gráfico ─────────────────────
   const zoneCounts: Record<string, number> = {}
@@ -177,11 +192,14 @@ export default async function AdminPage({
   const pulsoLabel = pulsoScore >= 60 ? '🔥 Caliente' : pulsoScore >= 25 ? '🌤️ Tibio' : '❄️ Frío'
   const pulsoColor = pulsoScore >= 60 ? 'text-red-600 bg-red-50 border-red-200' : pulsoScore >= 25 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-blue-600 bg-blue-50 border-blue-200'
 
+  const fmtARS = (n: number) =>
+    n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : `$${(n / 1000).toFixed(0)}k`
+
   const stats = [
-    { icon: FileText, label: 'Publicaciones', value: totalRequests, sub: `${activeRequests} activas`, color: 'blue' },
-    { icon: Users, label: 'Brokers', value: totalBrokers, sub: `${totalLeads} leads vendidos`, color: 'purple' },
-    { icon: UserCheck, label: 'Compradores', value: totalBuyers, sub: 'cuentas registradas', color: 'green' },
-    { icon: DollarSign, label: 'Revenue estimado', value: `~$${totalRevenueEstimate}`, sub: `${totalCreditsSpent} créditos vendidos`, color: 'orange' },
+    { icon: FileText, label: 'Publicaciones',   value: totalRequests,            sub: `${activeRequests} activas`,          color: 'blue'   },
+    { icon: Users,    label: 'Brokers',          value: totalBrokers,             sub: `${totalLeads} contactos desbloqueados`, color: 'purple' },
+    { icon: UserCheck,label: 'Compradores',      value: totalBuyers,              sub: 'cuentas registradas',                color: 'green'  },
+    { icon: DollarSign,label: 'Revenue',         value: totalRevenueARS > 0 ? fmtARS(totalRevenueARS) : '$0', sub: `${txns.length} compras · ${totalCreditsBought} créditos`, color: 'orange' },
   ]
 
   return (
@@ -312,10 +330,10 @@ export default async function AdminPage({
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Acumulado total</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Pedidos activos', value: activeRequests, sub: `${totalRequests} total`, emoji: '📋' },
-                  { label: 'Brokers registrados', value: totalBrokers, sub: 'en la plataforma', emoji: '🏢' },
-                  { label: 'Desbloqueos totales', value: totalLeads, sub: `${totalCreditsSpent} créditos gastados`, emoji: '🔓' },
-                  { label: 'Revenue estimado', value: `~USD ${totalRevenueEstimate}`, sub: 'a $4/crédito', emoji: '💰' },
+                  { label: 'Pedidos activos',      value: activeRequests,                                            sub: `${totalRequests} total`,                   emoji: '📋' },
+                  { label: 'Brokers registrados',  value: totalBrokers,                                              sub: 'en la plataforma',                         emoji: '🏢' },
+                  { label: 'Desbloqueos totales',  value: totalLeads,                                                sub: `${totalCreditsSpent} créditos gastados`,    emoji: '🔓' },
+                  { label: 'Revenue total',        value: totalRevenueARS > 0 ? fmtARS(totalRevenueARS) : '$0',    sub: `${txns.length} compras realizadas`,          emoji: '💰' },
                 ].map(k => (
                   <div key={k.label} className="bg-white rounded-xl border border-gray-100 p-4">
                     <div className="text-2xl mb-2">{k.emoji}</div>
@@ -324,6 +342,52 @@ export default async function AdminPage({
                     <div className="text-xs text-gray-400">{k.sub}</div>
                   </div>
                 ))}
+              </div>
+            </div>
+
+            {/* Historial de compras de créditos */}
+            <div>
+              <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Compras de créditos</h2>
+              <div className="bg-white rounded-xl border border-gray-100 overflow-hidden">
+                {txns.length === 0 ? (
+                  <div className="px-4 py-8 text-center text-sm text-gray-400">
+                    Aún no hay compras registradas.
+                  </div>
+                ) : (
+                  <table className="w-full text-sm">
+                    <thead className="bg-gray-50 border-b border-gray-100">
+                      <tr>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Broker</th>
+                        <th className="text-left px-4 py-3 text-xs font-semibold text-gray-500">Pack</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Créditos</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Monto ARS</th>
+                        <th className="text-right px-4 py-3 text-xs font-semibold text-gray-500">Fecha</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {txns.map(t => {
+                        const broker = (brokers || []).find(b => b.id === t.broker_id)
+                        const ars = PACK_PRICES[t.amount] ?? 0
+                        return (
+                          <tr key={t.id} className="hover:bg-gray-50">
+                            <td className="px-4 py-3 font-medium text-gray-700">{broker?.name || broker?.agency_name || '—'}</td>
+                            <td className="px-4 py-3 text-gray-500 text-xs">{t.description?.split('—')[0]?.replace('Compra: ','').trim() || '—'}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-orange-500">{t.amount === 999 ? '∞' : t.amount}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-gray-900">{ars > 0 ? `$${ars.toLocaleString('es-AR')}` : '—'}</td>
+                            <td className="px-4 py-3 text-right text-gray-400 text-xs">{new Date(t.created_at).toLocaleDateString('es-AR')}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                    <tfoot className="bg-gray-50 border-t border-gray-100">
+                      <tr>
+                        <td colSpan={3} className="px-4 py-3 text-xs font-semibold text-gray-500">Total</td>
+                        <td className="px-4 py-3 text-right font-bold text-gray-900">{totalRevenueARS > 0 ? `$${totalRevenueARS.toLocaleString('es-AR')}` : '$0'}</td>
+                        <td />
+                      </tr>
+                    </tfoot>
+                  </table>
+                )}
               </div>
             </div>
 
