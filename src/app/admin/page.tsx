@@ -8,6 +8,7 @@ import {
 import AdminTable from './AdminTable'
 import AdminUsersTable from './AdminUsersTable'
 import { adminLogout } from './login/actions'
+import ChartPublicaciones from './ChartPublicaciones'
 
 export default async function AdminPage({
   searchParams,
@@ -264,6 +265,9 @@ export default async function AdminPage({
                 <div>Pedidos + vistas + desbloqueos + brokers nuevos</div>
               </div>
             </div>
+
+            {/* Gráfico publicaciones por día */}
+            <ChartPublicaciones />
 
             {/* KPIs esta semana */}
             <div>
