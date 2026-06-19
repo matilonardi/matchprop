@@ -3,19 +3,21 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 
+// ADMIN_USERS = "matias:Gelly3625$,nicolas:Marvick$"
+function isValidAdmin(username: string, password: string): boolean {
+  const raw = process.env.ADMIN_USERS || ''
+  return raw.split(',').some(entry => {
+    const [u, p] = entry.trim().split(':')
+    return u === username && p === password
+  })
+}
+
 export async function adminLogin(formData: FormData) {
   const username = formData.get('username') as string
   const password = formData.get('password') as string
+  const secret   = process.env.ADMIN_SECRET
 
-  const validUser = process.env.ADMIN_USERNAME
-  const validPass = process.env.ADMIN_PASSWORD
-  const secret    = process.env.ADMIN_SECRET
-
-  if (!validUser || !validPass || !secret) {
-    redirect('/admin/login?error=1')
-  }
-
-  if (username !== validUser || password !== validPass) {
+  if (!secret || !isValidAdmin(username, password)) {
     redirect('/admin/login?error=1')
   }
 
