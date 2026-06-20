@@ -108,8 +108,15 @@ export default function BrokerLoginForm() {
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo })
       if (resetError) throw resetError
       setResetSent(true)
-    } catch {
-      setError('No pudimos enviar el email. Verificá la dirección e intentá de nuevo.')
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('too many')) {
+        setError('Demasiados intentos. Esperá unos minutos e intentá de nuevo.')
+      } else if (msg.toLowerCase().includes('smtp') || msg.toLowerCase().includes('send') || msg.toLowerCase().includes('email')) {
+        setError('Error al enviar el email. Por favor contactá a soporte: hola@matchprop.com.ar')
+      } else {
+        setError(`No pudimos enviar el email. ${msg || 'Verificá la dirección e intentá de nuevo.'}`)
+      }
     } finally {
       setLoading(false)
     }
