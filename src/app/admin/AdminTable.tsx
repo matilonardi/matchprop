@@ -9,6 +9,7 @@ import { Trash2, ExternalLink, Car, Home } from 'lucide-react'
 interface BuyerRequest {
   id: string
   request_type: string | null
+  publisher_type: string | null
   contact_name: string | null
   contact_email: string | null
   contact_phone: string | null
@@ -97,6 +98,7 @@ export default function AdminTable({ requests: initialRequests, adminSecret }: A
             <tr className="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
               <th className="text-left px-4 py-3 font-medium">Fecha</th>
               <th className="text-left px-4 py-3 font-medium">Tipo</th>
+              <th className="text-left px-4 py-3 font-medium">Origen</th>
               <th className="text-left px-4 py-3 font-medium">Contacto</th>
               <th className="text-left px-4 py-3 font-medium">Zonas</th>
               <th className="text-left px-4 py-3 font-medium">Presupuesto</th>
@@ -125,6 +127,15 @@ export default function AdminTable({ requests: initialRequests, adminSecret }: A
                       <Home className="h-3 w-3" />
                       Propiedad
                     </Badge>
+                  )}
+                </td>
+
+                {/* Origin */}
+                <td className="px-4 py-3">
+                  {r.publisher_type === 'inmobiliaria' ? (
+                    <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">Inmo</Badge>
+                  ) : (
+                    <Badge className="bg-green-100 text-green-700 border-0 text-xs">Particular</Badge>
                   )}
                 </td>
 
@@ -201,7 +212,7 @@ export default function AdminTable({ requests: initialRequests, adminSecret }: A
 
             {requests.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm">
+                <td colSpan={9} className="px-4 py-10 text-center text-gray-400 text-sm">
                   No hay pedidos registrados todavía.
                 </td>
               </tr>

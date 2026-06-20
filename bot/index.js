@@ -134,6 +134,33 @@ function saveLastRun() {
   fs.writeFileSync(LAST_RUN_FILE, JSON.stringify({ timestamp: Date.now() }))
 }
 
+// Verifica si ya existe un pedido activo con el mismo teléfono + zona + presupuesto.
+// Usa la API REST de Supabase directamente para evitar importar el SDK.
+async function isDuplicate(phone, zones, budgetUsd) {
+  if (!phone || phone.startsWith('LID_')) return false
+  const supabaseUrl  = process.env.SUPABASE_URL
+  const supabaseKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !supabaseKey) return false
+  try {
+    const url = `${supabaseUrl}/rest/v1/buyer_requests?contact_phone=eq.${encodeURIComponent(phone)}&status=eq.active&select=id,zones,budget_usd`
+    const res = await fetch(url, {
+      headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
+    })
+    if (!res.ok) return false
+    const existing = await res.json()
+    for (const req of existing) {
+      const zoneMatch = (req.zones || []).some(z => zones.includes(z))
+      const b1 = budgetUsd || 0
+      const b2 = req.budget_usd || 0
+      const budgetMatch = b1 === 0 || b2 === 0 || Math.abs(b1 - b2) / Math.max(b1, b2) < 0.15
+      if (zoneMatch && budgetMatch) return true
+    }
+    return false
+  } catch {
+    return false
+  }
+}
+
 async function createPedido(body) {
   const res = await fetch(`${MATCHPROP_URL}/api/bot/pedido`, {
     method:  'POST',
@@ -298,6 +325,14 @@ client.on('ready', async () => {
         parsed.description = `[Contactar por nombre en WA: ${name || 'ver grupo'}] ${parsed.description}`
       } else if (isLID) {
         parsed.description = `Contactar por nombre en WA: ${name || 'ver grupo'}`
+      }
+
+      // Deduplicación local antes de llamar a la API
+      const dup = await isDuplicate(finalPhone, parsed.zones, parsed.budget_usd || 0)
+      if (dup) {
+        process.stdout.write('→ ↩ duplicado\n')
+        totalIgnorados++
+        continue
       }
 
       try {

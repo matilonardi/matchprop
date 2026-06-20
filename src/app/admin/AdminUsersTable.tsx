@@ -11,11 +11,12 @@ interface EnrichedBroker {
   email: string
   phone?: string | null
   zones: string[]
-  credits: number           // credits remaining
-  credits_spent: number     // credits used (= leads unlocked)
-  credits_total: number     // total ever acquired
+  credits: number
+  credits_spent: number
+  credits_total: number
   leads_unlocked: number
-  revenue_estimate: number  // ≈ USD (credits_total × $4)
+  pedidos_loaded: number
+  revenue_estimate: number
   created_at: string
 }
 
@@ -77,6 +78,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                 <th className="text-left px-4 py-3 font-medium">Registro</th>
                 <th className="text-left px-4 py-3 font-medium">Créditos</th>
                 <th className="text-left px-4 py-3 font-medium">Uso</th>
+                <th className="text-left px-4 py-3 font-medium">Pedidos</th>
                 <th className="text-left px-4 py-3 font-medium">Leads</th>
                 <th className="text-left px-4 py-3 font-medium">Revenue ~</th>
                 <th className="text-left px-4 py-3 font-medium">Zonas</th>
@@ -130,6 +132,18 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                     <CreditBar spent={b.credits_spent} remaining={b.credits} />
                   </td>
 
+                  {/* Pedidos loaded */}
+                  <td className="px-4 py-3">
+                    {b.pedidos_loaded > 0 ? (
+                      <div className="flex items-center gap-1.5 text-purple-700 font-medium">
+                        <Home className="h-3.5 w-3.5 text-purple-400" />
+                        {b.pedidos_loaded}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-xs">—</span>
+                    )}
+                  </td>
+
                   {/* Leads unlocked */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1.5 text-green-700 font-medium">
@@ -166,7 +180,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
 
               {brokers.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-10 text-center text-gray-400 text-sm">
+                  <td colSpan={8} className="px-4 py-10 text-center text-gray-400 text-sm">
                     No hay brokers registrados todavía.
                   </td>
                 </tr>

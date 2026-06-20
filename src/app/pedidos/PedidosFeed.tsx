@@ -808,7 +808,7 @@ export default function PedidosFeed({
         {/* Dormitorios — solo propiedades, multi-select */}
         {activeTab === 'property' && (
           <div className="shrink-0 flex items-center gap-1">
-            <span className="text-sm font-medium text-gray-500 mr-1">🛏</span>
+            <span className="text-sm font-medium text-gray-500 mr-1">🛏 Dorm:</span>
             {['1','2','3','4'].map((v) => (
               <button
                 key={v}

@@ -44,7 +44,7 @@ export default async function AdminPage({
   ] = await Promise.all([
     supabase
       .from('buyer_requests')
-      .select('id, request_type, contact_name, contact_email, contact_phone, zones, budget_usd, status, views_count, created_at')
+      .select('id, request_type, publisher_type, agency_name, contact_name, contact_email, contact_phone, zones, budget_usd, status, views_count, created_at')
       .order('created_at', { ascending: false }),
 
     supabase
@@ -128,16 +128,25 @@ export default async function AdminPage({
     })
   }
 
+  // Aggregate pedidos loaded per agency (by agency_name match)
+  const pedidosByAgency = new Map<string, number>()
+  for (const r of requests || []) {
+    if (r.agency_name) {
+      pedidosByAgency.set(r.agency_name, (pedidosByAgency.get(r.agency_name) || 0) + 1)
+    }
+  }
+
   // Enrich brokers
   const enrichedBrokers = (brokers || []).map(b => {
     const purchases = purchasesByBroker.get(b.id) || { count: 0, creditsSpent: 0 }
     const creditsSpent = purchases.creditsSpent
     const creditsTotal = b.credits + creditsSpent
-    // Estimated revenue: ~$20.000 ARS/credit average across packs
     const revenueEstimate = creditsTotal > 0 ? creditsTotal * 20000 : 0
+    const pedidosLoaded = b.agency_name ? (pedidosByAgency.get(b.agency_name) || 0) : 0
     return {
       ...b,
       leads_unlocked: purchases.count,
+      pedidos_loaded: pedidosLoaded,
       credits_spent: creditsSpent,
       credits_total: creditsTotal,
       revenue_estimate: revenueEstimate,
@@ -161,6 +170,8 @@ export default async function AdminPage({
   // ── Aggregate stats ──────────────────────────────────────────
   const totalRequests = requests?.length ?? 0
   const activeRequests = requests?.filter(r => r.status === 'active').length ?? 0
+  const inmoRequests = requests?.filter(r => r.publisher_type === 'inmobiliaria').length ?? 0
+  const particularRequests = totalRequests - inmoRequests
   const totalBrokers = brokers?.length ?? 0
   const totalLeads = leadPurchases?.length ?? 0
   const totalBuyers = buyerCount ?? 0
@@ -196,10 +207,10 @@ export default async function AdminPage({
     n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : `$${(n / 1000).toFixed(0)}k`
 
   const stats = [
-    { icon: FileText, label: 'Publicaciones',   value: totalRequests,            sub: `${activeRequests} activas`,          color: 'blue'   },
-    { icon: Users,    label: 'Brokers',          value: totalBrokers,             sub: `${totalLeads} contactos desbloqueados`, color: 'purple' },
-    { icon: UserCheck,label: 'Compradores',      value: totalBuyers,              sub: 'cuentas registradas',                color: 'green'  },
-    { icon: DollarSign,label: 'Revenue',         value: totalRevenueARS > 0 ? fmtARS(totalRevenueARS) : '$0', sub: `${txns.length} compras · ${totalCreditsBought} créditos`, color: 'orange' },
+    { icon: FileText,   label: 'Publicaciones', value: totalRequests,   sub: `${inmoRequests} inmo · ${particularRequests} particulares`, color: 'blue'   },
+    { icon: Users,      label: 'Inmos (brokers)',value: totalBrokers,   sub: `${totalLeads} contactos desbloqueados`,                     color: 'purple' },
+    { icon: UserCheck,  label: 'Particulares',   value: totalBuyers,    sub: 'compradores registrados',                                   color: 'green'  },
+    { icon: DollarSign, label: 'Revenue',        value: totalRevenueARS > 0 ? fmtARS(totalRevenueARS) : '$0', sub: `${txns.length} compras · ${totalCreditsBought} créditos`, color: 'orange' },
   ]
 
   return (

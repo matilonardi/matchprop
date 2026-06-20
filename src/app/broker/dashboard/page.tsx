@@ -6,7 +6,7 @@ import Link from 'next/link'
 import {
   Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2,
   MapPin, MessageCircle, FileSearch, Search, Flame, Zap,
-  BarChart2, Target, ChevronRight, AlertCircle,
+  BarChart2, Target, ChevronRight, AlertCircle, ClipboardList, Building2,
 } from 'lucide-react'
 import { buildZonaPropUrl } from '@/lib/zonaprop'
 import { Button } from '@/components/ui/button'
@@ -75,6 +75,7 @@ export default function BrokerDashboard() {
   const [broker, setBroker] = useState<Broker | null>(null)
   const [leads, setLeads] = useState<Lead[]>([])
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null)
+  const [platformStats, setPlatformStats] = useState<{ total: number; byUs: number } | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -102,6 +103,14 @@ export default function BrokerDashboard() {
         .then(r => r.json())
         .then(setMarketStats)
         .catch(() => {/* silently fail */})
+
+      // Platform stats — total active pedidos + pedidos loaded by us
+      Promise.all([
+        supabase.from('buyer_requests').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+        supabase.from('buyer_requests').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('publisher_type', 'inmobiliaria'),
+      ]).then(([{ count: total }, { count: byUs }]) => {
+        setPlatformStats({ total: total ?? 0, byUs: byUs ?? 0 })
+      }).catch(() => {/* silently fail */})
     }
     load()
   }, [router])
@@ -179,16 +188,16 @@ export default function BrokerDashboard() {
               </Link>
               <button
                 onClick={handleLogout}
-                className="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-                title="Cerrar sesión"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 border border-gray-200 hover:border-red-200 text-sm font-medium transition-colors"
               >
                 <LogOut className="h-4 w-4" />
+                Cerrar sesión
               </button>
             </div>
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-3 gap-4 mb-3">
             {[
               { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500', badge: null },
               { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600', badge: totalUnread > 0 ? totalUnread : null },
@@ -208,6 +217,22 @@ export default function BrokerDashboard() {
                     </span>
                   )}
                 </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Platform stats */}
+          <div className="grid grid-cols-2 gap-4 mb-8">
+            {[
+              { label: 'Pedidos en plataforma', value: platformStats?.total ?? '—', icon: <ClipboardList className="h-5 w-5 text-indigo-500" />, color: 'text-indigo-600' },
+              { label: 'Cargados por nosotros', value: platformStats?.byUs ?? '—', icon: <Building2 className="h-5 w-5 text-teal-500" />, color: 'text-teal-600' },
+            ].map(({ label, value, icon, color }) => (
+              <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
+                <div className="flex items-center gap-3 mb-2">
+                  {icon}
+                  <span className="text-sm text-gray-500">{label}</span>
+                </div>
+                <p className={`text-3xl font-bold ${color}`}>{value}</p>
               </div>
             ))}
           </div>
