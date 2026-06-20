@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
           </p>
         </div>
       `,
-    }).catch(() => null)
+    }).catch((err) => console.error('[email] matching alert failed for broker:', broker.email, err?.message ?? err))
   )
 
   await Promise.allSettled(emailPromises)

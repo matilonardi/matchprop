@@ -235,8 +235,10 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
         `,
-      }).catch(() => {})
-    } catch {}
+      }).catch((err) => console.error('[email] admin pedido notification failed:', err?.message ?? err))
+    } catch (err: unknown) {
+      console.error('[email] pedido email block failed:', err instanceof Error ? err.message : err)
+    }
   }
 
   const close_token = makeCloseToken(data.id)
