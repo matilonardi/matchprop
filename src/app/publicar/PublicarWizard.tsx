@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { CheckCircle2, ArrowRight, ArrowLeft, Home, Building2, Layers, MapPin, DollarSign, User, Loader2, Eye, EyeOff } from 'lucide-react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
@@ -73,6 +73,12 @@ const PROPERTY_TYPES: { id: PropertyType; label: string; icon: string }[] = [
   { id: 'revaluo', label: 'Para revalúo (cualquier tipo/zona)', icon: '📈' },
 ]
 
+interface LoggedBroker {
+  id: string
+  name: string
+  agency_name?: string | null
+}
+
 export default function PublicarWizard() {
   const router = useRouter()
   const [requestType, setRequestType] = useState<null | 'property' | 'car'>(null)
@@ -83,6 +89,17 @@ export default function PublicarWizard() {
   const [zoneSearch, setZoneSearch] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const captchaRef = useRef<HCaptcha>(null)
+  const [loggedBroker, setLoggedBroker] = useState<LoggedBroker | null | 'loading'>('loading')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) { setLoggedBroker(null); return }
+      fetch(`/api/broker/me?userId=${user.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => setLoggedBroker(data?.broker ?? null))
+        .catch(() => setLoggedBroker(null))
+    })
+  }, [])
 
   const [form, setForm] = useState<FormData>({
     property_types: [],
@@ -134,10 +151,14 @@ export default function PublicarWizard() {
       case 3: return isTerrenoOnly || !!form.bedrooms_min
       case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
       case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10
-      case 6: return !!form.contact_name && !!form.contact_phone &&
-        !!form.contact_email && form.contact_email.includes('@') &&
-        form.contact_password.length >= 8 && acceptedTerms &&
-        (form.publisher_type !== 'inmobiliaria' || !!form.agency_name.trim())
+      case 6:
+        if (loggedBroker && loggedBroker !== 'loading') {
+          return !!form.contact_name && !!form.contact_phone
+        }
+        return !!form.contact_name && !!form.contact_phone &&
+          !!form.contact_email && form.contact_email.includes('@') &&
+          form.contact_password.length >= 8 && acceptedTerms &&
+          (form.publisher_type !== 'inmobiliaria' || !!form.agency_name.trim())
       default: return false
     }
   }
@@ -218,6 +239,54 @@ export default function PublicarWizard() {
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
       captchaRef.current?.resetCaptcha()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleBrokerSubmit() {
+    if (!canProceed() || loading || !loggedBroker || loggedBroker === 'loading') return
+    setLoading(true)
+    setError('')
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) throw new Error('Sesión expirada, volvé a iniciar sesión')
+
+      const ft = form.financing_types
+      const derivedFinancing =
+        ft.includes('credito') && !ft.includes('efectivo') ? 'credito'
+        : ft.includes('efectivo') && !ft.includes('credito') ? 'efectivo'
+        : ft.length > 0 ? 'ambos' : null
+
+      const intOrNull = (v: string) => v ? parseInt(v) : null
+
+      const res = await fetch('/api/broker/pedidos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          property_types: form.property_types,
+          zones: form.zones,
+          bedrooms_min: intOrNull(form.bedrooms_min),
+          bedrooms_max: intOrNull(form.bedrooms_max),
+          bathrooms_min: intOrNull(form.bathrooms_min),
+          budget_usd: parseInt(form.budget_usd),
+          financing: derivedFinancing,
+          financing_types: form.financing_types,
+          description: form.description || null,
+          urgency: form.urgency || null,
+          requirements: form.requirements,
+          contact_name: form.contact_name,
+          contact_phone: form.contact_phone,
+        }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Error al publicar')
+      }
+      router.push('/broker/dashboard?pedido=nuevo')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error inesperado')
     } finally {
       setLoading(false)
     }
@@ -800,8 +869,56 @@ export default function PublicarWizard() {
           )
         })()}
 
-        {/* Step 6: Create account */}
-        {step === 6 && (
+        {/* Step 6: Create account (or broker shortcut) */}
+        {step === 6 && loggedBroker && loggedBroker !== 'loading' && (
+          <div className="space-y-5">
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+              <p className="font-semibold mb-1">📋 Último paso: datos del cliente</p>
+              <p className="text-blue-700">
+                Publicás como <strong>{loggedBroker.agency_name || loggedBroker.name}</strong>. Ingresá el nombre y teléfono del cliente que busca.
+              </p>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Nombre del cliente <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                placeholder="Juan García"
+                value={form.contact_name}
+                onChange={(e) => setForm((f) => ({ ...f, contact_name: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium text-gray-700 mb-2 block">
+                Teléfono / WhatsApp del cliente <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                type="tel"
+                placeholder="+54 9 351 xxx xxxx"
+                value={form.contact_phone}
+                onChange={(e) => setForm((f) => ({ ...f, contact_phone: e.target.value }))}
+              />
+            </div>
+
+            {/* Summary */}
+            <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
+              <p className="font-medium text-gray-900 mb-3">Resumen de la búsqueda:</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
+                <span>📦 {form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
+                <span>📍 {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
+                {form.bedrooms_min && <span>🛏 {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>}
+                <span>💰 USD {parseInt(form.budget_usd || '0').toLocaleString()}</span>
+              </div>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 text-red-700 rounded-lg p-3 text-sm">{error}</div>
+            )}
+          </div>
+        )}
+
+        {step === 6 && (!loggedBroker || loggedBroker === 'loading') && (
           <div className="space-y-5">
             <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 text-sm text-orange-800">
               <p className="font-semibold mb-1">📋 Último paso: creá tu cuenta gratis</p>
@@ -971,6 +1088,24 @@ export default function PublicarWizard() {
             >
               Siguiente
               <ArrowRight className="h-4 w-4 ml-2" />
+            </Button>
+          ) : loggedBroker && loggedBroker !== 'loading' ? (
+            <Button
+              onClick={handleBrokerSubmit}
+              disabled={!canProceed() || loading}
+              className="bg-orange-500 hover:bg-orange-600"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Publicando...
+                </>
+              ) : (
+                <>
+                  Publicar búsqueda
+                  <CheckCircle2 className="h-4 w-4 ml-2" />
+                </>
+              )}
             </Button>
           ) : (
             <>

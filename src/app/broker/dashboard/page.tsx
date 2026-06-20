@@ -7,6 +7,7 @@ import {
   Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2,
   MapPin, MessageCircle, FileSearch, Search, Flame, Zap,
   BarChart2, Target, ChevronRight, AlertCircle, ClipboardList, Building2,
+  CheckCircle2, X,
 } from 'lucide-react'
 import { buildZonaPropUrl } from '@/lib/zonaprop'
 import { Button } from '@/components/ui/button'
@@ -49,6 +50,20 @@ interface ZoneStat {
   avgBudget: number
 }
 
+interface BrokerPedido {
+  id: string
+  property_types: string[]
+  zones: string[]
+  budget_usd: number
+  contact_name: string
+  contact_phone: string
+  bedrooms_min: number | null
+  bedrooms_max: number | null
+  description: string | null
+  status: string
+  created_at: string
+}
+
 interface MarketStats {
   zoneStats: ZoneStat[]
   typeBreakdown: Record<string, number>
@@ -76,6 +91,8 @@ export default function BrokerDashboard() {
   const [leads, setLeads] = useState<Lead[]>([])
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null)
   const [platformStats, setPlatformStats] = useState<{ total: number; byUs: number } | null>(null)
+  const [misPedidos, setMisPedidos] = useState<BrokerPedido[]>([])
+  const [closingId, setClosingId] = useState<string | null>(null)
 
   useEffect(() => {
     async function load() {
@@ -97,6 +114,12 @@ export default function BrokerDashboard() {
       setLeads(data.leads || [])
       setLoading(false)
 
+      // Broker's own pedidos
+      fetch(`/api/broker/pedidos?userId=${user.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => d?.pedidos && setMisPedidos(d.pedidos))
+        .catch(() => {})
+
       // Market stats (fire after broker loads)
       const zonesParam = encodeURIComponent((data.broker.zones as string[]).join(','))
       fetch(`/api/broker/market-stats?broker_id=${data.broker.id}&zones=${zonesParam}`)
@@ -114,6 +137,25 @@ export default function BrokerDashboard() {
     }
     load()
   }, [router])
+
+  async function closePedido(id: string) {
+    if (closingId) return
+    setClosingId(id)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const res = await fetch(`/api/broker/pedidos/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId: user.id, action: 'close' }),
+      })
+      if (res.ok) {
+        setMisPedidos(prev => prev.map(p => p.id === id ? { ...p, status: 'closed' } : p))
+      }
+    } finally {
+      setClosingId(null)
+    }
+  }
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -223,18 +265,23 @@ export default function BrokerDashboard() {
 
           {/* Platform stats */}
           <div className="grid grid-cols-2 gap-4 mb-8">
-            {[
-              { label: 'Pedidos en plataforma', value: platformStats?.total ?? '—', icon: <ClipboardList className="h-5 w-5 text-indigo-500" />, color: 'text-indigo-600' },
-              { label: 'Cargados por nosotros', value: platformStats?.byUs ?? '—', icon: <Building2 className="h-5 w-5 text-teal-500" />, color: 'text-teal-600' },
-            ].map(({ label, value, icon, color }) => (
-              <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
-                <div className="flex items-center gap-3 mb-2">
-                  {icon}
-                  <span className="text-sm text-gray-500">{label}</span>
-                </div>
-                <p className={`text-3xl font-bold ${color}`}>{value}</p>
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <ClipboardList className="h-5 w-5 text-indigo-500" />
+                <span className="text-sm text-gray-500">Pedidos en plataforma</span>
               </div>
-            ))}
+              <p className="text-3xl font-bold text-indigo-600">{platformStats?.total ?? '—'}</p>
+            </div>
+            <div className="bg-white rounded-xl border border-gray-100 p-5">
+              <div className="flex items-center gap-3 mb-2">
+                <Building2 className="h-5 w-5 text-teal-500" />
+                <span className="text-sm text-gray-500">Mis búsquedas cargadas</span>
+              </div>
+              <p className="text-3xl font-bold text-teal-600">{misPedidos.length || '—'}</p>
+              <p className="text-xs text-gray-400 mt-1">
+                {misPedidos.filter(p => p.status === 'active').length} activas
+              </p>
+            </div>
           </div>
 
           {/* Personal activity grid */}
@@ -403,6 +450,84 @@ export default function BrokerDashboard() {
                 </div>
               )}
             </div>
+          </div>
+
+          {/* ── MIS BÚSQUEDAS ───────────────────────────────────────────────── */}
+          <div className="bg-white rounded-xl border border-gray-100 mb-6 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900 flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-teal-500" />
+                Mis búsquedas
+                {misPedidos.length > 0 && (
+                  <span className="text-xs font-normal text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">
+                    {misPedidos.length}
+                  </span>
+                )}
+              </h2>
+              <Link href="/publicar">
+                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs h-8">
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Nueva búsqueda
+                </Button>
+              </Link>
+            </div>
+
+            {misPedidos.length === 0 ? (
+              <div className="px-5 py-10 text-center">
+                <p className="text-gray-400 text-sm mb-3">Todavía no cargaste ninguna búsqueda de clientes.</p>
+                <Link href="/publicar">
+                  <Button size="sm" variant="outline" className="text-xs">Cargar primera búsqueda</Button>
+                </Link>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-50">
+                {misPedidos.map((p) => {
+                  const typeLabel = (p.property_types || []).map((t: string) => PROPERTY_TYPE_LABELS[t] || t).join(' / ')
+                  const isActive = p.status === 'active'
+                  return (
+                    <div key={p.id} className="px-5 py-4 flex items-start justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="font-medium text-gray-900 text-sm">{p.contact_name}</span>
+                          <a href={`tel:${p.contact_phone}`} className="text-xs text-orange-500 hover:underline">
+                            {p.contact_phone}
+                          </a>
+                          {isActive ? (
+                            <span className="text-[11px] font-medium text-green-700 bg-green-50 border border-green-100 rounded-full px-2 py-0.5">activa</span>
+                          ) : (
+                            <span className="text-[11px] font-medium text-gray-400 bg-gray-100 rounded-full px-2 py-0.5">finalizada</span>
+                          )}
+                        </div>
+                        <p className="text-xs text-gray-500">
+                          {typeLabel}
+                          {p.bedrooms_min && ` · ${p.bedrooms_min}${p.bedrooms_max ? `–${p.bedrooms_max}` : '+'} dorm.`}
+                          {' · '}<span className="font-medium">USD {(p.budget_usd || 0).toLocaleString()}</span>
+                        </p>
+                        <p className="text-xs text-gray-400 mt-0.5 flex items-center gap-1">
+                          <MapPin className="h-3 w-3 shrink-0" />
+                          {(p.zones || []).slice(0, 3).join(', ')}{(p.zones || []).length > 3 ? ` +${p.zones.length - 3}` : ''}
+                        </p>
+                      </div>
+                      {isActive && (
+                        <button
+                          onClick={() => closePedido(p.id)}
+                          disabled={closingId === p.id}
+                          title="Marcar como finalizada"
+                          className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-200 rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-50"
+                        >
+                          {closingId === p.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                          )}
+                          Finalizar
+                        </button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
 
           {/* ── MARKET INTELLIGENCE ─────────────────────────────────────────── */}
