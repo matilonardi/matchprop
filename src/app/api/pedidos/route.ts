@@ -235,9 +235,9 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
         `,
-      }).catch((err) => console.error('[email] admin pedido notification failed:', err?.message ?? err))
+      }).catch((err) => console.error('[email] falló notificación admin (nuevo pedido):', err?.message ?? err))
     } catch (err: unknown) {
-      console.error('[email] pedido email block failed:', err instanceof Error ? err.message : err)
+      console.error('[email] error en bloque de email de pedido:', err instanceof Error ? err.message : err)
     }
   }
 

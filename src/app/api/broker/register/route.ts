@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
             </div>
           </div>
         `,
-      }).catch((err) => console.error('[email] admin broker notification failed:', err?.message ?? err))
+      }).catch((err) => console.error('[email] falló notificación admin (nuevo broker):', err?.message ?? err))
     }
 
     await resend.emails.send({
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
     })
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err)
-    console.error('[email] broker welcome email failed:', msg)
+    console.error('[email] falló email de bienvenida al broker:', msg)
   }
 
   return Response.json({ success: true }, { status: 201 })
