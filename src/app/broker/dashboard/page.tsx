@@ -96,44 +96,48 @@ export default function BrokerDashboard() {
 
   useEffect(() => {
     async function load() {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
-        router.replace('/broker?login=1')
-        return
-      }
+      try {
+        const { data: { user } } = await supabase.auth.getUser()
+        if (!user) {
+          router.replace('/broker?login=1')
+          return
+        }
 
-      const res = await fetch(`/api/broker/me?userId=${user.id}`)
-      if (!res.ok) {
-        setLoadError('No encontramos un perfil de broker para esta cuenta. Si acabás de registrarte, esperá unos segundos y recargá la página.')
+        const res = await fetch(`/api/broker/me?userId=${user.id}`)
+        if (!res.ok) {
+          setLoadError('No encontramos un perfil de broker para esta cuenta. Si acabás de registrarte, esperá unos segundos y recargá la página.')
+          return
+        }
+
+        const data = await res.json()
+        setBroker(data.broker)
+        setLeads(data.leads || [])
+
+        // Broker's own pedidos
+        fetch(`/api/broker/pedidos?userId=${user.id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => d?.pedidos && setMisPedidos(d.pedidos))
+          .catch(() => {})
+
+        // Market stats (fire after broker loads)
+        const zonesParam = encodeURIComponent((data.broker.zones as string[]).join(','))
+        fetch(`/api/broker/market-stats?broker_id=${data.broker.id}&zones=${zonesParam}`)
+          .then(r => r.json())
+          .then(setMarketStats)
+          .catch(() => {})
+
+        // Platform stats — total active pedidos + pedidos loaded by us
+        Promise.all([
+          supabase.from('buyer_requests').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+          supabase.from('buyer_requests').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('publisher_type', 'inmobiliaria'),
+        ]).then(([{ count: total }, { count: byUs }]) => {
+          setPlatformStats({ total: total ?? 0, byUs: byUs ?? 0 })
+        }).catch(() => {})
+      } catch {
+        setLoadError('Error al cargar el dashboard. Por favor recargá la página.')
+      } finally {
         setLoading(false)
-        return
       }
-
-      const data = await res.json()
-      setBroker(data.broker)
-      setLeads(data.leads || [])
-      setLoading(false)
-
-      // Broker's own pedidos
-      fetch(`/api/broker/pedidos?userId=${user.id}`)
-        .then(r => r.ok ? r.json() : null)
-        .then(d => d?.pedidos && setMisPedidos(d.pedidos))
-        .catch(() => {})
-
-      // Market stats (fire after broker loads)
-      const zonesParam = encodeURIComponent((data.broker.zones as string[]).join(','))
-      fetch(`/api/broker/market-stats?broker_id=${data.broker.id}&zones=${zonesParam}`)
-        .then(r => r.json())
-        .then(setMarketStats)
-        .catch(() => {/* silently fail */})
-
-      // Platform stats — total active pedidos + pedidos loaded by us
-      Promise.all([
-        supabase.from('buyer_requests').select('*', { count: 'exact', head: true }).eq('status', 'active'),
-        supabase.from('buyer_requests').select('*', { count: 'exact', head: true }).eq('status', 'active').eq('publisher_type', 'inmobiliaria'),
-      ]).then(([{ count: total }, { count: byUs }]) => {
-        setPlatformStats({ total: total ?? 0, byUs: byUs ?? 0 })
-      }).catch(() => {/* silently fail */})
     }
     load()
   }, [router])

@@ -83,38 +83,8 @@ export async function POST(request: NextRequest) {
 
   // Welcome email + admin alert
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.vercel.app'
-  const adminEmail = process.env.ADMIN_EMAIL || ''
-  const adminSecret = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
   try {
     const resend = new Resend(process.env.RESEND_API_KEY || '')
-
-    // Admin notification (fire-and-forget, parallel)
-    if (adminEmail) {
-      resend.emails.send({
-        from: 'Propi <alertas@matchprop.com.ar>',
-        to: adminEmail,
-        subject: `🏠 Nuevo broker: ${name}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1f2937;">
-            <h2 style="color:#2563eb;">Nuevo broker registrado</h2>
-            <table style="width:100%;border-collapse:collapse;font-size:14px;">
-              <tr><td style="padding:6px 0;color:#6b7280;width:130px;">Nombre</td><td><strong>${name}</strong></td></tr>
-              ${agency_name ? `<tr><td style="padding:6px 0;color:#6b7280;">Inmobiliaria</td><td>${agency_name}</td></tr>` : ''}
-              <tr><td style="padding:6px 0;color:#6b7280;">Email</td><td>${email}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Teléfono</td><td>${phone || '—'}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Zonas</td><td>${zones.join(', ')}</td></tr>
-              ${specialty ? `<tr><td style="padding:6px 0;color:#6b7280;">Especialidad</td><td>${specialty}</td></tr>` : ''}
-            </table>
-            <div style="margin-top:16px;">
-              <a href="${appUrl}/admin?key=${adminSecret}&tab=brokers"
-                 style="background:#2563eb;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px;">
-                Ver en admin →
-              </a>
-            </div>
-          </div>
-        `,
-      }).catch((err) => console.error('[email] falló notificación admin (nuevo broker):', err?.message ?? err))
-    }
 
     await resend.emails.send({
       from: 'Propi <alertas@matchprop.com.ar>',

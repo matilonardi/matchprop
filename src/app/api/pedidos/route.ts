@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { createHmac } from 'crypto'
-import { Resend } from 'resend'
 
 function makeCloseToken(requestId: string): string {
   const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
@@ -196,50 +195,6 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({ request_id: data.id }),
     }).catch(() => {})
   } catch {}
-
-  // Admin notification (non-blocking)
-  const adminEmail = process.env.ADMIN_EMAIL || ''
-  const adminSecret = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
-  if (adminEmail) {
-    try {
-      const resend = new Resend(process.env.RESEND_API_KEY || '')
-      const isCarReq = request_type === 'car'
-      const budgetLabel = budget_usd && budget_usd > 0
-        ? `USD ${Number(budget_usd).toLocaleString('es-AR')}`
-        : 'A convenir'
-      resend.emails.send({
-        from: 'Propi <alertas@matchprop.com.ar>',
-        to: adminEmail,
-        subject: `${isCarReq ? '🚗' : '🏠'} Nueva búsqueda: ${contact_name}`,
-        html: `
-          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1f2937;">
-            <h2 style="color:#2563eb;">Nueva búsqueda publicada</h2>
-            <table style="width:100%;border-collapse:collapse;font-size:14px;">
-              <tr><td style="padding:6px 0;color:#6b7280;width:130px;">Tipo</td><td>${isCarReq ? 'Vehículo 🚗' : 'Propiedad 🏠'}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Contacto</td><td><strong>${contact_name}</strong></td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Teléfono</td><td>${contact_phone}</td></tr>
-              ${contact_email ? `<tr><td style="padding:6px 0;color:#6b7280;">Email</td><td>${contact_email}</td></tr>` : ''}
-              <tr><td style="padding:6px 0;color:#6b7280;">Zonas</td><td>${(zones as string[]).join(', ')}</td></tr>
-              <tr><td style="padding:6px 0;color:#6b7280;">Presupuesto</td><td>${budgetLabel}</td></tr>
-              ${description ? `<tr><td style="padding:6px 0;color:#6b7280;">Detalle</td><td>${description}</td></tr>` : ''}
-            </table>
-            <div style="margin-top:16px;display:flex;gap:12px;">
-              <a href="${appUrl}/pedidos/${data.id}"
-                 style="background:#f97316;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px;">
-                Ver pedido →
-              </a>
-              <a href="${appUrl}/admin?key=${adminSecret}&tab=requests"
-                 style="background:#2563eb;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-size:14px;">
-                Admin →
-              </a>
-            </div>
-          </div>
-        `,
-      }).catch((err) => console.error('[email] falló notificación admin (nuevo pedido):', err?.message ?? err))
-    } catch (err: unknown) {
-      console.error('[email] error en bloque de email de pedido:', err instanceof Error ? err.message : err)
-    }
-  }
 
   const close_token = makeCloseToken(data.id)
   return Response.json({ id: data.id, close_token }, { status: 201 })
