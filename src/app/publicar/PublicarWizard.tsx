@@ -56,7 +56,7 @@ interface FormData {
 
 const STEPS = [
   { id: 1, title: 'Tipo de propiedad', icon: Home },
-  { id: 2, title: 'Zona', icon: MapPin },
+  { id: 2, title: 'Barrio', icon: MapPin },
   { id: 3, title: 'Dormitorios y baños', icon: Layers },
   { id: 4, title: 'Presupuesto', icon: DollarSign },
   { id: 5, title: 'Requisitos', icon: Building2 },
