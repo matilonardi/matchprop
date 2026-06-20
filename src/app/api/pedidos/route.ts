@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
   const carFuels = carFuelsParam ? carFuelsParam.split(',').filter(Boolean) : []
   const carKmMax = searchParams.get('carKmMax')
   const publisherType = searchParams.get('publisherType') // 'particular' | 'inmobiliaria'
-  const bedroomsMin = searchParams.get('bedroomsMin')
+  const bedroomsMinParam = searchParams.get('bedroomsMin')
+  const bedroomsMin = bedroomsMinParam ? bedroomsMinParam.split(',').filter(Boolean) : []
   const page = parseInt(searchParams.get('page') || '1')
   const q    = searchParams.get('q')?.trim() || ''   // free-text search
   const limit = 20
@@ -83,7 +84,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('financing', financing)
     }
   }
-  if (bedroomsMin && requestType !== 'car') query = query.gte('bedrooms_min', parseInt(bedroomsMin))
+  if (bedroomsMin.length && requestType !== 'car') query = query.in('bedrooms_min', bedroomsMin.map(Number))
   if (minBudget) query = query.gte('budget_usd', parseInt(minBudget))
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
   if (q) query = query.or(`description.ilike.%${q}%,search_reason.ilike.%${q}%`)

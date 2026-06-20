@@ -409,7 +409,7 @@ export default function PedidosFeed({
   const [filters, setFilters] = useState({
     zones: initialZone ? [initialZone] : [] as string[],
     types: initialType ? [initialType] : [] as string[],
-    bedroomsMin: '',
+    bedroomsMin: [] as string[],
     carCondition: '',
     carBrands: [] as string[],
     carTransmission: '',
@@ -445,7 +445,7 @@ export default function PedidosFeed({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [textSearch])
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || debouncedTextSearch)
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -461,7 +461,7 @@ export default function PedidosFeed({
     if (debouncedTextSearch) params.set('q', debouncedTextSearch)
     if (filters.zones.length) params.set('zones', filters.zones.join(','))
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
-    if (activeTab === 'property' && filters.bedroomsMin) params.set('bedroomsMin', filters.bedroomsMin)
+    if (activeTab === 'property' && filters.bedroomsMin.length) params.set('bedroomsMin', filters.bedroomsMin.join(','))
     if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
     if (activeTab === 'car' && filters.carBrands.length) params.set('carBrands', filters.carBrands.join(','))
     if (activeTab === 'car' && filters.carTransmission) params.set('carTransmission', filters.carTransmission)
@@ -523,6 +523,14 @@ export default function PedidosFeed({
     setPage(1)
   }
 
+  function toggleBedroomsFilter(val: string) {
+    setFilters((f) => ({
+      ...f,
+      bedroomsMin: f.bedroomsMin.includes(val) ? f.bedroomsMin.filter((v) => v !== val) : [...f.bedroomsMin, val],
+    }))
+    setPage(1)
+  }
+
   const pillBase = 'rounded-full text-sm font-medium border transition-colors w-full h-9'
   const pillActive = 'border-orange-500 bg-orange-50 text-orange-700'
   const pillInactive = 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
@@ -539,7 +547,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], types: [], bedroomsMin: '', carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setZoneDropdownOpen(false)
@@ -797,24 +805,21 @@ export default function PedidosFeed({
           )}
         </>)}
 
-        {/* Dormitorios — solo propiedades */}
+        {/* Dormitorios — solo propiedades, multi-select */}
         {activeTab === 'property' && (
-          <div className="shrink-0 w-44">
-            <Select value={filters.bedroomsMin || 'todos'} onValueChange={(v) => handleFilterChange('bedroomsMin', v)}>
-              <SelectTrigger className={`${pillBase} ${filters.bedroomsMin ? pillActive : pillInactive} px-4`}>
-                <span className="flex items-center gap-1 truncate text-left">
-                  <span className="shrink-0 font-medium">🛏 Dorm.:</span>
-                  <span className="truncate">{filters.bedroomsMin ? `${filters.bedroomsMin}+` : 'todos'}</span>
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Cualquier cantidad</SelectItem>
-                <SelectItem value="1">1+ dormitorio</SelectItem>
-                <SelectItem value="2">2+ dormitorios</SelectItem>
-                <SelectItem value="3">3+ dormitorios</SelectItem>
-                <SelectItem value="4">4+ dormitorios</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="shrink-0 flex items-center gap-1">
+            <span className="text-sm font-medium text-gray-500 mr-1">🛏</span>
+            {['1','2','3','4'].map((v) => (
+              <button
+                key={v}
+                onClick={() => toggleBedroomsFilter(v)}
+                className={`h-9 px-3 rounded-full text-sm font-medium border transition-colors ${
+                  filters.bedroomsMin.includes(v) ? pillActive : pillInactive
+                }`}
+              >
+                {v}+
+              </button>
+            ))}
           </div>
         )}
 
@@ -1008,7 +1013,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], types: [], bedroomsMin: '', carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setPage(1)
