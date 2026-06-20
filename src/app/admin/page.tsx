@@ -9,6 +9,7 @@ import AdminTable from './AdminTable'
 import AdminUsersTable from './AdminUsersTable'
 import { adminLogout } from './login/actions'
 import ChartPublicaciones from './ChartPublicaciones'
+import AdminExportButton from './AdminExportButton'
 
 export default async function AdminPage({
   searchParams,
@@ -441,7 +442,13 @@ export default async function AdminPage({
           </div>
         )}
         {tab === 'requests' && (
-          <AdminTable requests={requests ?? []} adminSecret={ADMIN_SECRET} />
+          <div className="space-y-4">
+            <div className="bg-white rounded-xl border border-gray-100 px-5 py-4">
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Exportar pedidos</p>
+              <AdminExportButton />
+            </div>
+            <AdminTable requests={requests ?? []} adminSecret={ADMIN_SECRET} />
+          </div>
         )}
         {tab === 'brokers' && (
           <AdminUsersTable type="broker" users={enrichedBrokers} adminSecret={ADMIN_SECRET} />
