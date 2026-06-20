@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, CheckCircle2, Gift } from 'lucide-react'
+import { Loader2, CheckCircle2, Gift, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -35,6 +35,7 @@ export default function BrokerRegisterForm() {
     email: '',
     password: '',
   })
+  const [showPassword, setShowPassword] = useState(false)
 
   function toggleZone(zone: string) {
     setSelectedZones((prev) =>
@@ -89,7 +90,7 @@ export default function BrokerRegisterForm() {
         <div>
           <Label className="text-sm mb-1 block">Inmobiliaria / Agencia</Label>
           <Input
-            placeholder="Must Brokers"
+            placeholder="SIGI Inmobiliaria"
             value={form.agency_name}
             onChange={(e) => setForm((f) => ({ ...f, agency_name: e.target.value }))}
           />
@@ -120,14 +121,25 @@ export default function BrokerRegisterForm() {
 
       <div>
         <Label className="text-sm mb-1 block">Contraseña *</Label>
-        <Input
-          type="password"
-          placeholder="Mínimo 8 caracteres"
-          value={form.password}
-          onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
-          minLength={8}
-          required
-        />
+        <div className="relative">
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Mínimo 8 caracteres"
+            value={form.password}
+            onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))}
+            minLength={8}
+            required
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {/* Specialty selector */}

@@ -26,7 +26,25 @@ casa, departamento, duplex, ph, terreno, local, renta, revaluo
 
 Zonas válidas — usá EXACTAMENTE estos nombres, mapeá variantes informales:
 ${ZONES}
-Ejemplos de mapeo: "nva cba"→"Nueva Córdoba", "bº gral paz"→"General Paz", "v belgrano"→"Villa Belgrano"
+Ejemplos de mapeo:
+- "nva cba"→"Nueva Córdoba", "bº gral paz"→"General Paz", "v belgrano"→"Villa Belgrano"
+- "zona norte" o "norte de cba" → ["Argüello","Villa Belgrano","Cerro de las Rosas","Villa Warcalde"]
+- "zona sur" o "sur de cba" o "corredor sur" → ["Manantiales","San Carlos","San Antonio","Tejas del Sur"]
+- "zona centro" → ["Centro","Nueva Córdoba","General Paz"]
+- "Quebrada" o "quebradas" → "Quebradas de Manantiales"
+- "Rincones" → "Rincones de Manantiales"
+- "Brisas" → "Brisas de Manantiales"
+- "Cuestas" → "Manantiales"
+- "Solares" → "Solares de Manantiales"
+- "Terrazas" → "Terrazas de Manantiales"
+- "Colinas" → "Colinas de Manantiales"
+- "Miradores" → "Miradores de Manantiales"
+- "Manantiales 1" o "Mant 1" → "Manantiales I"
+- "Manantiales 2" o "Mant 2" → "Manantiales II"
+- "Barrio Jardín" o "B° Jardín" → "Jardín"
+- "Gral Paz" o "Bº Gral Paz" → "General Paz"
+- "Alta Cba" o "Alta Córdoba" → "Alta Córdoba"
+- "Nva Cba" → "Nueva Córdoba"
 
 Para el presupuesto:
 - "USD X" o "u$s X" → budget_usd: X
@@ -100,35 +118,42 @@ async function parseMessage(text) {
   // Pre-filtro rápido sin costo de API
   if (isObviousNonSearch(text)) return null
 
-  try {
-    const response = await groq.chat.completions.create({
-      model: 'llama-3.1-8b-instant',   // 500k tokens/día en free tier (5x más que 70b)
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `Mensaje: "${text}"` },
-      ],
-      max_tokens: 400,
-      temperature: 0,
-    })
+  const MAX_RETRIES = 3
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      const response = await groq.chat.completions.create({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: SYSTEM_PROMPT },
+          { role: 'user', content: `Mensaje: "${text}"` },
+        ],
+        max_tokens: 400,
+        temperature: 0,
+      })
 
-    const content = response.choices[0].message.content.trim()
+      const content = response.choices[0].message.content.trim()
+      if (!content || content === 'null') return null
 
-    if (!content || content === 'null') return null
+      const jsonMatch = content.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) return null
 
-    // Extraer JSON aunque el modelo agregue texto alrededor
-    const jsonMatch = content.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) return null
+      const parsed = JSON.parse(jsonMatch[0])
+      if (!parsed.zones?.length && !parsed.property_types?.length) return null
 
-    const parsed = JSON.parse(jsonMatch[0])
-
-    // Validación mínima: necesitamos al menos zona o tipo
-    if (!parsed.zones?.length && !parsed.property_types?.length) return null
-
-    return parsed
-  } catch (err) {
-    console.error('Error parseando mensaje:', err.message)
-    return null
+      return parsed
+    } catch (err) {
+      const isRateLimit = err.status === 429 || err.message?.includes('rate')
+      if (isRateLimit && attempt < MAX_RETRIES) {
+        const wait = attempt * 3000 // 3s, 6s
+        console.error(`   ⏳ Groq rate limit, reintento ${attempt}/${MAX_RETRIES} en ${wait/1000}s...`)
+        await new Promise(r => setTimeout(r, wait))
+        continue
+      }
+      console.error('Error parseando mensaje:', err.message)
+      return null
+    }
   }
+  return null
 }
 
 module.exports = { parseMessage }

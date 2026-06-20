@@ -6,7 +6,7 @@ export default function Footer() {
     <footer className="py-10 px-4 border-t border-gray-100 bg-white">
       <div className="max-w-5xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-gray-500">
         <div>
-          <PropiLogoFull iconSize={22} textSize="text-base" />
+          <PropiLogoFull size="sm" />
         </div>
         <div className="flex flex-wrap gap-6 justify-center">
           <Link href="/pedidos" className="hover:text-gray-700 transition-colors">Ver búsquedas</Link>

@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import AnimateIn from '@/components/AnimateIn'
+import { PropiLogoBrand } from '@/components/PropiLogo'
 
 export default function HomePage() {
   return (
@@ -25,6 +26,11 @@ export default function HomePage() {
         <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float-slow delay-1000" />
 
         <div className="relative w-full max-w-5xl mx-auto px-4 py-20 text-center">
+          {/* Logo hero */}
+          <div className="animate-hero-fade-up flex justify-center mb-8">
+            <PropiLogoBrand className="opacity-95" />
+          </div>
+
           <div className="animate-hero-fade-up inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/30 text-yellow-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
             <Star className="h-3.5 w-3.5 fill-current" />
             El marketplace al revés

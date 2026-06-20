@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Loader2, KeyRound, CheckCircle2, AlertCircle } from 'lucide-react'
+import { Loader2, KeyRound, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -16,6 +16,7 @@ export default function ResetPasswordPage() {
   const [error, setError] = useState('')
   const [done, setDone] = useState(false)
   const [ready, setReady] = useState(false)
+  const [showPwd, setShowPwd] = useState(false)
 
   // Supabase lands here with the recovery token in the URL hash.
   // The SDK picks it up automatically via onAuthStateChange.
@@ -100,27 +101,37 @@ export default function ResetPasswordPage() {
 
             <div>
               <Label className="text-sm mb-1 block">Nueva contraseña *</Label>
-              <Input
-                type="password"
-                placeholder="Mínimo 8 caracteres"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                minLength={8}
-                required
-                autoFocus
-              />
+              <div className="relative">
+                <Input
+                  type={showPwd ? 'text' : 'password'}
+                  placeholder="Mínimo 8 caracteres"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  minLength={8}
+                  required
+                  autoFocus
+                  className="pr-10"
+                />
+                <button type="button" onClick={() => setShowPwd(v => !v)} tabIndex={-1}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPwd ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
             </div>
 
             <div>
               <Label className="text-sm mb-1 block">Confirmá la contraseña *</Label>
-              <Input
-                type="password"
-                placeholder="Repetí la contraseña"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                minLength={8}
-                required
-              />
+              <div className="relative">
+                <Input
+                  type={showPwd ? 'text' : 'password'}
+                  placeholder="Repetí la contraseña"
+                  value={confirm}
+                  onChange={(e) => setConfirm(e.target.value)}
+                  minLength={8}
+                  required
+                  className="pr-10"
+                />
+              </div>
             </div>
 
             {error && (

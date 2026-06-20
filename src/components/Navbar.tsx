@@ -49,7 +49,7 @@ export default function Navbar() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           <Link href="/">
-            <PropiLogoFull />
+            <PropiLogoFull size="md" />
           </Link>
 
           {/* Desktop */}
@@ -68,10 +68,10 @@ export default function Navbar() {
                 Mi dashboard
               </Link>
             ) : (
-              // Not logged in: show broker + publish links
+              // Not logged in: show login + publish links
               <>
-                <Link href="/broker" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Para vendedores
+                <Link href="/broker?login=1" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+                  Iniciar sesión
                 </Link>
                 <Link href="/publicar">
                   <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
@@ -112,8 +112,8 @@ export default function Navbar() {
               Mi dashboard →
             </Link>
           ) : (
-            <Link href="/broker" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
-              Para vendedores
+            <Link href="/broker?login=1" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
+              Iniciar sesión
             </Link>
           )}
           <Link href="/publicar" onClick={() => setOpen(false)}>

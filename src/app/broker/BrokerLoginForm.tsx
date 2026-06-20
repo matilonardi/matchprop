@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Loader2, LogIn, UserPlus, ArrowLeft, Mail } from 'lucide-react'
+import { Loader2, LogIn, UserPlus, ArrowLeft, Mail, Eye, EyeOff } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +22,7 @@ export default function BrokerLoginForm() {
     { value: 'ambos',       label: 'Ambos',         sublabel: 'Todo tipo de activos',   icon: '✨' },
   ]
 
+  const [showPassword, setShowPassword] = useState(false)
   const [forgotPassword, setForgotPassword] = useState(false)
   const [resetEmail, setResetEmail] = useState('')
   const [resetSent, setResetSent] = useState(false)
@@ -102,7 +103,8 @@ export default function BrokerLoginForm() {
     setLoading(true)
     setError('')
     try {
-      const redirectTo = `${window.location.origin}/broker/reset-password`
+      const origin = window.location.hostname === 'localhost' ? 'https://matchprop.vercel.app' : window.location.origin
+      const redirectTo = `${origin}/broker/reset-password`
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo })
       if (resetError) throw resetError
       setResetSent(true)
@@ -326,14 +328,25 @@ export default function BrokerLoginForm() {
             ¿Olvidaste tu contraseña?
           </button>
         </div>
-        <Input
-          type="password"
-          placeholder="Tu contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          autoComplete="current-password"
-        />
+        <div className="relative">
+          <Input
+            type={showPassword ? 'text' : 'password'}
+            placeholder="Tu contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+            className="pr-10"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((v) => !v)}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            tabIndex={-1}
+          >
+            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </button>
+        </div>
       </div>
 
       {error && (

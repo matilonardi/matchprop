@@ -56,6 +56,38 @@ function sanitize(parsed) {
   return { ...parsed, property_types: types, financing }
 }
 
+// ── Fallback de zona por grupo ────────────────────────────────
+// Cuando el parser no detecta zona, usamos el grupo como contexto.
+const GROUP_ZONE_FALLBACK = {
+  'NUEVA CBA':  ['Nueva Córdoba', 'General Paz'],
+  'G PAZ':      ['General Paz', 'Nueva Córdoba'],
+  'ZONA NORTE': ['Argüello', 'Villa Belgrano', 'Cerro de las Rosas', 'Villa Warcalde'],
+  'NORTE':      ['Argüello', 'Villa Belgrano', 'Cerro de las Rosas'],
+  'ZONA SUR':   ['Manantiales', 'San Carlos', 'Rincones de Manantiales'],
+  'SUR':        ['Manantiales', 'San Carlos'],
+  'CENTRO':     ['Centro', 'Nueva Córdoba', 'General Paz'],
+  'COFICO':     ['Cofico', 'Alta Córdoba'],
+  'ALBERDI':    ['Alberdi', 'Centro'],
+}
+
+function getGroupFallbackZones(groupName) {
+  const upper = groupName.toUpperCase()
+  for (const [key, zones] of Object.entries(GROUP_ZONE_FALLBACK)) {
+    if (upper.includes(key)) return zones
+  }
+  return []
+}
+
+// ── Log de mensajes no procesados ────────────────────────────
+const MISSED_FILE = './missed.json'
+
+function logMissed(entry) {
+  let missed = []
+  try { missed = JSON.parse(fs.readFileSync(MISSED_FILE, 'utf8')) } catch {}
+  missed.unshift({ ...entry, ts: new Date().toISOString() })
+  fs.writeFileSync(MISSED_FILE, JSON.stringify(missed.slice(0, 100), null, 2))
+}
+
 // ── Config ────────────────────────────────────────────────────
 const TARGET_GROUP_IDS = (process.env.TARGET_GROUP_IDS || '')
   .split(',').map(s => s.trim()).filter(Boolean)
@@ -68,6 +100,8 @@ const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID || ''
 
 // Cuántas horas hacia atrás buscar mensajes (default 25h para no perder nada)
 const HOURS_BACK = parseInt(process.env.HOURS_BACK || '25')
+// Mínimo de horas hacia atrás aunque last_run sea reciente (evita perder msgs entre runs)
+const MIN_LOOKBACK_HOURS = parseInt(process.env.MIN_LOOKBACK_HOURS || '3')
 
 // ── Telegram notificación ─────────────────────────────────────
 async function sendTelegram(text) {
@@ -83,9 +117,13 @@ async function sendTelegram(text) {
 
 // ── Helpers ───────────────────────────────────────────────────
 function getLastRun() {
+  // Siempre mirar al menos MIN_LOOKBACK_HOURS atrás aunque last_run sea más reciente.
+  // Los duplicados los rechaza la API — esto garantiza que mensajes entre runs no se pierdan.
+  const minLookback = Date.now() - MIN_LOOKBACK_HOURS * 60 * 60 * 1000
   try {
     const data = JSON.parse(fs.readFileSync(LAST_RUN_FILE, 'utf8'))
-    return data.timestamp || 0
+    const stored = data.timestamp || 0
+    return Math.min(stored, minLookback)
   } catch {
     // Primera vez: procesar últimas HOURS_BACK horas
     return Date.now() - HOURS_BACK * 60 * 60 * 1000
@@ -118,8 +156,7 @@ const client = new Client({
     headless: true,
     protocolTimeout: 300000, // 5 minutos
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
-           '--disable-accelerated-2d-canvas', '--no-first-run', '--no-zygote',
-           '--single-process', '--disable-gpu'],
+           '--disable-accelerated-2d-canvas', '--no-first-run', '--disable-gpu'],
   },
 })
 
@@ -134,6 +171,9 @@ client.on('auth_failure', msg => { console.error('❌ Error de autenticación:',
 
 client.on('ready', async () => {
   console.log('\n🤖 Bot conectado!\n')
+
+  // Esperar a que WhatsApp Web sincronice los mensajes recientes del servidor
+  await new Promise(r => setTimeout(r, 8000))
 
   // ── Modo discovery: listar grupos ────────────────────────────
   if (TARGET_GROUP_IDS.length === 0) {
@@ -156,8 +196,10 @@ client.on('ready', async () => {
   const sinceStr = new Date(since).toLocaleString('es-AR')
   console.log(`📅 Procesando mensajes desde: ${sinceStr}\n`)
 
-  let totalCreados  = 0
+  let totalCreados   = 0
   let totalIgnorados = 0
+  let totalMissed    = 0
+  const missedList   = []
 
   for (const groupId of TARGET_GROUP_IDS) {
     let group
@@ -170,54 +212,92 @@ client.on('ready', async () => {
 
     console.log(`📂 ${group.name}`)
 
-    // Traer últimos 50 mensajes y filtrar por timestamp
-    // (50 es suficiente corriendo cada 2 horas; límite alto causa timeouts)
-    const messages = await group.fetchMessages({ limit: 50 })
+    // 500 mensajes para cubrir hasta 15+ horas sin conexión en grupos activos
+    const messages = await group.fetchMessages({ limit: 500 })
     const nuevos = messages.filter(m => m.timestamp * 1000 > since && !m.fromMe)
 
     console.log(`   ${nuevos.length} mensajes nuevos desde la última vez`)
 
     for (const msg of nuevos) {
-      if (!msg.body || msg.body.length < 25) continue
+      if (!msg.body || msg.body.length < 25) {
+        console.log(`   ⏭ (msg corto, ${msg.body?.length ?? 0} chars)`)
+        continue
+      }
 
       const contact = await msg.getContact()
-      // Usar pushname/name solo si no es un número puro (LID); si no hay nombre real, dejar vacío
       const rawName = contact.pushname || contact.name || ''
       const name    = /^\d+$/.test(rawName) ? '' : rawName
       const preview = msg.body.substring(0, 60).replace(/\n/g, ' ')
 
       process.stdout.write(`   • ${name}: ${preview}... `)
 
-      // La clave: contact.id._serialized = '5493XXXXXXXXX@c.us' (número real)
-      // msg.author = '116557090918492@lid' (LID de privacidad — NO es el teléfono)
-      // contact.number devuelve el LID, NO el número real → ignorarlo
+      // Teléfono real: solo cuando server === 'c.us'
+      // LID (@lid): identificador de privacidad de WhatsApp — no es número real,
+      // pero lo usamos como ID único para no perder la búsqueda.
       let finalPhone = ''
+      let isLID = false
 
-      // Opción 1: contact.id.user cuando server === 'c.us' → número real
       if (contact.id?.server === 'c.us' && /^\d{10,15}$/.test(contact.id.user)) {
         finalPhone = contact.id.user
+      } else if (contact.id?.server === 'lid' && contact.id?.user) {
+        // Intentar extraer número del texto primero
+        const fromText = extractPhoneFromText(msg.body)
+        if (fromText) {
+          finalPhone = fromText
+        } else {
+          // Usar LID como fallback: garantiza unicidad aunque no sea un teléfono real
+          finalPhone = contact.id.user
+          isLID = true
+        }
       }
 
-      // Opción 2: fallback — buscar número en el texto del mensaje
-      if (!/^\d{10,13}$/.test(finalPhone)) {
+      // Opción adicional: buscar número en el texto del mensaje
+      if (!finalPhone) {
         const fromText = extractPhoneFromText(msg.body)
         if (fromText) finalPhone = fromText
       }
 
-      // Validación final: teléfonos argentinos = 10-13 dígitos (ej: 5493516796777 = 13 dígitos)
-      if (!/^\d{10,13}$/.test(finalPhone)) {
-        process.stdout.write('→ ignorado (sin teléfono válido)\n')
+      // Sin ningún identificador → descartar
+      if (!finalPhone) {
+        process.stdout.write('→ ignorado (sin ID)\n')
         totalIgnorados++
         continue
       }
 
-      const raw = await parseMessage(msg.body)
+      // Parsear siempre — no depender del teléfono para decidir si es búsqueda
+      const raw    = await parseMessage(msg.body)
       const parsed = raw ? sanitize(raw) : null
 
       if (!parsed) {
         process.stdout.write('→ ignorado\n')
         totalIgnorados++
         continue
+      }
+
+      // Fallback de zona: si el parser no detectó zona, usar la del grupo
+      if (!parsed.zones?.length) {
+        const fallback = getGroupFallbackZones(group.name)
+        if (fallback.length) {
+          parsed.zones = fallback
+          process.stdout.write(`[zona fallback: ${fallback[0]}] `)
+        }
+      }
+
+      // Sin zonas (ni parser ni fallback) → guardar para revisión
+      if (!parsed.zones?.length) {
+        process.stdout.write('→ ⚠️  sin zona\n')
+        const entry = { group: group.name, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'no_zones' }
+        logMissed(entry)
+        missedList.push(entry)
+        totalMissed++
+        continue
+      }
+
+      // Si es LID, agregar nota en description para que el broker sepa
+      if (isLID && parsed.description) {
+        parsed.description = `[Contactar por nombre en WA: ${name || 'ver grupo'}] ${parsed.description}`
+      } else if (isLID) {
+        parsed.description = `Contactar por nombre en WA: ${name || 'ver grupo'}`
       }
 
       try {
@@ -234,11 +314,22 @@ client.on('ready', async () => {
           contact_name:   name,
           contact_phone:  finalPhone,
           publisher_type: 'inmobiliaria',
+          source:         'whatsapp',
         })
         process.stdout.write(`→ ✅ creado (${id})\n`)
         totalCreados++
       } catch (err) {
-        process.stdout.write(`→ ❌ error: ${err.message}\n`)
+        const errMsg = err.message || ''
+        if (errMsg.includes('duplicate')) {
+          process.stdout.write(`→ ↩ duplicado\n`)
+          totalIgnorados++
+        } else {
+          process.stdout.write(`→ ❌ error: ${errMsg}\n`)
+          const entry = { group: group.name, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'api_error', error: errMsg }
+          logMissed(entry)
+          missedList.push(entry)
+          totalMissed++
+        }
       }
     }
     console.log()
@@ -248,6 +339,7 @@ client.on('ready', async () => {
   console.log('━'.repeat(50))
   console.log(`✅ Pedidos creados:  ${totalCreados}`)
   console.log(`⏭  Ignorados:       ${totalIgnorados}`)
+  if (totalMissed > 0) console.log(`⚠️  Sin procesar:    ${totalMissed} (ver missed.json)`)
   console.log('━'.repeat(50))
 
   saveLastRun()
@@ -255,10 +347,20 @@ client.on('ready', async () => {
   // ── Notificación Telegram ─────────────────────────────────────
   const fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
   const emoji = totalCreados > 0 ? '🏠' : '😴'
-  const msg = totalCreados > 0
-    ? `${emoji} <b>Propi Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados desde los grupos de WhatsApp.\n⏭ ${totalIgnorados} mensajes ignorados (ofertas, links, etc.)\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
-    : `${emoji} <b>Propi Bot — ${fecha}</b>\n\nSin pedidos nuevos hoy.\n⏭ ${totalIgnorados} mensajes procesados.`
-  await sendTelegram(msg)
+
+  let missedSection = ''
+  if (missedList.length > 0) {
+    const items = missedList.slice(0, 5).map(e => {
+      const motivo = e.reason === 'no_phone' ? 'sin tel.' : e.reason === 'no_zones' ? 'sin zona' : 'error API'
+      return `  • ${e.name || '(?)'}: ${e.body.slice(0, 80).replace(/\n/g, ' ')}… (${motivo})`
+    }).join('\n')
+    missedSection = `\n\n⚠️ <b>${totalMissed} búsqueda${totalMissed > 1 ? 's' : ''} sin procesar:</b>\n${items}`
+  }
+
+  const telegramMsg = totalCreados > 0
+    ? `${emoji} <b>Propi Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados.\n⏭ ${totalIgnorados} ignorados (ofertas, links, etc.)${missedSection}\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
+    : `${emoji} <b>Propi Bot — ${fecha}</b>\n\nSin pedidos nuevos.\n⏭ ${totalIgnorados} mensajes procesados.${missedSection}`
+  await sendTelegram(telegramMsg)
 
   console.log('\n🏁 Listo. Podés cerrar la terminal.\n')
 
