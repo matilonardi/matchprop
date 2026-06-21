@@ -178,7 +178,8 @@ export default function PublicarWizard() {
     try {
       const ft = form.financing_types
       const derivedFinancing: FinancingType =
-        ft.includes('credito') && !ft.includes('efectivo') ? 'credito'
+        form.operation_type === 'alquiler' ? 'efectivo'
+        : ft.includes('credito') && !ft.includes('efectivo') ? 'credito'
         : ft.includes('efectivo') && !ft.includes('credito') ? 'efectivo'
         : 'ambos'
 
@@ -258,7 +259,8 @@ export default function PublicarWizard() {
 
       const ft = form.financing_types
       const derivedFinancing =
-        ft.includes('credito') && !ft.includes('efectivo') ? 'credito'
+        form.operation_type === 'alquiler' ? 'efectivo'
+        : ft.includes('credito') && !ft.includes('efectivo') ? 'credito'
         : ft.includes('efectivo') && !ft.includes('credito') ? 'efectivo'
         : ft.length > 0 ? 'ambos' : null
 

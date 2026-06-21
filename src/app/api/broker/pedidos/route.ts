@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
       bedrooms_max: fields.bedrooms_max ?? null,
       bathrooms_min: fields.bathrooms_min ?? null,
       budget_usd: fields.budget_usd,
-      financing: fields.financing ?? null,
+      financing: fields.financing ?? (fields.operation_type === 'alquiler' ? 'efectivo' : null),
       financing_types: fields.financing_types ?? [],
       description: fields.description ?? null,
       urgency: fields.urgency ?? null,

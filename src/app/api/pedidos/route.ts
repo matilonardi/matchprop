@@ -162,7 +162,7 @@ export async function POST(request: NextRequest) {
       bedrooms_max: bedrooms_max || null,
       bathrooms_min: bathrooms_min || null,
       budget_usd,
-      financing,
+      financing: financing ?? (isAlquiler ? 'efectivo' : null),
       requirements: requirements || [],
       requirements_excluyentes: requirements_excluyentes || [],
       priorities: priorities || [],
