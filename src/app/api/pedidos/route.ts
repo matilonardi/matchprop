@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
   const carFuels = carFuelsParam ? carFuelsParam.split(',').filter(Boolean) : []
   const carKmMax = searchParams.get('carKmMax')
   const publisherType = searchParams.get('publisherType') // 'particular' | 'inmobiliaria'
+  const brokerPublisherId = searchParams.get('brokerPublisherId')
   const bedroomsMinParam = searchParams.get('bedroomsMin')
   const bedroomsMin = bedroomsMinParam ? bedroomsMinParam.split(',').filter(Boolean) : []
   const page = parseInt(searchParams.get('page') || '1')
@@ -64,7 +65,8 @@ export async function GET(request: NextRequest) {
   if (carTransmission && requestType === 'car') query = query.eq('car_transmission', carTransmission)
   if (carFuels.length && requestType === 'car') query = query.overlaps('car_fuel_types', carFuels)
   if (carKmMax && requestType === 'car') query = query.lte('car_km_max', parseInt(carKmMax))
-  if (publisherType) query = query.eq('publisher_type', publisherType)
+  if (brokerPublisherId) query = query.eq('publisher_broker_id', brokerPublisherId)
+  else if (publisherType) query = query.eq('publisher_type', publisherType)
   if (since) {
     const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }
     const days = sinceMap[since]

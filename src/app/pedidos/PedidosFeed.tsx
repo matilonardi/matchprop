@@ -6,6 +6,7 @@ import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown, Sear
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 // ---------------------------------------------------------------------------
 // Car extra fields (not in PublicBuyerRequest type yet)
@@ -400,6 +401,7 @@ export default function PedidosFeed({
   const [activeTab, setActiveTab] = useState<'property' | 'car'>('property')
   const [requests, setRequests] = useState<(PublicBuyerRequest & CarFields)[]>([])
   const [loading, setLoading] = useState(true)
+  const [loggedBrokerId, setLoggedBrokerId] = useState<string | null>(null)
   const [gridKey, setGridKey] = useState(0)
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
@@ -434,6 +436,17 @@ export default function PedidosFeed({
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
   const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
+
+  // Detect logged-in broker (fire-and-forget, non-blocking)
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user) return
+      fetch(`/api/broker/me?userId=${user.id}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => d?.broker?.id && setLoggedBrokerId(d.broker.id))
+        .catch(() => {})
+    })
+  }, [])
 
   // Debounce text search 400ms
   useEffect(() => {
@@ -474,7 +487,8 @@ export default function PedidosFeed({
     if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
     if (filters.dateTo) params.set('dateTo', filters.dateTo)
     if (filters.sort && filters.sort !== 'recent') params.set('sort', filters.sort)
-    if (filters.publisherType) params.set('publisherType', filters.publisherType)
+    if (filters.publisherType === 'mis' && loggedBrokerId) params.set('brokerPublisherId', loggedBrokerId)
+    else if (filters.publisherType) params.set('publisherType', filters.publisherType)
 
     try {
       const res = await fetch(`/api/pedidos?${params}`)
@@ -500,7 +514,7 @@ export default function PedidosFeed({
     }
     setLoading(false)
     setGridKey((k) => k + 1)
-  }, [page, filters, activeTab, debouncedTextSearch])
+  }, [page, filters, activeTab, debouncedTextSearch, loggedBrokerId])
 
   useEffect(() => {
     fetchRequests()
@@ -898,7 +912,8 @@ export default function PedidosFeed({
                 <span className="flex items-center gap-1 truncate text-left">
                   <span className="shrink-0 font-medium">👤 Publica:</span>
                   <span className="truncate">{
-                    filters.publisherType === 'particular' ? 'Particular'
+                    filters.publisherType === 'mis' ? 'Mis pedidos'
+                    : filters.publisherType === 'particular' ? 'Particular'
                     : filters.publisherType === 'inmobiliaria' ? 'Inmobiliaria'
                     : 'cualquiera'
                   }</span>
@@ -906,6 +921,9 @@ export default function PedidosFeed({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="todos">Cualquiera</SelectItem>
+                {loggedBrokerId && (
+                  <SelectItem value="mis">🔖 Mis pedidos</SelectItem>
+                )}
                 <SelectItem value="particular">🙋 Particular</SelectItem>
                 <SelectItem value="inmobiliaria">🏢 Inmobiliaria</SelectItem>
               </SelectContent>
