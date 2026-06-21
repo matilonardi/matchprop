@@ -1108,8 +1108,13 @@ export default function PublicarWizard() {
           </div>
         )}
 
+        {/* Global error (visible at any step) */}
+        {error && (
+          <div className="mt-4 bg-red-50 text-red-700 rounded-lg p-3 text-sm border border-red-100">{error}</div>
+        )}
+
         {/* Navigation */}
-        <div className="flex items-center justify-between mt-8 pt-6 border-t border-gray-100">
+        <div className="flex items-center justify-between mt-4 pt-6 border-t border-gray-100">
           {step > 1 ? (
             <Button
               variant="outline"

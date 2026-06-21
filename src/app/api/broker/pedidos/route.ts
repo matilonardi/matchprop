@@ -35,8 +35,8 @@ export async function POST(request: NextRequest) {
   const { userId, ...fields } = body
 
   if (!userId) return Response.json({ error: 'userId required' }, { status: 400 })
-  if (!fields.contact_name || !fields.contact_phone) {
-    return Response.json({ error: 'contact_name y contact_phone requeridos' }, { status: 400 })
+  if (!fields.contact_name) {
+    return Response.json({ error: 'contact_name requerido' }, { status: 400 })
   }
   if (!fields.property_types?.length || !fields.zones?.length || !fields.budget_usd) {
     return Response.json({ error: 'Faltan campos obligatorios del pedido' }, { status: 400 })
