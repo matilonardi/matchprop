@@ -323,10 +323,7 @@ export const URGENCY_OPTIONS = [
 ]
 
 export const CREDIT_PACKS = [
-  { id: 'pack_3',         credits: 3,   price_ars: 80000,  label: '3 créditos',        price_per_ars: 26667, popular: false, unlimited: false },
-  { id: 'pack_5',         credits: 5,   price_ars: 100000, label: '5 créditos',        price_per_ars: 20000, popular: true,  unlimited: false },
-  { id: 'pack_10',        credits: 10,  price_ars: 180000, label: '10 créditos',       price_per_ars: 18000, popular: false, unlimited: false },
-  { id: 'pack_unlimited', credits: 999, price_ars: 350000, label: 'Ilimitado mensual', price_per_ars: 0,     popular: false, unlimited: true  },
+  { id: 'plan_mensual', credits: 999, price_ars: 25000, label: 'Plan mensual ilimitado', price_per_ars: 0, popular: true, unlimited: true },
 ]
 
 export const PROPERTY_TYPE_LABELS: Record<string, string> = {

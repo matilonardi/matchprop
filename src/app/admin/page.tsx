@@ -10,6 +10,7 @@ import AdminUsersTable from './AdminUsersTable'
 import { adminLogout } from './login/actions'
 import ChartPublicaciones from './ChartPublicaciones'
 import AdminExportButton from './AdminExportButton'
+import ReportsTab from './ReportsTab'
 
 export default async function AdminPage({
   searchParams,
@@ -37,6 +38,7 @@ export default async function AdminPage({
     { data: buyers },
     { data: leadPurchases },
     { data: creditTxns },
+    { data: reports },
     { count: buyerCount },
     { count: pedidosWeek },
     { count: pedidosMonth },
@@ -65,6 +67,12 @@ export default async function AdminPage({
       .from('credit_transactions')
       .select('id, broker_id, amount, description, mp_payment_id, created_at')
       .gt('amount', 0)
+      .order('created_at', { ascending: false }),
+
+    // Reportes de pedidos
+    supabase
+      .from('request_reports')
+      .select('id, reason, status, created_at, request_id, broker_id')
       .order('created_at', { ascending: false }),
 
     supabase
@@ -161,7 +169,7 @@ export default async function AdminPage({
   })
 
   // ── Revenue real desde credit_transactions ──────────────────
-  const PACK_PRICES: Record<number, number> = { 3: 80000, 5: 100000, 10: 180000, 999: 350000 }
+  const PACK_PRICES: Record<number, number> = { 999: 25000 }
   const txns = creditTxns || []
   const totalCreditsBought = txns.reduce((s, t) => s + (t.amount === 999 ? 999 : t.amount), 0)
   const totalRevenueARS    = txns.reduce((s, t) => s + (PACK_PRICES[t.amount] ?? 0), 0)
@@ -274,6 +282,7 @@ export default async function AdminPage({
             { id: 'requests', label: '📋 Publicaciones', count: totalRequests },
             { id: 'brokers', label: '🏠 Brokers', count: totalBrokers },
             { id: 'buyers', label: '🔍 Compradores', count: totalBuyers },
+            { id: 'reports', label: '🚩 Reportes', count: (reports || []).filter(r => r.status === 'pending').length || null },
           ].map(t => (
             <a
               key={t.id}
@@ -455,6 +464,9 @@ export default async function AdminPage({
         )}
         {tab === 'buyers' && (
           <AdminUsersTable type="buyer" users={enrichedBuyers} adminSecret={ADMIN_SECRET} />
+        )}
+        {tab === 'reports' && (
+          <ReportsTab reports={reports || []} brokers={brokers || []} requests={requests || []} adminSecret={ADMIN_SECRET} />
         )}
       </div>
     </div>

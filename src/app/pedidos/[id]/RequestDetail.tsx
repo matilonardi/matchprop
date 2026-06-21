@@ -6,7 +6,7 @@ import { usePostHog } from '@/components/PostHogProvider'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
   CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar,
-  MessageCircle, Send, Pencil
+  MessageCircle, Send, Pencil, Flag
 } from 'lucide-react'
 import { CAR_BODY_STYLE_LABELS, SEGURIDAD_TIPOS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -74,6 +74,13 @@ export default function RequestDetail({
   const [sendingMsg, setSendingMsg] = useState(false)
   const [msgError, setMsgError] = useState('')
   const [showChat, setShowChat] = useState(false)
+
+  // Report state
+  const [showReportForm, setShowReportForm] = useState(false)
+  const [reportReason, setReportReason] = useState('')
+  const [reporting, setReporting] = useState(false)
+  const [reportError, setReportError] = useState('')
+  const [reportSubmitted, setReportSubmitted] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(async ({ data }) => {
@@ -246,6 +253,30 @@ export default function RequestDetail({
       setShowChat(true)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleReport() {
+    if (!reportReason || !userId) return
+    setReporting(true)
+    setReportError('')
+    try {
+      const res = await fetch(`/api/pedidos/${request.id}/report`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ broker_user_id: userId, reason: reportReason }),
+      })
+      if (!res.ok) {
+        const data = await res.json()
+        setReportError(data.error || 'Error al enviar el reporte')
+        return
+      }
+      setReportSubmitted(true)
+      setShowReportForm(false)
+    } catch {
+      setReportError('Error de conexión')
+    } finally {
+      setReporting(false)
+    }
+  }
 
   const isCar = request.request_type === 'car'
   const typeLabels = isCar
@@ -967,7 +998,60 @@ export default function RequestDetail({
                   </div>
                 )}
               </div>
-            </div>
+
+            {/* Report button */}
+            {!reportSubmitted ? (
+              <div className="pt-3 border-t border-gray-100">
+                {!showReportForm ? (
+                  <button
+                    onClick={() => setShowReportForm(true)}
+                    className="text-xs text-gray-400 hover:text-red-500 flex items-center gap-1.5 transition-colors"
+                  >
+                    <Flag className="h-3.5 w-3.5" />
+                    Reportar este pedido
+                  </button>
+                ) : (
+                  <div className="bg-red-50 rounded-xl p-4 border border-red-100">
+                    <p className="text-sm font-medium text-gray-800 mb-3">¿Por qué querés reportar?</p>
+                    <select
+                      value={reportReason}
+                      onChange={(e) => setReportReason(e.target.value)}
+                      className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 mb-3 bg-white"
+                    >
+                      <option value="">Seleccioná un motivo</option>
+                      <option value="vendida">La propiedad ya está vendida / alquilada</option>
+                      <option value="contacto_incorrecto">Los datos de contacto son incorrectos</option>
+                      <option value="falso">La búsqueda parece falsa o spam</option>
+                      <option value="cliente_encontro">El cliente ya encontró lo que buscaba</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                    {reportError && <p className="text-xs text-red-600 mb-2">{reportError}</p>}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleReport}
+                        disabled={!reportReason || reporting}
+                        className="bg-red-500 hover:bg-red-600 text-white"
+                      >
+                        {reporting && <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />}
+                        Enviar reporte
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => { setShowReportForm(false); setReportError('') }}>
+                        Cancelar
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="pt-3 border-t border-gray-100">
+                <p className="text-xs text-green-600 flex items-center gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" />
+                  Reporte enviado. Lo revisaremos pronto.
+                </p>
+              </div>
+            )}
+          </div>
           ) : isLoggedIn ? (
             /* Logged-in broker: show unlock flow */
             <div>
