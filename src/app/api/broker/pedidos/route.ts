@@ -49,6 +49,7 @@ export async function POST(request: NextRequest) {
   const { data: pedido, error } = await supabase
     .from('buyer_requests')
     .insert({
+      operation_type: fields.operation_type ?? 'compra',
       request_type: 'property',
       property_types: fields.property_types,
       zones: fields.zones,

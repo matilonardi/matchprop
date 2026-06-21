@@ -207,10 +207,18 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
           <div className="flex items-baseline justify-between gap-2">
             <div className="text-2xl font-bold text-gray-900 tracking-tight">
               {req.budget_usd === 999999 ? 'Sin límite' : `USD ${req.budget_usd.toLocaleString()}`}
+              {req.operation_type === 'alquiler' && <span className="text-sm font-normal text-gray-400">/mes</span>}
             </div>
-            <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full shrink-0">
-              {FINANCING_LABELS[req.financing]}
-            </span>
+            <div className="flex items-center gap-1.5 shrink-0">
+              {req.operation_type === 'alquiler' && (
+                <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full">🔑 Alquiler</span>
+              )}
+              {(!req.operation_type || req.operation_type === 'compra') && req.financing && (
+                <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
+                  {FINANCING_LABELS[req.financing]}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Type */}
@@ -435,6 +443,7 @@ export default function PedidosFeed({
       dateTo: '',
       sort: 'recent',
       publisherType: '',
+      operationType: '',
     }
   })
   const [textSearch, setTextSearch] = useState('')
@@ -474,7 +483,7 @@ export default function PedidosFeed({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [textSearch])
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || debouncedTextSearch)
+  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -505,6 +514,7 @@ export default function PedidosFeed({
     if (filters.sort && filters.sort !== 'recent') params.set('sort', filters.sort)
     if (filters.publisherType === 'mis' && loggedBrokerId) params.set('brokerPublisherId', loggedBrokerId)
     else if (filters.publisherType) params.set('publisherType', filters.publisherType)
+    if (activeTab === 'property' && filters.operationType) params.set('operationType', filters.operationType)
 
     try {
       const res = await fetch(`/api/pedidos?${params}`)
@@ -577,7 +587,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setZoneDropdownOpen(false)
@@ -935,6 +945,29 @@ export default function PedidosFeed({
           </div>
         )}
 
+        {/* Operación: compra / alquiler */}
+        {activeTab === 'property' && (
+          <div className="shrink-0">
+            <Select value={filters.operationType || 'todos'} onValueChange={(v) => { setFilters(f => ({ ...f, operationType: v === 'todos' ? '' : v })); setPage(1) }}>
+              <SelectTrigger className={`${pillBase} ${filters.operationType ? pillActive : pillInactive} px-4`}>
+                <span className="flex items-center gap-1 truncate text-left">
+                  <span className="shrink-0 font-medium">🔄 Operación:</span>
+                  <span className="truncate">{
+                    filters.operationType === 'compra' ? 'Compra'
+                    : filters.operationType === 'alquiler' ? 'Alquiler'
+                    : 'todas'
+                  }</span>
+                </span>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="todos">Todas</SelectItem>
+                <SelectItem value="compra">🏠 Compra</SelectItem>
+                <SelectItem value="alquiler">🔑 Alquiler</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Quién publica (solo propiedades) */}
         {activeTab === 'property' && (
           <div className="shrink-0">
@@ -1062,7 +1095,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '' })
+              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setPage(1)

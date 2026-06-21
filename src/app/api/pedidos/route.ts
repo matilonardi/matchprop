@@ -30,6 +30,7 @@ export async function GET(request: NextRequest) {
   const carKmMax = searchParams.get('carKmMax')
   const publisherType = searchParams.get('publisherType') // 'particular' | 'inmobiliaria'
   const brokerPublisherId = searchParams.get('brokerPublisherId')
+  const operationType = searchParams.get('operationType') // 'compra' | 'alquiler'
   const bedroomsMinParam = searchParams.get('bedroomsMin')
   const bedroomsMin = bedroomsMinParam ? bedroomsMinParam.split(',').filter(Boolean) : []
   const page = parseInt(searchParams.get('page') || '1')
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, request_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
+      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
       { count: 'exact' }
     )
     .eq('status', 'active')
@@ -85,6 +86,7 @@ export async function GET(request: NextRequest) {
       query = query.eq('financing', financing)
     }
   }
+  if (operationType) query = query.eq('operation_type', operationType)
   if (bedroomsMin.length && requestType !== 'car') query = query.in('bedrooms_min', bedroomsMin.map(Number))
   if (minBudget) query = query.gte('budget_usd', parseInt(minBudget))
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
@@ -104,6 +106,7 @@ export async function POST(request: NextRequest) {
   const body = await request.json()
 
   const {
+    operation_type,
     request_type,
     property_types,
     zones,
@@ -138,7 +141,8 @@ export async function POST(request: NextRequest) {
 
   const isCarRequest = request_type === 'car'
 
-  if (!zones?.length || !budget_usd || !financing || !contact_name || !contact_phone) {
+  const isAlquiler = operation_type === 'alquiler'
+  if (!zones?.length || !budget_usd || (!isAlquiler && !financing) || !contact_name || !contact_phone) {
     return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
   }
   if (!isCarRequest && !property_types?.length) {
@@ -150,6 +154,7 @@ export async function POST(request: NextRequest) {
   const { data, error } = await supabase
     .from('buyer_requests')
     .insert({
+      operation_type: operation_type || 'compra',
       request_type: request_type || 'property',
       property_types: property_types || [],
       zones,

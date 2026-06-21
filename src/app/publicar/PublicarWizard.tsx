@@ -18,6 +18,7 @@ type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'loc
 type FinancingType = 'efectivo' | 'credito' | 'ambos'
 
 interface FormData {
+  operation_type: 'compra' | 'alquiler'
   property_types: PropertyType[]
   zones: string[]
   bedrooms_min: string
@@ -103,6 +104,7 @@ export default function PublicarWizard() {
   }, [])
 
   const [form, setForm] = useState<FormData>({
+    operation_type: 'compra',
     property_types: [],
     zones: [],
     bedrooms_min: '',
@@ -150,7 +152,7 @@ export default function PublicarWizard() {
       case 1: return form.property_types.length > 0
       case 2: return form.zones.length > 0
       case 3: return isTerrenoOnly || !!form.bedrooms_min
-      case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
+      case 4: return !!form.budget_usd && (form.operation_type === 'alquiler' || form.financing_types.length > 0) && !!form.search_reason
       case 5: return isTerrenoOnly || ((form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10)
       case 6:
         if (loggedBroker && loggedBroker !== 'loading') {
@@ -194,6 +196,7 @@ export default function PublicarWizard() {
           phone: form.contact_phone,
           captcha_token: captchaToken,
           // Request
+          operation_type: form.operation_type,
           request_type: 'property',
           property_types: form.property_types,
           zones: form.zones,
@@ -267,6 +270,7 @@ export default function PublicarWizard() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: user.id,
+          operation_type: form.operation_type,
           property_types: form.property_types,
           zones: form.zones,
           bedrooms_min: intOrNull(form.bedrooms_min),
@@ -300,18 +304,26 @@ export default function PublicarWizard() {
         <div className="p-8">
           <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">¿Qué estás buscando?</h2>
           <p className="text-gray-500 text-center mb-8">Elegí el tipo de búsqueda para empezar</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <button
-              onClick={() => setRequestType('property')}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all group"
+              onClick={() => { setRequestType('property'); setForm(f => ({ ...f, operation_type: 'compra' })) }}
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all"
             >
               <div className="text-5xl mb-3">🏠</div>
-              <h3 className="font-bold text-lg text-gray-900 mb-1">Propiedad</h3>
-              <p className="text-sm text-gray-500">Casa, departamento, terreno, local o inversión</p>
+              <h3 className="font-bold text-lg text-gray-900 mb-1">Comprar</h3>
+              <p className="text-sm text-gray-500">Compra de casa, depto, terreno, local o inversión</p>
+            </button>
+            <button
+              onClick={() => { setRequestType('property'); setForm(f => ({ ...f, operation_type: 'alquiler' })) }}
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all"
+            >
+              <div className="text-5xl mb-3">🔑</div>
+              <h3 className="font-bold text-lg text-gray-900 mb-1">Alquilar</h3>
+              <p className="text-sm text-gray-500">Alquiler de casa, depto, local u oficina</p>
             </button>
             <button
               onClick={() => setRequestType('car')}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all group"
+              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all"
             >
               <div className="text-5xl mb-3">🚗</div>
               <h3 className="font-bold text-lg text-gray-900 mb-1">Auto</h3>
@@ -663,14 +675,14 @@ export default function PublicarWizard() {
             {/* Budget */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                Presupuesto máximo en USD <span className="text-red-500">*</span>
+                {form.operation_type === 'alquiler' ? 'Presupuesto mensual máximo en USD' : 'Presupuesto máximo en USD'} <span className="text-red-500">*</span>
               </Label>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">USD</span>
                 <Input
                   type="text"
                   inputMode="numeric"
-                  placeholder="230.000"
+                  placeholder={form.operation_type === 'alquiler' ? '600' : '230.000'}
                   value={form.budget_usd ? form.budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
                   onChange={(e) => {
                     const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
@@ -680,7 +692,10 @@ export default function PublicarWizard() {
                 />
               </div>
               <div className="flex flex-wrap gap-2 mt-3">
-                {['70000', '150000', '230000', '400000', '620000'].map((v) => (
+                {(form.operation_type === 'alquiler'
+                  ? ['300', '500', '700', '1000', '1500']
+                  : ['70000', '150000', '230000', '400000', '620000']
+                ).map((v) => (
                   <button key={v} type="button"
                     onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
@@ -690,8 +705,8 @@ export default function PublicarWizard() {
               </div>
             </div>
 
-            {/* Financing types — multi-select with conditional sub-fields */}
-            <div>
+            {/* Financing types — multi-select with conditional sub-fields — hidden for alquiler */}
+            {form.operation_type !== 'alquiler' && <div>
               <Label className="text-sm font-medium text-gray-700 mb-1 block">
                 ¿Cómo vas a pagar? <span className="text-red-500">*</span>
               </Label>
@@ -748,7 +763,7 @@ export default function PublicarWizard() {
                   )
                 })}
               </div>
-            </div>
+            </div>}
 
             {/* Search reason */}
             <div>
