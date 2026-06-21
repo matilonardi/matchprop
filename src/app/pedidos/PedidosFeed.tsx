@@ -635,8 +635,8 @@ export default function PedidosFeed({
                   <input
                     type="checkbox"
                     checked={filters.zones.length === 0}
-                    onChange={(e) => {
-                      setFilters(f => ({ ...f, zones: e.target.checked ? [] : [] }))
+                    onChange={() => {
+                      setFilters(f => ({ ...f, zones: [] }))
                       setPage(1)
                     }}
                     className="rounded border-gray-300 accent-orange-500 h-4 w-4"
