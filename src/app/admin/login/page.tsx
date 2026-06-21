@@ -12,7 +12,7 @@ export default async function AdminLoginPage({
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="text-center mb-8">
-          <div className="text-3xl font-black text-orange-500 mb-1">Propi</div>
+          <div className="text-3xl font-black mb-1" style={{ color: '#2E8B57' }}>Demandi</div>
           <p className="text-sm text-gray-500">Panel de administración</p>
         </div>
 

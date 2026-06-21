@@ -2,8 +2,8 @@ import Link from 'next/link'
 import Navbar from '@/components/Navbar'
 
 export const metadata = {
-  title: 'Términos y Condiciones – Propi',
-  description: 'Términos y condiciones de uso de la plataforma Propi.',
+  title: 'Términos y Condiciones – Demandi',
+  description: 'Términos y condiciones de uso de la plataforma Demandi.',
 }
 
 export default function TerminosPage() {
@@ -21,7 +21,7 @@ export default function TerminosPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">1. Descripción del servicio</h2>
                 <p>
-                  Propi es una plataforma digital que conecta a personas que buscan comprar o alquilar propiedades
+                  Demandi es una plataforma digital que conecta a personas que buscan comprar o alquilar propiedades
                   o adquirir vehículos (<strong>compradores</strong>) con vendedores, inmobiliarias, concesionarias y
                   particulares que puedan satisfacer esas búsquedas (<strong>vendedores</strong>).
                 </p>
@@ -34,7 +34,7 @@ export default function TerminosPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">2. Aceptación de los términos</h2>
                 <p>
-                  Al acceder o utilizar Propi, el usuario declara haber leído, comprendido y aceptado estos
+                  Al acceder o utilizar Demandi, el usuario declara haber leído, comprendido y aceptado estos
                   Términos y Condiciones en su totalidad. Si no está de acuerdo con alguna de las disposiciones
                   aquí establecidas, deberá abstenerse de utilizar la plataforma.
                 </p>
@@ -68,11 +68,11 @@ export default function TerminosPage() {
                   <li>Los créditos no son transferibles ni canjeables por dinero.</li>
                   <li>
                     <strong>Los créditos consumidos no son reembolsables</strong>, excepto en caso de error técnico
-                    comprobable imputable a Propi.
+                    comprobable imputable a Demandi.
                   </li>
                   <li>Los precios están expresados en dólares estadounidenses (USD) y el cobro se procesa en pesos
                     argentinos (ARS) al tipo de cambio vigente al momento del pago, a través de MercadoPago.</li>
-                  <li>Propi se reserva el derecho de modificar los precios con previo aviso de 15 días.</li>
+                  <li>Demandi se reserva el derecho de modificar los precios con previo aviso de 15 días.</li>
                 </ul>
               </section>
 
@@ -88,7 +88,7 @@ export default function TerminosPage() {
                   <li>No utiliza la plataforma para fines distintos a la búsqueda genuina de un bien.</li>
                 </ul>
                 <p className="mt-2">
-                  Propi se reserva el derecho de eliminar búsquedas que incumplan estas condiciones, sin
+                  Demandi se reserva el derecho de eliminar búsquedas que incumplan estas condiciones, sin
                   necesidad de notificación previa.
                 </p>
               </section>
@@ -111,10 +111,10 @@ export default function TerminosPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">7. Limitación de responsabilidad</h2>
                 <p>
-                  Propi actúa exclusivamente como intermediario tecnológico. La plataforma no interviene en las
+                  Demandi actúa exclusivamente como intermediario tecnológico. La plataforma no interviene en las
                   negociaciones, acuerdos ni transacciones que se realicen entre compradores y vendedores.
                 </p>
-                <p className="mt-2">Propi <strong>no garantiza</strong>:</p>
+                <p className="mt-2">Demandi <strong>no garantiza</strong>:</p>
                 <ul className="list-disc list-inside mt-2 space-y-1">
                   <li>Que el comprador efectivamente realice la compra.</li>
                   <li>La veracidad de la información publicada por los usuarios.</li>
@@ -122,7 +122,7 @@ export default function TerminosPage() {
                   <li>Resultados comerciales a partir del uso de los créditos.</li>
                 </ul>
                 <p className="mt-2">
-                  En ningún caso Propi será responsable por daños directos, indirectos, incidentales o
+                  En ningún caso Demandi será responsable por daños directos, indirectos, incidentales o
                   consecuentes derivados del uso o la imposibilidad de uso de la plataforma.
                 </p>
               </section>
@@ -130,7 +130,7 @@ export default function TerminosPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">8. Propiedad intelectual</h2>
                 <p>
-                  Todos los derechos sobre el diseño, código, marca, logotipo y contenidos propios de Propi son
+                  Todos los derechos sobre el diseño, código, marca, logotipo y contenidos propios de Demandi son
                   propiedad exclusiva de sus titulares. Queda prohibida su reproducción, distribución o uso sin
                   autorización expresa.
                 </p>
@@ -139,7 +139,7 @@ export default function TerminosPage() {
               <section>
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">9. Modificaciones</h2>
                 <p>
-                  Propi podrá modificar estos Términos y Condiciones en cualquier momento. Los cambios serán
+                  Demandi podrá modificar estos Términos y Condiciones en cualquier momento. Los cambios serán
                   notificados mediante la actualización de la fecha al inicio de este documento y, cuando sea
                   relevante, por correo electrónico a los usuarios registrados. El uso continuado de la plataforma
                   implica la aceptación de los términos vigentes.

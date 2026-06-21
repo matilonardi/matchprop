@@ -203,7 +203,7 @@ export async function POST(
       const requestUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.vercel.app'}/pedidos/${requestId}`
 
       await resend.emails.send({
-        from: 'Propi <alertas@matchprop.com.ar>',
+        from: 'Demandi <alertas@matchprop.com.ar>',
         to: req.contact_email,
         subject: `📬 ${brokerDisplay} está interesado en tu búsqueda`,
         html: `
@@ -238,7 +238,7 @@ export async function POST(
             </div>
             <div style="padding:16px 32px;background:#f9fafb;border-top:1px solid #f3f4f6;">
               <p style="margin:0;font-size:12px;color:#9ca3af;">
-                Recibís este mail porque publicaste una búsqueda en Propi. Si no fuiste vos, ignorá este mensaje.
+                Recibís este mail porque publicaste una búsqueda en Demandi. Si no fuiste vos, ignorá este mensaje.
               </p>
             </div>
           </div>

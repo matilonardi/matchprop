@@ -114,7 +114,7 @@ export async function POST(request: NextRequest) {
     if (text === '/start') {
       await sendTelegramMessage(
         chatId,
-        `👋 *Bienvenido al bot de Propi*\n\nReenvíame cualquier búsqueda inmobiliaria y la cargo automáticamente en la plataforma.\n\nEjemplo:\n_Busco casa 3 dormitorios zona norte, hasta USD 200.000, apta crédito_`
+        `👋 *Bienvenido al bot de Demandi*\n\nReenvíame cualquier búsqueda inmobiliaria y la cargo automáticamente en la plataforma.\n\nEjemplo:\n_Busco casa 3 dormitorios zona norte, hasta USD 200.000, apta crédito_`
       )
     }
     return Response.json({ ok: true })
@@ -194,7 +194,7 @@ export async function POST(request: NextRequest) {
 
     await sendTelegramMessage(
       chatId,
-      `✅ *Pedido cargado en Propi*\n\n` +
+      `✅ *Pedido cargado en Demandi*\n\n` +
         `${typeLabel} en *${zonesLabel}*\n` +
         `💰 Hasta ${budget}\n` +
         (parsed.bedrooms_min ? `🛏 ${parsed.bedrooms_min}${parsed.bedrooms_max ? `-${parsed.bedrooms_max}` : '+'} dormitorios\n` : '') +

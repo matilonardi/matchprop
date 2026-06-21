@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown, Search } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { ZONAS_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
+import { ZONAS_CORDOBA, ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 
@@ -630,22 +630,23 @@ export default function PedidosFeed({
           {zoneDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setZoneDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72">
                 <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
                   <input
                     type="checkbox"
-                    checked={filters.zones.length === ZONAS_CORDOBA.length}
+                    checked={filters.zones.length === 0}
                     onChange={(e) => {
-                      setFilters(f => ({ ...f, zones: e.target.checked ? [...ZONAS_CORDOBA] : [] }))
+                      setFilters(f => ({ ...f, zones: e.target.checked ? [] : [] }))
                       setPage(1)
                     }}
                     className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                   />
-                  Todas las zonas
+                  Todas
                 </label>
-                <div className="py-1">
+                <div className="max-h-72 overflow-y-auto">
+                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Zonas</p>
                   {ZONAS_CORDOBA.map((z) => (
-                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
+                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
                       <input
                         type="checkbox"
                         checked={filters.zones.includes(z)}
@@ -656,6 +657,31 @@ export default function PedidosFeed({
                         className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                       />
                       {z}
+                    </label>
+                  ))}
+                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-100 mt-1">Barrios</p>
+                  <div className="px-3 pb-1">
+                    <input
+                      type="text"
+                      placeholder="Buscar barrio..."
+                      value={zoneSearch}
+                      onChange={(e) => setZoneSearch(e.target.value)}
+                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-300"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  </div>
+                  {ZONES_CORDOBA.filter(b => !zoneSearch || b.toLowerCase().includes(zoneSearch.toLowerCase())).map((b) => (
+                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(b) ? 'bg-orange-50' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={filters.zones.includes(b)}
+                        onChange={() => {
+                          setFilters(f => ({ ...f, zones: f.zones.includes(b) ? f.zones.filter(x => x !== b) : [...f.zones, b] }))
+                          setPage(1)
+                        }}
+                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                      />
+                      {b}
                     </label>
                   ))}
                 </div>

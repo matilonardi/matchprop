@@ -2,7 +2,7 @@
 
 export default function WhatsAppButton() {
   const phone = process.env.NEXT_PUBLIC_SUPPORT_WHATSAPP || '5493517025338'
-  const message = encodeURIComponent('Hola, tengo una consulta sobre Propi 👋')
+  const message = encodeURIComponent('Hola, tengo una consulta sobre Demandi 👋')
   const href = `https://wa.me/${phone}?text=${message}`
 
   return (

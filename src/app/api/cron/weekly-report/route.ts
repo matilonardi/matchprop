@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
 
   const fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: 'long' })
 
-  const msg = `📡 <b>Propi — Reporte semanal</b>
+  const msg = `📡 <b>Demandi — Reporte semanal</b>
 ${fecha}
 
 <b>Temperatura: ${pulsoLabel} (${pulsoScore}/100)</b>

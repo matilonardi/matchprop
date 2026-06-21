@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   // Send email notifications (batch, max 50/hour on Resend free tier)
   const emailPromises = matchingBrokers.slice(0, 10).map((broker) =>
     resend.emails.send({
-      from: 'Propi <alertas@matchprop.com.ar>',
+      from: 'Demandi <alertas@matchprop.com.ar>',
       to: broker.email,
       subject: `Nuevo pedido en tu zona: ${types} en ${zones}`,
       html: `
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
           </p>
           <hr style="border:none;border-top:1px solid #e5e7eb;margin:20px 0;"/>
           <p style="color:#9ca3af;font-size:12px;">
-            Recibís este email porque registraste zonas compatibles en Propi.<br>
+            Recibís este email porque registraste zonas compatibles en Demandi.<br>
             <a href="${appUrl}/broker/dashboard" style="color:#6b7280;">Gestionar mis alertas</a>
           </p>
         </div>

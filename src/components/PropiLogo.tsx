@@ -1,13 +1,15 @@
 'use client'
 
 // ─────────────────────────────────────────────────────────────
-//  Propi — Sistema de Logo
+//  Demandi — Sistema de Logo
 //
 //  Concepto: el pin de ubicación reemplaza la letra "i"
 //  El punto del pin = el punto de la i = donde querés vivir
 //
-//  Colores: #1e293b (slate-800) + #f97316 (orange-500)
+//  Colores: #2E8B57 (verde esmeralda moderno)
 // ─────────────────────────────────────────────────────────────
+
+const BRAND_GREEN = '#2E8B57'
 
 // ── Pin SVG (reemplaza la "i") ────────────────────────────────
 function PinIcon({ height = 28 }: { height?: number }) {
@@ -22,12 +24,10 @@ function PinIcon({ height = 28 }: { height?: number }) {
       aria-hidden="true"
       style={{ display: 'inline-block', verticalAlign: 'bottom', marginBottom: 1 }}
     >
-      {/* Cuerpo del pin */}
       <path
         d="M6.5 0C2.91 0 0 2.91 0 6.5C0 11.375 6.5 20 6.5 20C6.5 20 13 11.375 13 6.5C13 2.91 10.09 0 6.5 0Z"
-        fill="#f97316"
+        fill={BRAND_GREEN}
       />
-      {/* Punto interior blanco */}
       <circle cx="6.5" cy="6.5" r="2.8" fill="white" />
     </svg>
   )
@@ -44,17 +44,17 @@ export function PropiIcon({ size = 32 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      <rect width="32" height="32" rx="8" fill="#f97316" />
+      <rect width="32" height="32" rx="8" fill={BRAND_GREEN} />
       <path
         d="M16 6C12.134 6 9 9.134 9 13C9 17.75 16 26 16 26C16 26 23 17.75 23 13C23 9.134 19.866 6 16 6Z"
         fill="white"
       />
-      <circle cx="16" cy="13" r="3" fill="#f97316" />
+      <circle cx="16" cy="13" r="3" fill="white" />
     </svg>
   )
 }
 
-// ── Logo completo: prop + pin-como-i ─────────────────────────
+// ── Logo completo: demand + pin-como-i ─────────────────────────
 export function PropiLogoFull({
   size = 'md',
   className = '',
@@ -79,11 +79,11 @@ export function PropiLogoFull({
         style={{
           fontSize: c.fontSize,
           fontWeight: c.fontWeight,
-          color: '#1e293b',
+          color: BRAND_GREEN,
           fontFamily: 'inherit',
         }}
       >
-        prop
+        demand
       </span>
       <PinIcon height={c.pinH} />
     </span>

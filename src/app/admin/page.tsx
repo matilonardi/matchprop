@@ -221,7 +221,7 @@ export default async function AdminPage({
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">Panel de Admin</h1>
-            <p className="text-sm text-gray-500 mt-0.5">Propi · Gestión y métricas</p>
+            <p className="text-sm text-gray-500 mt-0.5">Demandi · Gestión y métricas</p>
           </div>
           <div className="flex items-center gap-4">
             <a href="/pedidos" className="text-sm text-orange-500 hover:underline">

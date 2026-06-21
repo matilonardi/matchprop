@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
   const { data: broker, error: brokerError } = await supabase
     .from('broker_profiles')
-    .select('id, name, agency_name, credits, zones, email')
+    .select('id, name, agency_name, credits, zones, email, phone')
     .eq('user_id', userId)
     .single()
 

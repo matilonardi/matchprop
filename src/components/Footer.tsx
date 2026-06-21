@@ -15,7 +15,7 @@ export default function Footer() {
           <Link href="/terminos" className="hover:text-gray-700 transition-colors">Términos</Link>
           <Link href="/privacidad" className="hover:text-gray-700 transition-colors">Privacidad</Link>
         </div>
-        <p>© 2026 Propi · Córdoba, Argentina</p>
+        <p>© 2026 Demandi · Córdoba, Argentina</p>
       </div>
     </footer>
   )

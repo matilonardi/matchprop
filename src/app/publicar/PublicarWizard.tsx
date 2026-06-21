@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
-import { ZONAS_CORDOBA, REQUIREMENTS, SEGURIDAD_TIPOS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
+import { ZONAS_CORDOBA, ZONES_CORDOBA, REQUIREMENTS, SEGURIDAD_TIPOS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import PublicarWizardAuto from './PublicarWizardAuto'
 
 type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
@@ -77,6 +77,7 @@ interface LoggedBroker {
   id: string
   name: string
   agency_name?: string | null
+  phone?: string | null
 }
 
 export default function PublicarWizard() {
@@ -260,6 +261,7 @@ export default function PublicarWizard() {
 
       const intOrNull = (v: string) => v ? parseInt(v) : null
 
+      const broker = loggedBroker as LoggedBroker
       const res = await fetch('/api/broker/pedidos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -276,8 +278,8 @@ export default function PublicarWizard() {
           description: form.description || null,
           urgency: form.urgency || null,
           requirements: form.requirements,
-          contact_name: form.contact_name,
-          contact_phone: form.contact_phone,
+          contact_name: broker.name,
+          contact_phone: broker.phone || '',
         }),
       })
       if (!res.ok) {
@@ -371,11 +373,14 @@ export default function PublicarWizard() {
           </div>
         )}
 
-        {/* Step 2: Zones */}
+        {/* Step 2: Zones + Barrios */}
         {step === 2 && (
           <div>
-            <p className="text-gray-600 mb-4">¿En qué zonas? Podés elegir varias.</p>
-            <div className="space-y-2">
+            <p className="text-gray-600 mb-4">¿En qué zonas o barrios? Podés elegir varios.</p>
+
+            {/* Zonas section */}
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Zonas</p>
+            <div className="space-y-2 mb-5">
               {ZONAS_CORDOBA.map((zone) => (
                 <label
                   key={zone}
@@ -395,9 +400,40 @@ export default function PublicarWizard() {
                 </label>
               ))}
             </div>
+
+            {/* Barrios section */}
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">Barrios</p>
+            <input
+              type="text"
+              placeholder="Buscar barrio..."
+              value={zoneSearch}
+              onChange={(e) => setZoneSearch(e.target.value)}
+              className="w-full mb-2 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+            />
+            <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+              {ZONES_CORDOBA.filter(b => !zoneSearch || b.toLowerCase().includes(zoneSearch.toLowerCase())).map((barrio) => (
+                <label
+                  key={barrio}
+                  className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer border transition-colors ${
+                    form.zones.includes(barrio)
+                      ? 'bg-orange-50 border-orange-200'
+                      : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200'
+                  }`}
+                >
+                  <Checkbox
+                    checked={form.zones.includes(barrio)}
+                    onCheckedChange={() =>
+                      setForm((f) => ({ ...f, zones: toggleArrayItem(f.zones, barrio) }))
+                    }
+                  />
+                  <span className="text-sm text-gray-700">{barrio}</span>
+                </label>
+              ))}
+            </div>
+
             {form.zones.length > 0 && (
               <p className="mt-3 text-xs text-orange-500 font-medium">
-                ✓ {form.zones.length} zona{form.zones.length > 1 ? 's' : ''}: {form.zones.join(', ')}
+                ✓ {form.zones.length} seleccionado{form.zones.length > 1 ? 's' : ''}: {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}
               </p>
             )}
           </div>
@@ -1072,34 +1108,38 @@ export default function PublicarWizard() {
             <div />
           )}
 
-          {step < STEPS.length ? (
-            <Button
-              onClick={() => setStep((s) => s === 4 && isTerrenoOnly ? 6 : s + 1)}
-              disabled={!canProceed()}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              Siguiente
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          ) : loggedBroker && loggedBroker !== 'loading' ? (
-            <Button
-              onClick={handleBrokerSubmit}
-              disabled={!canProceed() || loading}
-              className="bg-orange-500 hover:bg-orange-600"
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Publicando...
-                </>
-              ) : (
-                <>
-                  Publicar búsqueda
-                  <CheckCircle2 className="h-4 w-4 ml-2" />
-                </>
-              )}
-            </Button>
-          ) : (
+          {(() => {
+            const isLoggedBroker = loggedBroker && loggedBroker !== 'loading'
+            const isLastBrokerStep = isLoggedBroker && (step === 5 || (isTerrenoOnly && step === 4))
+            if (isLastBrokerStep) {
+              return (
+                <Button
+                  onClick={handleBrokerSubmit}
+                  disabled={!canProceed() || loading}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  {loading ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publicando...</>
+                  ) : (
+                    <>Publicar búsqueda<CheckCircle2 className="h-4 w-4 ml-2" /></>
+                  )}
+                </Button>
+              )
+            }
+            if (step < STEPS.length) {
+              return (
+                <Button
+                  onClick={() => setStep((s) => s === 4 && isTerrenoOnly ? 6 : s + 1)}
+                  disabled={!canProceed()}
+                  className="bg-orange-500 hover:bg-orange-600"
+                >
+                  Siguiente
+                  <ArrowRight className="h-4 w-4 ml-2" />
+                </Button>
+              )
+            }
+            // step === 6, no logged broker
+            return (
             <>
               <HCaptcha
                 sitekey={process.env.NEXT_PUBLIC_HCAPTCHA_SITEKEY || '10000000-ffff-ffff-ffff-000000000001'}
@@ -1127,7 +1167,8 @@ export default function PublicarWizard() {
                 )}
               </Button>
             </>
-          )}
+            )
+          })()}
         </div>
       </div>
     </div>
