@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { supabase } from '@/lib/supabase'
-import { ZONES_CORDOBA } from '@/lib/constants'
+import { ZONAS_CORDOBA } from '@/lib/constants'
 
 export default function BrokerLoginForm() {
   const [loading, setLoading] = useState(false)
@@ -204,7 +204,7 @@ export default function BrokerLoginForm() {
             </button>
             {zonesOpen && (
               <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
-                {ZONES_CORDOBA.map((zone) => (
+                {ZONAS_CORDOBA.map((zone) => (
                   <label key={zone} className="flex items-center gap-2 px-3 py-2 hover:bg-orange-50 cursor-pointer text-sm">
                     <input
                       type="checkbox"

@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown, Search } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
+import { ZONAS_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 
@@ -408,23 +408,34 @@ export default function PedidosFeed({
   const [total, setTotal] = useState(0)
   const [showingDemo, setShowingDemo] = useState(false)
 
-  const [filters, setFilters] = useState({
-    zones: initialZone ? [initialZone] : [] as string[],
-    types: initialType ? [initialType] : [] as string[],
-    bedroomsMin: [] as string[],
-    carCondition: '',
-    carBrands: [] as string[],
-    carTransmission: '',
-    carFuels: [] as string[],
-    carKmMax: '',
-    financing: initialFinancing,
-    minBudget: '',
-    maxBudget: initialMaxBudget,
-    since: initialSince,
-    dateFrom: '',
-    dateTo: '',
-    sort: 'recent',
-    publisherType: '',
+  const FILTER_SESSION_KEY = 'pedidos_filters'
+
+  const [filters, setFilters] = useState(() => {
+    const hasInitial = initialZone || initialType || initialFinancing || initialMaxBudget || initialSince
+    if (!hasInitial && typeof window !== 'undefined') {
+      try {
+        const saved = sessionStorage.getItem(FILTER_SESSION_KEY)
+        if (saved) return JSON.parse(saved)
+      } catch {}
+    }
+    return {
+      zones: initialZone ? [initialZone] : [] as string[],
+      types: initialType ? [initialType] : [] as string[],
+      bedroomsMin: [] as string[],
+      carCondition: '',
+      carBrands: [] as string[],
+      carTransmission: '',
+      carFuels: [] as string[],
+      carKmMax: '',
+      financing: initialFinancing,
+      minBudget: '',
+      maxBudget: initialMaxBudget,
+      since: initialSince,
+      dateFrom: '',
+      dateTo: '',
+      sort: 'recent',
+      publisherType: '',
+    }
   })
   const [textSearch, setTextSearch] = useState('')
   const [debouncedTextSearch, setDebouncedTextSearch] = useState('')
@@ -436,6 +447,11 @@ export default function PedidosFeed({
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
   const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
   const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
+
+  // Persist filters to sessionStorage
+  useEffect(() => {
+    try { sessionStorage.setItem(FILTER_SESSION_KEY, JSON.stringify(filters)) } catch {}
+  }, [filters])
 
   // Detect logged-in broker (fire-and-forget, non-blocking)
   useEffect(() => {
@@ -615,32 +631,21 @@ export default function PedidosFeed({
             <>
               <div className="fixed inset-0 z-40" onClick={() => setZoneDropdownOpen(false)} />
               <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
-                <div className="px-3 pt-2.5 pb-1.5 border-b border-gray-100">
+                <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
                   <input
-                    type="text"
-                    placeholder="🔍 Buscar zona..."
-                    value={zoneSearch}
-                    onChange={e => setZoneSearch(e.target.value)}
-                    className="w-full px-3 py-1.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    type="checkbox"
+                    checked={filters.zones.length === ZONAS_CORDOBA.length}
+                    onChange={(e) => {
+                      setFilters(f => ({ ...f, zones: e.target.checked ? [...ZONAS_CORDOBA] : [] }))
+                      setPage(1)
+                    }}
+                    className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                   />
-                </div>
-                {zoneSearch === '' && (
-                  <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                    <input
-                      type="checkbox"
-                      checked={filters.zones.length === ZONES_CORDOBA.length}
-                      onChange={(e) => {
-                        setFilters(f => ({ ...f, zones: e.target.checked ? [...ZONES_CORDOBA] : [] }))
-                        setPage(1)
-                      }}
-                      className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                    />
-                    Todas las zonas
-                  </label>
-                )}
-                <div className="max-h-56 overflow-y-auto py-1">
-                  {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((z) => (
-                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
+                  Todas las zonas
+                </label>
+                <div className="py-1">
+                  {ZONAS_CORDOBA.map((z) => (
+                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
                       <input
                         type="checkbox"
                         checked={filters.zones.includes(z)}

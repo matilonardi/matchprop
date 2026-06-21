@@ -1,3 +1,13 @@
+export const ZONAS_CORDOBA = [
+  'Norte',
+  'Calera',
+  'Villa Allende',
+  'Sur',
+  'Centro / Nueva Córdoba / Gral. Paz / Güemes / Alto Alberdi',
+  'Corredor Carlos Paz',
+  'E53',
+]
+
 export const ZONES_CORDOBA = [
   'Acosta',
   'Alberdi',

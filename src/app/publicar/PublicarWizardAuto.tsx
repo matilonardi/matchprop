@@ -12,7 +12,7 @@ import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { supabase } from '@/lib/supabase'
 import {
-  ZONES_CORDOBA,
+  ZONAS_CORDOBA,
   URGENCY_OPTIONS,
   CAR_BRANDS,
   CAR_BODY_STYLES,
@@ -245,10 +245,10 @@ export default function PublicarWizardAuto({ onBack }: Props) {
               className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
             />
             <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
-              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).length === 0 && (
+              {ZONAS_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).length === 0 && (
                 <p className="text-sm text-gray-400 py-4 text-center">Sin resultados para &quot;{zoneSearch}&quot;</p>
               )}
-              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((zone) => (
+              {ZONAS_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((zone) => (
                 <label
                   key={zone}
                   className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${

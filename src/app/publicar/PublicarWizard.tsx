@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
-import { ZONES_CORDOBA, REQUIREMENTS, SEGURIDAD_TIPOS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
+import { ZONAS_CORDOBA, REQUIREMENTS, SEGURIDAD_TIPOS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import PublicarWizardAuto from './PublicarWizardAuto'
 
 type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
@@ -150,7 +150,7 @@ export default function PublicarWizard() {
       case 2: return form.zones.length > 0
       case 3: return isTerrenoOnly || !!form.bedrooms_min
       case 4: return !!form.budget_usd && form.financing_types.length > 0 && !!form.search_reason
-      case 5: return (form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10
+      case 5: return isTerrenoOnly || ((form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10)
       case 6:
         if (loggedBroker && loggedBroker !== 'loading') {
           return !!form.contact_name && !!form.contact_phone
@@ -374,23 +374,15 @@ export default function PublicarWizard() {
         {/* Step 2: Zones */}
         {step === 2 && (
           <div>
-            <p className="text-gray-600 mb-3">¿En qué zonas o barrios? Podés elegir varios.</p>
-            <input
-              type="text"
-              placeholder="🔍 Buscar barrio o ciudad..."
-              value={zoneSearch}
-              onChange={e => setZoneSearch(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400"
-            />
-            <div className="max-h-64 overflow-y-auto space-y-1 pr-1">
-              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).length === 0 && (
-                <p className="text-sm text-gray-400 py-4 text-center">Sin resultados para &quot;{zoneSearch}&quot;</p>
-              )}
-              {ZONES_CORDOBA.filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase())).map((zone) => (
+            <p className="text-gray-600 mb-4">¿En qué zonas? Podés elegir varias.</p>
+            <div className="space-y-2">
+              {ZONAS_CORDOBA.map((zone) => (
                 <label
                   key={zone}
-                  className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer transition-colors ${
-                    form.zones.includes(zone) ? 'bg-orange-50' : 'hover:bg-gray-50'
+                  className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-colors ${
+                    form.zones.includes(zone)
+                      ? 'bg-orange-50 border-orange-200'
+                      : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200'
                   }`}
                 >
                   <Checkbox
@@ -399,13 +391,13 @@ export default function PublicarWizard() {
                       setForm((f) => ({ ...f, zones: toggleArrayItem(f.zones, zone) }))
                     }
                   />
-                  <span className="text-sm text-gray-800">{zone}</span>
+                  <span className="text-sm text-gray-800 font-medium">{zone}</span>
                 </label>
               ))}
             </div>
             {form.zones.length > 0 && (
               <p className="mt-3 text-xs text-orange-500 font-medium">
-                ✓ {form.zones.length} zona{form.zones.length > 1 ? 's' : ''}: {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}
+                ✓ {form.zones.length} zona{form.zones.length > 1 ? 's' : ''}: {form.zones.join(', ')}
               </p>
             )}
           </div>
@@ -1070,7 +1062,7 @@ export default function PublicarWizard() {
           {step > 1 ? (
             <Button
               variant="outline"
-              onClick={() => setStep((s) => s - 1)}
+              onClick={() => setStep((s) => s === 6 && isTerrenoOnly ? 4 : s - 1)}
               disabled={loading}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -1082,7 +1074,7 @@ export default function PublicarWizard() {
 
           {step < STEPS.length ? (
             <Button
-              onClick={() => setStep((s) => s + 1)}
+              onClick={() => setStep((s) => s === 4 && isTerrenoOnly ? 6 : s + 1)}
               disabled={!canProceed()}
               className="bg-orange-500 hover:bg-orange-600"
             >

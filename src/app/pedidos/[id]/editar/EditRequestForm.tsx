@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
-  ZONES_CORDOBA,
+  ZONAS_CORDOBA,
   PROPERTY_TYPE_LABELS,
   FINANCING_LABELS,
   URGENCY_OPTIONS,
@@ -161,7 +161,7 @@ export default function EditRequestForm({
     )
   }
 
-  const filteredZones = ZONES_CORDOBA.filter(z =>
+  const filteredZones = ZONAS_CORDOBA.filter(z =>
     z.toLowerCase().includes(zoneSearch.toLowerCase())
   )
 
