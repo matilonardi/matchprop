@@ -42,7 +42,7 @@ export default function CreditosPage() {
             <ul className="space-y-3 mb-8">
               {[
                 'Contactos ilimitados durante 30 días',
-                'Teléfono y email de cada comprador',
+                'Teléfono de cada comprador',
                 'Válido desde el momento del pago',
                 'Ideal para brokers activos',
               ].map((item) => (
