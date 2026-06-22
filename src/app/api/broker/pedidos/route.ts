@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
 
   const { data: pedidos, error } = await supabase
     .from('buyer_requests')
-    .select('id, property_types, zones, budget_usd, contact_name, contact_phone, bedrooms_min, bedrooms_max, description, status, created_at')
+    .select('id, property_types, zones, budget_usd, contact_name, contact_phone, bedrooms_min, bedrooms_max, description, urgency, operation_type, status, created_at')
     .eq('publisher_broker_id', broker.id)
     .order('created_at', { ascending: false })
 

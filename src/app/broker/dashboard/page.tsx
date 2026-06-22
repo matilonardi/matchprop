@@ -7,13 +7,13 @@ import {
   Bell, CreditCard, Unlock, TrendingUp, Plus, LogOut, Loader2,
   MapPin, MessageCircle, FileSearch, Search, Flame, Zap,
   BarChart2, Target, ChevronRight, AlertCircle, ClipboardList, Building2,
-  CheckCircle2, X,
+  CheckCircle2, X, Pencil,
 } from 'lucide-react'
 import { buildZonaPropUrl } from '@/lib/zonaprop'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import { supabase } from '@/lib/supabase'
-import { PROPERTY_TYPE_LABELS } from '@/lib/constants'
+import { PROPERTY_TYPE_LABELS, ZONES_CORDOBA } from '@/lib/constants'
 
 interface Broker {
   id: string
@@ -60,6 +60,8 @@ interface BrokerPedido {
   bedrooms_min: number | null
   bedrooms_max: number | null
   description: string | null
+  urgency: string | null
+  operation_type: string | null
   status: string
   created_at: string
 }
@@ -92,7 +94,14 @@ export default function BrokerDashboard() {
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null)
   const [platformStats, setPlatformStats] = useState<{ total: number; byUs: number } | null>(null)
   const [misPedidos, setMisPedidos] = useState<BrokerPedido[]>([])
-  const [closingId, setClosingId] = useState<string | null>(null)
+  const [editingPedido, setEditingPedido] = useState<BrokerPedido | null>(null)
+  const [editForm, setEditForm] = useState({ zones: [] as string[], budget_usd: '', bedrooms_min: '', bedrooms_max: '', description: '' })
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+  const [zoneSearch, setZoneSearch] = useState('')
+  const [closeTarget, setCloseTarget] = useState<{ id: string; name: string } | null>(null)
+  const [closeReason, setCloseReason] = useState('')
+  const [closeSubmitting, setCloseSubmitting] = useState(false)
 
   useEffect(() => {
     async function load() {
@@ -142,22 +151,83 @@ export default function BrokerDashboard() {
     load()
   }, [router])
 
-  async function closePedido(id: string) {
-    if (closingId) return
-    setClosingId(id)
+  function openEditModal(p: BrokerPedido) {
+    setEditingPedido(p)
+    setEditForm({
+      zones: p.zones || [],
+      budget_usd: String(p.budget_usd || ''),
+      bedrooms_min: p.bedrooms_min != null ? String(p.bedrooms_min) : '',
+      bedrooms_max: p.bedrooms_max != null ? String(p.bedrooms_max) : '',
+      description: p.description || '',
+    })
+    setEditError('')
+    setZoneSearch('')
+  }
+
+  async function saveEdit() {
+    if (!editingPedido) return
+    if (editForm.zones.length === 0) { setEditError('Seleccioná al menos una zona.'); return }
+    if (!editForm.budget_usd) { setEditError('Ingresá el presupuesto.'); return }
+    setEditSaving(true)
+    setEditError('')
     try {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) return
-      const res = await fetch(`/api/broker/pedidos/${id}`, {
+      const res = await fetch(`/api/broker/pedidos/${editingPedido.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: user.id,
+          zones: editForm.zones,
+          budget_usd: Number(editForm.budget_usd),
+          bedrooms_min: editForm.bedrooms_min ? Number(editForm.bedrooms_min) : null,
+          bedrooms_max: editForm.bedrooms_max ? Number(editForm.bedrooms_max) : null,
+          description: editForm.description || null,
+        }),
+      })
+      if (!res.ok) {
+        const json = await res.json()
+        setEditError(json.error || 'Error al guardar')
+        return
+      }
+      setMisPedidos(prev => prev.map(p => p.id === editingPedido.id ? {
+        ...p,
+        zones: editForm.zones,
+        budget_usd: Number(editForm.budget_usd),
+        bedrooms_min: editForm.bedrooms_min ? Number(editForm.bedrooms_min) : null,
+        bedrooms_max: editForm.bedrooms_max ? Number(editForm.bedrooms_max) : null,
+        description: editForm.description || null,
+      } : p))
+      setEditingPedido(null)
+    } catch {
+      setEditError('Error de conexión')
+    } finally {
+      setEditSaving(false)
+    }
+  }
+
+  function openCloseModal(p: BrokerPedido) {
+    setCloseTarget({ id: p.id, name: p.contact_name })
+    setCloseReason('')
+  }
+
+  async function confirmClose() {
+    if (!closeTarget || !closeReason) return
+    setCloseSubmitting(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      const res = await fetch(`/api/broker/pedidos/${closeTarget.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ userId: user.id, action: 'close' }),
       })
       if (res.ok) {
-        setMisPedidos(prev => prev.map(p => p.id === id ? { ...p, status: 'closed' } : p))
+        setMisPedidos(prev => prev.map(p => p.id === closeTarget.id ? { ...p, status: 'closed' } : p))
+        setCloseTarget(null)
       }
     } finally {
-      setClosingId(null)
+      setCloseSubmitting(false)
     }
   }
 
@@ -512,21 +582,33 @@ export default function BrokerDashboard() {
                           {(p.zones || []).slice(0, 3).join(', ')}{(p.zones || []).length > 3 ? ` +${p.zones.length - 3}` : ''}
                         </p>
                       </div>
-                      {isActive && (
-                        <button
-                          onClick={() => closePedido(p.id)}
-                          disabled={closingId === p.id}
-                          title="Marcar como finalizada"
-                          className="shrink-0 flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-200 rounded-lg px-2.5 py-1.5 transition-colors disabled:opacity-50"
+                      <div className="shrink-0 flex items-center gap-2">
+                        <Link
+                          href={`/pedidos/${p.id}`}
+                          className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-600 border border-gray-200 hover:border-blue-200 rounded-lg px-2.5 py-1.5 transition-colors"
                         >
-                          {closingId === p.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-3.5 w-3.5" />
-                          )}
-                          Finalizar
-                        </button>
-                      )}
+                          <FileSearch className="h-3.5 w-3.5" />
+                          Ver
+                        </Link>
+                        {isActive && (
+                          <>
+                            <button
+                              onClick={() => openEditModal(p)}
+                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 border border-gray-200 hover:border-indigo-200 rounded-lg px-2.5 py-1.5 transition-colors"
+                            >
+                              <Pencil className="h-3.5 w-3.5" />
+                              Editar
+                            </button>
+                            <button
+                              onClick={() => openCloseModal(p)}
+                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 border border-gray-200 hover:border-red-200 rounded-lg px-2.5 py-1.5 transition-colors"
+                            >
+                              <CheckCircle2 className="h-3.5 w-3.5" />
+                              Finalizar
+                            </button>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -757,6 +839,181 @@ export default function BrokerDashboard() {
 
         </div>
       </div>
+
+      {/* ── EDIT MODAL ─────────────────────────────────────────────────────── */}
+      {editingPedido && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg shadow-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="font-semibold text-gray-900">Editar búsqueda</h3>
+              <button onClick={() => setEditingPedido(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="p-6 space-y-4 max-h-[65vh] overflow-y-auto">
+              {/* Budget */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Presupuesto (USD)</label>
+                <input
+                  type="number"
+                  value={editForm.budget_usd}
+                  onChange={e => setEditForm(f => ({ ...f, budget_usd: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                  placeholder="ej: 80000"
+                />
+              </div>
+              {/* Bedrooms */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Dormitorios mín.</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.bedrooms_min}
+                    onChange={e => setEditForm(f => ({ ...f, bedrooms_min: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                    placeholder="0"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-gray-700 block mb-1">Dormitorios máx.</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editForm.bedrooms_max}
+                    onChange={e => setEditForm(f => ({ ...f, bedrooms_max: e.target.value }))}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300"
+                    placeholder="0"
+                  />
+                </div>
+              </div>
+              {/* Description */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">Notas internas</label>
+                <textarea
+                  rows={3}
+                  value={editForm.description}
+                  onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 resize-none"
+                  placeholder="Descripción adicional..."
+                />
+              </div>
+              {/* Zones */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 block mb-1">
+                  Zonas <span className="text-gray-400 font-normal">({editForm.zones.length} seleccionadas)</span>
+                </label>
+                {editForm.zones.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {editForm.zones.map(z => (
+                      <span
+                        key={z}
+                        onClick={() => setEditForm(f => ({ ...f, zones: f.zones.filter(x => x !== z) }))}
+                        className="inline-flex items-center gap-0.5 text-xs bg-teal-50 text-teal-700 border border-teal-200 rounded-full px-2 py-0.5 cursor-pointer hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                      >
+                        {z} <X className="h-3 w-3" />
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <input
+                  type="text"
+                  placeholder="Buscar zona o barrio..."
+                  value={zoneSearch}
+                  onChange={e => setZoneSearch(e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-teal-300 mb-1"
+                />
+                <div className="border border-gray-200 rounded-lg overflow-hidden max-h-44 overflow-y-auto">
+                  {ZONES_CORDOBA
+                    .filter(z => z.toLowerCase().includes(zoneSearch.toLowerCase()))
+                    .slice(0, 40)
+                    .map(z => (
+                      <label key={z} className="flex items-center gap-2 px-3 py-1.5 hover:bg-gray-50 cursor-pointer text-sm border-b border-gray-50 last:border-0">
+                        <input
+                          type="checkbox"
+                          checked={editForm.zones.includes(z)}
+                          onChange={e => setEditForm(f => ({
+                            ...f,
+                            zones: e.target.checked ? [...f.zones, z] : f.zones.filter(x => x !== z),
+                          }))}
+                          className="rounded accent-teal-600"
+                        />
+                        {z}
+                      </label>
+                    ))}
+                </div>
+              </div>
+              {editError && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3 py-2">{editError}</p>
+              )}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setEditingPedido(null)} disabled={editSaving}>
+                Cancelar
+              </Button>
+              <Button onClick={saveEdit} disabled={editSaving} className="bg-teal-600 hover:bg-teal-700">
+                {editSaving && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Guardar cambios
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── CLOSE REASON MODAL ─────────────────────────────────────────────── */}
+      {closeTarget && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-xl overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100">
+              <h3 className="font-semibold text-gray-900">Finalizar búsqueda</h3>
+              <p className="text-sm text-gray-500 mt-1">
+                ¿Por qué finalizás la búsqueda de <span className="font-medium text-gray-700">{closeTarget.name}</span>?
+              </p>
+            </div>
+            <div className="p-5 space-y-2">
+              {[
+                { value: 'encontro_propiedad', label: 'El cliente encontró una propiedad' },
+                { value: 'cliente_cancelo', label: 'El cliente canceló la búsqueda' },
+                { value: 'ya_no_busca', label: 'Ya no está buscando' },
+                { value: 'datos_incorrectos', label: 'Datos incorrectos o duplicado' },
+                { value: 'otro', label: 'Otro motivo' },
+              ].map(opt => (
+                <label
+                  key={opt.value}
+                  className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                    closeReason === opt.value
+                      ? 'border-teal-400 bg-teal-50'
+                      : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="close_reason"
+                    value={opt.value}
+                    checked={closeReason === opt.value}
+                    onChange={() => setCloseReason(opt.value)}
+                    className="accent-teal-600"
+                  />
+                  <span className="text-sm text-gray-700">{opt.label}</span>
+                </label>
+              ))}
+            </div>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setCloseTarget(null)} disabled={closeSubmitting}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={confirmClose}
+                disabled={!closeReason || closeSubmitting}
+                className="bg-red-500 hover:bg-red-600"
+              >
+                {closeSubmitting && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
+                Finalizar búsqueda
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
