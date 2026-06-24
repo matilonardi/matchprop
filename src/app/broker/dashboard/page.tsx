@@ -103,6 +103,16 @@ export default function BrokerDashboard() {
   const [closeReason, setCloseReason] = useState('')
   const [closeSubmitting, setCloseSubmitting] = useState(false)
 
+  // Survey state
+  interface PendingSurvey {
+    lead_id: string
+    purchased_at: string
+    request: { property_types: string[]; zones: string[]; budget_usd: number; contact_name: string } | null
+  }
+  const [pendingSurveys, setPendingSurveys] = useState<PendingSurvey[]>([])
+  const [surveyOutcome, setSurveyOutcome] = useState('')
+  const [surveySubmitting, setSurveySubmitting] = useState(false)
+
   useEffect(() => {
     async function load() {
       try {
@@ -133,6 +143,12 @@ export default function BrokerDashboard() {
         fetch(`/api/broker/market-stats?broker_id=${data.broker.id}&zones=${zonesParam}`)
           .then(r => r.json())
           .then(setMarketStats)
+          .catch(() => {})
+
+        // Pending surveys (10+ days old unlocks without outcome)
+        fetch(`/api/broker/pending-surveys?broker_id=${data.broker.id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => d?.surveys?.length && setPendingSurveys(d.surveys))
           .catch(() => {})
 
         // Platform stats — total active pedidos + pedidos loaded by us
@@ -1014,6 +1030,101 @@ export default function BrokerDashboard() {
           </div>
         </div>
       )}
+
+      {/* ── Survey modal (blocking) ─────────────────────────────── */}
+      {pendingSurveys.length > 0 && (() => {
+        const survey = pendingSurveys[0]
+        const req = survey.request
+        const purchasedDate = new Date(survey.purchased_at).toLocaleDateString('es-AR', { day: '2-digit', month: 'long' })
+        const OUTCOMES = [
+          { value: 'nada',             label: 'Nada' },
+          { value: 'envie_opciones',   label: 'Envié opciones' },
+          { value: 'hubo_visita',      label: 'Hubo visita' },
+          { value: 'hubo_negociacion', label: 'Hubo negociación' },
+          { value: 'hubo_reserva',     label: 'Hubo reserva' },
+          { value: 'hubo_venta',       label: 'Hubo venta 🎉' },
+        ]
+
+        async function submitSurvey() {
+          if (!surveyOutcome) return
+          setSurveySubmitting(true)
+          try {
+            await fetch('/api/leads/survey', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ lead_id: survey.lead_id, outcome: surveyOutcome }),
+            })
+            setPendingSurveys(prev => prev.slice(1))
+            setSurveyOutcome('')
+          } finally {
+            setSurveySubmitting(false)
+          }
+        }
+
+        return (
+          <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+            <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+              <div className="bg-blue-600 px-6 py-4 rounded-t-2xl">
+                <p className="text-white font-bold text-lg">📋 Encuesta de seguimiento</p>
+                <p className="text-blue-100 text-sm mt-0.5">
+                  Necesitamos saber cómo te fue para mejorar la plataforma
+                </p>
+              </div>
+              <div className="px-6 py-5">
+                {req && (
+                  <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-4 text-sm">
+                    <p className="font-semibold text-gray-900">{req.contact_name}</p>
+                    <p className="text-gray-500 mt-0.5">
+                      {req.property_types.join(', ')} · {req.zones.slice(0, 2).join(', ')} · USD {req.budget_usd.toLocaleString()}
+                    </p>
+                    <p className="text-gray-400 text-xs mt-1">Desbloqueado el {purchasedDate}</p>
+                  </div>
+                )}
+                <p className="font-semibold text-gray-900 mb-3">¿Qué pasó con esta búsqueda?</p>
+                <div className="space-y-2">
+                  {OUTCOMES.map(opt => (
+                    <label
+                      key={opt.value}
+                      className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                        surveyOutcome === opt.value
+                          ? 'border-blue-500 bg-blue-50'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="survey_outcome"
+                        value={opt.value}
+                        checked={surveyOutcome === opt.value}
+                        onChange={() => setSurveyOutcome(opt.value)}
+                        className="accent-blue-600"
+                      />
+                      <span className="text-sm font-medium text-gray-800">{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {pendingSurveys.length > 1 && (
+                  <p className="text-xs text-gray-400 mt-3 text-center">
+                    {pendingSurveys.length - 1} encuesta{pendingSurveys.length - 1 > 1 ? 's' : ''} más pendiente{pendingSurveys.length - 1 > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+              <div className="px-6 pb-5">
+                <Button
+                  onClick={submitSurvey}
+                  disabled={!surveyOutcome || surveySubmitting}
+                  className="w-full bg-blue-600 hover:bg-blue-700"
+                >
+                  {surveySubmitting
+                    ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Guardando...</>
+                    : 'Responder y continuar'
+                  }
+                </Button>
+              </div>
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
