@@ -42,17 +42,20 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
+      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, featured_until, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
       { count: 'exact' }
     )
     .eq('status', 'active')
     .range((page - 1) * limit, page * limit - 1)
 
-  // Sorting
-  if (sort === 'oldest')      query = query.order('created_at', { ascending: true })
+  // Featured requests always surface first (nulls = not featured → go last)
+  query = query.order('featured_until', { ascending: false, nullsFirst: false })
+
+  // Then apply user-selected sort
+  if (sort === 'oldest')           query = query.order('created_at', { ascending: true })
   else if (sort === 'budget_asc')  query = query.order('budget_usd', { ascending: true })
   else if (sort === 'budget_desc') query = query.order('budget_usd', { ascending: false })
-  else                        query = query.order('created_at', { ascending: false })
+  else                             query = query.order('created_at', { ascending: false })
 
   if (requestType) query = query.eq('request_type', requestType)
   else query = query.eq('request_type', 'property') // default to property tab

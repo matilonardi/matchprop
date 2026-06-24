@@ -24,8 +24,25 @@ export async function POST(request: NextRequest) {
     return Response.json({ ok: true })
   }
 
-  // Parse external_reference: "pack_20_1716987654321"
   const externalRef: string = payment.external_reference || ''
+
+  // ── Feature payment: external_reference = "feature_{requestId}_{timestamp}"
+  if (externalRef.startsWith('feature_')) {
+    const withoutPrefix = externalRef.slice('feature_'.length)
+    const lastUnderscore = withoutPrefix.lastIndexOf('_')
+    const requestId = withoutPrefix.slice(0, lastUnderscore)
+    if (requestId) {
+      const featuredUntil = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000).toISOString()
+      const supabase = createServerClient()
+      await supabase
+        .from('buyer_requests')
+        .update({ featured_until: featuredUntil })
+        .eq('id', requestId)
+    }
+    return Response.json({ ok: true })
+  }
+
+  // ── Credit pack payment: external_reference = "pack_20_1716987654321"
   const packId = externalRef.split('_').slice(0, 2).join('_')
   const pack = CREDIT_PACKS.find((p) => p.id === packId)
 

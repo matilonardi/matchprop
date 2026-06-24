@@ -749,6 +749,7 @@ const pedidos = [
     contact_name: PLACEHOLDER_CONTACT,
     contact_phone: PLACEHOLDER_PHONE,
   },
+
 ]
 
 // ─── INSERCIÓN ────────────────────────────────────────────────────────────────
@@ -761,14 +762,17 @@ async function insertPedidos() {
   for (let i = 0; i < pedidos.length; i++) {
     const p = pedidos[i]
 
+    const isAlquiler = p.operation_type === 'alquiler'
     const body = {
+      operation_type: p.operation_type ?? 'compra',
       request_type: 'property',
       property_types: p.property_types,
       zones: p.zones,
       budget_usd: p.budget_usd,
       bedrooms_min: p.bedrooms_min ?? null,
       bedrooms_max: p.bedrooms_max ?? null,
-      financing: p.financing,
+      financing: p.financing ?? (isAlquiler ? 'efectivo' : null),
+      financing_types: p.financing_types ?? [],
       requirements: p.requirements ?? [],
       description: p.description ?? null,
       urgency: p.urgency ?? null,
@@ -797,7 +801,8 @@ async function insertPedidos() {
       const zone = p.zones[0]
       const type = p.property_types[0]
       const budget = p.budget_usd > 0 ? `USD ${p.budget_usd.toLocaleString()}` : 'a convenir'
-      console.log(`  ✓ [${i+1}/${pedidos.length}] ${type} en ${zone} - ${budget}`)
+      const op = p.operation_type === 'alquiler' ? ' [alquiler]' : ''
+      console.log(`  ✓ [${i+1}/${pedidos.length}] ${type} en ${zone} - ${budget}${op}`)
     } else {
       fail++
       const text = await res.text()

@@ -183,7 +183,14 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
               ✓ Activa
             </span>
           </div>
-          {isDemo && (
+          {req.featured_until && new Date(req.featured_until) > new Date() && (
+            <div className="absolute top-3 left-3">
+              <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
+                ⭐ Destacado
+              </span>
+            </div>
+          )}
+          {isDemo && !req.featured_until && (
             <div className="absolute top-3 left-3">
               <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
                 Ejemplo

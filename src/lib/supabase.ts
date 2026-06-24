@@ -53,8 +53,10 @@ export interface BuyerRequest {
   status: RequestStatus
   views_count: number
   leads_count: number
+  operation_type?: 'compra' | 'alquiler'
   created_at: string
   expires_at: string
+  featured_until?: string | null
 }
 
 // Public view — no contact fields (returned by the public feed API)

@@ -92,6 +92,8 @@ export default function PublicarWizard() {
   const [showPassword, setShowPassword] = useState(false)
   const captchaRef = useRef<HCaptcha>(null)
   const [loggedBroker, setLoggedBroker] = useState<LoggedBroker | null | 'loading'>('loading')
+  const [upsell, setUpsell] = useState<{ id: string; closeToken: string } | null>(null)
+  const [upsellLoading, setUpsellLoading] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -240,7 +242,7 @@ export default function PublicarWizard() {
         email: form.contact_email,
         password: form.contact_password,
       })
-      router.push(`/pedidos/${id}?nuevo=1&close_token=${close_token}`)
+      setUpsell({ id, closeToken: close_token })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
       captchaRef.current?.resetCaptcha()
@@ -292,12 +294,85 @@ export default function PublicarWizard() {
         const data = await res.json()
         throw new Error(data.error || 'Error al publicar')
       }
-      router.push('/broker/dashboard?pedido=nuevo')
+      const { id: brokerId } = await res.json()
+      setUpsell({ id: brokerId, closeToken: '' })
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error inesperado')
     } finally {
       setLoading(false)
     }
+  }
+
+  async function handleDestacar() {
+    if (!upsell) return
+    setUpsellLoading(true)
+    try {
+      const res = await fetch('/api/checkout/feature', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ request_id: upsell.id }),
+      })
+      const data = await res.json()
+      if (data.init_point) {
+        window.location.href = data.init_point
+      }
+    } catch {
+      setUpsellLoading(false)
+    }
+  }
+
+  // Upsell screen shown after successful submit
+  if (upsell) {
+    const isBroker = !upsell.closeToken
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="p-8 text-center">
+          <div className="text-5xl mb-4">🎉</div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Búsqueda publicada!</h2>
+          <p className="text-gray-500 mb-8">Ya está visible para todos los brokers de Córdoba.</p>
+
+          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6 mb-6 text-left">
+            <div className="flex items-start gap-4">
+              <span className="text-4xl">⭐</span>
+              <div>
+                <h3 className="font-bold text-gray-900 text-lg mb-1">Destacá tu búsqueda</h3>
+                <p className="text-gray-600 text-sm mb-3">
+                  Aparece <strong>primero en el feed</strong> con badge dorado durante <strong>45 días</strong>.
+                  Más visibilidad = más brokers contactándote.
+                </p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-gray-900">$15.000</span>
+                  <span className="text-gray-500 text-sm">ARS · pago único</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleDestacar}
+              disabled={upsellLoading}
+              className="w-full py-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold text-base transition-all shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
+            >
+              {upsellLoading ? (
+                <><span className="animate-spin">⏳</span> Preparando pago...</>
+              ) : (
+                <>⭐ Destacar mi búsqueda — $15.000</>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                if (isBroker) router.push('/broker/dashboard?pedido=nuevo')
+                else router.push(`/pedidos/${upsell.id}?nuevo=1&close_token=${upsell.closeToken}`)
+              }}
+              className="w-full py-3 rounded-xl border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-all"
+            >
+              No gracias, ver mi búsqueda
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (requestType === null) {
