@@ -435,6 +435,7 @@ export default function PedidosFeed({
     }
     return {
       zones: initialZone ? [initialZone] : [] as string[],
+      barrios: [] as string[],
       types: initialType ? [initialType] : [] as string[],
       bedroomsMin: [] as string[],
       carCondition: '',
@@ -458,6 +459,8 @@ export default function PedidosFeed({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [zoneSearch, setZoneSearch] = useState('')
   const [zoneDropdownOpen, setZoneDropdownOpen] = useState(false)
+  const [barrioSearch, setBarrioSearch] = useState('')
+  const [barrioDropdownOpen, setBarrioDropdownOpen] = useState(false)
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false)
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
@@ -490,7 +493,7 @@ export default function PedidosFeed({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [textSearch])
 
-  const hasFilters = !!(filters.zones.length || filters.types.length || filters.bedroomsMin.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
+  const hasFilters = !!(filters.zones.length || filters.barrios.length || filters.types.length || filters.bedroomsMin.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -504,7 +507,8 @@ export default function PedidosFeed({
     const params = new URLSearchParams({ page: String(page) })
     params.set('requestType', activeTab)
     if (debouncedTextSearch) params.set('q', debouncedTextSearch)
-    if (filters.zones.length) params.set('zones', filters.zones.join(','))
+    const allZones = [...filters.zones, ...filters.barrios]
+    if (allZones.length) params.set('zones', allZones.join(','))
     if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
     if (activeTab === 'property' && filters.bedroomsMin.length) params.set('bedroomsMin', filters.bedroomsMin.join(','))
     if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
@@ -594,7 +598,7 @@ export default function PedidosFeed({
             key={id}
             onClick={() => {
               setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
+              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setZoneDropdownOpen(false)
@@ -634,10 +638,10 @@ export default function PedidosFeed({
       {/* Filter bar */}
       <div key={activeTab} className="animate-tab-fade relative z-10 flex items-center gap-2 flex-wrap mb-6">
 
-        {/* Zona — multi-select */}
+        {/* Zona — macro sectores */}
         <div className="shrink-0 relative">
           <button
-            onClick={() => { setZoneDropdownOpen(v => !v); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            onClick={() => { setZoneDropdownOpen(v => !v); setBarrioDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
             className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.zones.length ? pillActive : pillInactive}`}
           >
             <span className="font-medium">📍 Zona:</span>
@@ -647,21 +651,17 @@ export default function PedidosFeed({
           {zoneDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setZoneDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72">
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
                 <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
                   <input
                     type="checkbox"
                     checked={filters.zones.length === 0}
-                    onChange={() => {
-                      setFilters(f => ({ ...f, zones: [] }))
-                      setPage(1)
-                    }}
+                    onChange={() => { setFilters(f => ({ ...f, zones: [] })); setPage(1) }}
                     className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                   />
                   Todas
                 </label>
                 <div className="max-h-72 overflow-y-auto">
-                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider">Zonas</p>
                   {ZONAS_CORDOBA.map((z) => (
                     <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
                       <input
@@ -676,24 +676,53 @@ export default function PedidosFeed({
                       {z}
                     </label>
                   ))}
-                  <p className="px-4 pt-2.5 pb-1 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-t border-gray-100 mt-1">Barrios</p>
-                  <div className="px-3 pb-1">
-                    <input
-                      type="text"
-                      placeholder="Buscar barrio..."
-                      value={zoneSearch}
-                      onChange={(e) => setZoneSearch(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-300"
-                      onClick={(e) => e.stopPropagation()}
-                    />
-                  </div>
-                  {ZONES_CORDOBA.filter(b => !zoneSearch || b.toLowerCase().includes(zoneSearch.toLowerCase())).map((b) => (
-                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(b) ? 'bg-orange-50' : ''}`}>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Barrio — búsqueda en los 261 barrios */}
+        <div className="shrink-0 relative">
+          <button
+            onClick={() => { setBarrioDropdownOpen(v => !v); setZoneDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.barrios.length ? pillActive : pillInactive}`}
+          >
+            <span className="font-medium">🏘️ Barrio:</span>
+            {filters.barrios.length === 0 ? 'todos' : filters.barrios.length === 1 ? filters.barrios[0] : `${filters.barrios.length} barrios`}
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          </button>
+          {barrioDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setBarrioDropdownOpen(false)} />
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72">
+                <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                  <input
+                    type="checkbox"
+                    checked={filters.barrios.length === 0}
+                    onChange={() => { setFilters(f => ({ ...f, barrios: [] })); setPage(1) }}
+                    className="rounded border-gray-300 accent-orange-500 h-4 w-4"
+                  />
+                  Todos
+                </label>
+                <div className="px-3 pt-2 pb-1">
+                  <input
+                    type="text"
+                    placeholder="Buscar barrio..."
+                    value={barrioSearch}
+                    onChange={(e) => setBarrioSearch(e.target.value)}
+                    className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto">
+                  {ZONES_CORDOBA.filter(b => !barrioSearch || b.toLowerCase().includes(barrioSearch.toLowerCase())).map((b) => (
+                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.barrios.includes(b) ? 'bg-orange-50' : ''}`}>
                       <input
                         type="checkbox"
-                        checked={filters.zones.includes(b)}
+                        checked={filters.barrios.includes(b)}
                         onChange={() => {
-                          setFilters(f => ({ ...f, zones: f.zones.includes(b) ? f.zones.filter(x => x !== b) : [...f.zones, b] }))
+                          setFilters(f => ({ ...f, barrios: f.barrios.includes(b) ? f.barrios.filter(x => x !== b) : [...f.barrios, b] }))
                           setPage(1)
                         }}
                         className="rounded border-gray-300 accent-orange-500 h-4 w-4"
@@ -711,7 +740,7 @@ export default function PedidosFeed({
         {activeTab === 'property' ? (
           <div className="shrink-0 relative">
             <button
-              onClick={() => setTypeDropdownOpen((v) => !v)}
+              onClick={() => { setTypeDropdownOpen((v) => !v); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }}
               className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
                 filters.types.length ? pillActive : pillInactive
               }`}
@@ -1102,7 +1131,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
+              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setPage(1)
