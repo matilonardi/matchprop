@@ -62,7 +62,7 @@ ${fecha}
 
 👁️ <b>Vistas totales del feed:</b> ${totalViews}
 
-🔗 <a href="https://matchprop.vercel.app/admin">Ver admin</a>`
+🔗 <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://demandi.vercel.app'}/admin">Ver admin</a>`
 
   const token = process.env.TELEGRAM_BOT_TOKEN
   const chatId = process.env.TELEGRAM_CHAT_ID

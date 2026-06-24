@@ -103,7 +103,7 @@ export default function BrokerLoginForm() {
     setLoading(true)
     setError('')
     try {
-      const origin = window.location.hostname === 'localhost' ? 'https://matchprop.vercel.app' : window.location.origin
+      const origin = window.location.hostname === 'localhost' ? 'https://demandi.vercel.app' : window.location.origin
       const redirectTo = `${origin}/broker/reset-password`
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo })
       if (resetError) throw resetError

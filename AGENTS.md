@@ -14,7 +14,7 @@ Marketplace inmobiliario de **demanda inversa** para Córdoba, Argentina.
 - **Brokers** pagan créditos para ver el contacto del comprador.
 - Modelo: compradores gratis · brokers pagan 1 crédito por contacto desbloqueado.
 
-Producción: **https://matchprop.vercel.app**
+Producción: **https://demandi.vercel.app**
 Repo: `git@github.com:matilonardi/matchprop.git`
 Local: `/Users/matias.lonardi/matchprop`
 
@@ -63,7 +63,7 @@ Local: `/Users/matias.lonardi/matchprop`
 | `GET /api/admin/stats` | Stats admin (protegido por ADMIN_SECRET) |
 
 ### Admin dashboard
-Acceso: `https://matchprop.vercel.app/admin?key=<ADMIN_SECRET>`
+Acceso: `https://demandi.vercel.app/admin?key=<ADMIN_SECRET>`
 - Tab Publicaciones: todos los pedidos, con opción de eliminar
 - Tab Brokers: lista con créditos, leads desbloqueados, revenue estimado
 - Tab Compradores: cuentas registradas
