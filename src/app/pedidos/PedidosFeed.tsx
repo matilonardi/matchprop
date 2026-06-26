@@ -459,8 +459,11 @@ export default function PedidosFeed({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [zoneSearch, setZoneSearch] = useState('')
   const [zoneDropdownOpen, setZoneDropdownOpen] = useState(false)
+  const [pendingZones, setPendingZones] = useState<string[]>([])
   const [barrioSearch, setBarrioSearch] = useState('')
   const [barrioDropdownOpen, setBarrioDropdownOpen] = useState(false)
+  const [pendingBarrios, setPendingBarrios] = useState<string[]>([])
+  const [pendingTypes, setPendingTypes] = useState<string[]>([])
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false)
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
@@ -531,7 +534,7 @@ export default function PedidosFeed({
       const res = await fetch(`/api/pedidos?${params}`)
       const json = await res.json()
       const data = json.data || []
-      const noFilterApplied = !filters.zones.length && !filters.types.length && !filters.financing && !filters.maxBudget
+      const noFilterApplied = !filters.zones.length && !filters.barrios.length && !filters.types.length && !filters.financing && !filters.maxBudget
       if (data.length === 0 && page === 1 && noFilterApplied) {
         setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
         setTotalPages(1)
@@ -641,7 +644,7 @@ export default function PedidosFeed({
         {/* Zona — macro sectores */}
         <div className="shrink-0 relative">
           <button
-            onClick={() => { setZoneDropdownOpen(v => !v); setBarrioDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            onClick={() => { setPendingZones(filters.zones); setZoneDropdownOpen(v => !v); setBarrioDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
             className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.zones.length ? pillActive : pillInactive}`}
           >
             <span className="font-medium">📍 Zona:</span>
@@ -650,27 +653,24 @@ export default function PedidosFeed({
           </button>
           {zoneDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setZoneDropdownOpen(false)} />
+              <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, zones: pendingZones })); setPage(1); setZoneDropdownOpen(false) }} />
               <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
                 <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
                   <input
                     type="checkbox"
-                    checked={filters.zones.length === 0}
-                    onChange={() => { setFilters(f => ({ ...f, zones: [] })); setPage(1) }}
+                    checked={pendingZones.length === 0}
+                    onChange={() => setPendingZones([])}
                     className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                   />
                   Todas
                 </label>
                 <div className="max-h-72 overflow-y-auto">
                   {ZONAS_CORDOBA.map((z) => (
-                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.zones.includes(z) ? 'bg-orange-50' : ''}`}>
+                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${pendingZones.includes(z) ? 'bg-orange-50' : ''}`}>
                       <input
                         type="checkbox"
-                        checked={filters.zones.includes(z)}
-                        onChange={() => {
-                          setFilters(f => ({ ...f, zones: f.zones.includes(z) ? f.zones.filter(x => x !== z) : [...f.zones, z] }))
-                          setPage(1)
-                        }}
+                        checked={pendingZones.includes(z)}
+                        onChange={() => setPendingZones(prev => prev.includes(z) ? prev.filter(x => x !== z) : [...prev, z])}
                         className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                       />
                       {z}
@@ -685,7 +685,7 @@ export default function PedidosFeed({
         {/* Barrio — búsqueda en los 261 barrios */}
         <div className="shrink-0 relative">
           <button
-            onClick={() => { setBarrioDropdownOpen(v => !v); setZoneDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            onClick={() => { setPendingBarrios(filters.barrios); setBarrioDropdownOpen(v => !v); setZoneDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
             className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.barrios.length ? pillActive : pillInactive}`}
           >
             <span className="font-medium">🏘️ Barrio:</span>
@@ -694,13 +694,13 @@ export default function PedidosFeed({
           </button>
           {barrioDropdownOpen && (
             <>
-              <div className="fixed inset-0 z-40" onClick={() => setBarrioDropdownOpen(false)} />
+              <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, barrios: pendingBarrios })); setPage(1); setBarrioDropdownOpen(false) }} />
               <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72">
                 <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
                   <input
                     type="checkbox"
-                    checked={filters.barrios.length === 0}
-                    onChange={() => { setFilters(f => ({ ...f, barrios: [] })); setPage(1) }}
+                    checked={pendingBarrios.length === 0}
+                    onChange={() => setPendingBarrios([])}
                     className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                   />
                   Todos
@@ -717,14 +717,11 @@ export default function PedidosFeed({
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {ZONES_CORDOBA.filter(b => !barrioSearch || b.toLowerCase().includes(barrioSearch.toLowerCase())).map((b) => (
-                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${filters.barrios.includes(b) ? 'bg-orange-50' : ''}`}>
+                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${pendingBarrios.includes(b) ? 'bg-orange-50' : ''}`}>
                       <input
                         type="checkbox"
-                        checked={filters.barrios.includes(b)}
-                        onChange={() => {
-                          setFilters(f => ({ ...f, barrios: f.barrios.includes(b) ? f.barrios.filter(x => x !== b) : [...f.barrios, b] }))
-                          setPage(1)
-                        }}
+                        checked={pendingBarrios.includes(b)}
+                        onChange={() => setPendingBarrios(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b])}
                         className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                       />
                       {b}
@@ -740,7 +737,7 @@ export default function PedidosFeed({
         {activeTab === 'property' ? (
           <div className="shrink-0 relative">
             <button
-              onClick={() => { setTypeDropdownOpen((v) => !v); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }}
+              onClick={() => { setPendingTypes(filters.types); setTypeDropdownOpen((v) => !v); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }}
               className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
                 filters.types.length ? pillActive : pillInactive
               }`}
@@ -756,14 +753,14 @@ export default function PedidosFeed({
             </button>
             {typeDropdownOpen && (
               <>
-                <div className="fixed inset-0 z-40" onClick={() => setTypeDropdownOpen(false)} />
+                <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, types: pendingTypes })); setPage(1); setTypeDropdownOpen(false) }} />
                 <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-52">
                   {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
                     <label key={k} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm">
                       <input
                         type="checkbox"
-                        checked={filters.types.includes(k)}
-                        onChange={() => toggleTypeFilter(k)}
+                        checked={pendingTypes.includes(k)}
+                        onChange={() => setPendingTypes(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])}
                         className="rounded border-gray-300 accent-orange-500 h-4 w-4"
                       />
                       {v}
