@@ -1203,22 +1203,69 @@ export default function PedidosFeed({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-3 mt-10">
+        <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
           <button
             disabled={page === 1}
             onClick={() => setPage((p) => p - 1)}
-            className="px-5 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            Anterior
+            ← Anterior
           </button>
-          <span className="text-sm text-gray-500">{page} de {totalPages}</span>
+
+          {/* Números de página */}
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1)
+              .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
+              .reduce<(number | '...')[]>((acc, p, idx, arr) => {
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push('...')
+                acc.push(p)
+                return acc
+              }, [])
+              .map((p, idx) =>
+                p === '...'
+                  ? <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-sm">…</span>
+                  : <button
+                      key={p}
+                      onClick={() => setPage(p as number)}
+                      className={`w-9 h-9 rounded-full text-sm font-medium transition-all ${
+                        page === p
+                          ? 'bg-orange-500 text-white border border-orange-500'
+                          : 'border border-gray-200 text-gray-700 hover:border-orange-300 hover:bg-orange-50'
+                      }`}
+                    >
+                      {p}
+                    </button>
+              )
+            }
+          </div>
+
           <button
             disabled={page === totalPages}
             onClick={() => setPage((p) => p + 1)}
-            className="px-5 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
+            className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
           >
-            Siguiente
+            Siguiente →
           </button>
+
+          {/* Ir a página */}
+          <form
+            onSubmit={e => {
+              e.preventDefault()
+              const val = parseInt((e.currentTarget.elements.namedItem('gotoPage') as HTMLInputElement).value)
+              if (val >= 1 && val <= totalPages) { setPage(val); (e.currentTarget.elements.namedItem('gotoPage') as HTMLInputElement).value = '' }
+            }}
+            className="flex items-center gap-1.5 ml-2"
+          >
+            <span className="text-xs text-gray-400">Ir a</span>
+            <input
+              name="gotoPage"
+              type="number"
+              min={1}
+              max={totalPages}
+              placeholder={String(page)}
+              className="w-14 px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-1 focus:ring-orange-300"
+            />
+          </form>
         </div>
       )}
     </div>
