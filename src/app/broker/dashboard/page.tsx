@@ -312,12 +312,6 @@ export default function BrokerDashboard() {
                 <span className="font-bold text-blue-900 text-xl">{broker.credits}</span>
                 <span className="text-orange-500 text-sm">créditos</span>
               </div>
-              <Link href="/broker/creditos">
-                <Button className="bg-orange-500 hover:bg-orange-600" size="sm">
-                  <Plus className="h-4 w-4 mr-1" />
-                  Comprar créditos
-                </Button>
-              </Link>
               <button
                 onClick={handleLogout}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-gray-500 hover:text-red-600 hover:bg-red-50 border border-gray-200 hover:border-red-200 text-sm font-medium transition-colors"

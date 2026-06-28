@@ -1067,11 +1067,6 @@ export default function RequestDetail({
               {unlockError && (
                 <div className="mb-3 text-sm text-red-600 bg-red-50 rounded-lg p-3">
                   {unlockError}
-                  {unlockError.includes('créditos') && (
-                    <Link href="/broker/creditos" className="ml-2 font-medium underline">
-                      Comprar créditos
-                    </Link>
-                  )}
                 </div>
               )}
               <Button
@@ -1096,7 +1091,7 @@ export default function RequestDetail({
                 ¿Querés contactar a este comprador?
               </p>
               <p className="text-sm text-gray-500 mb-5 max-w-xs mx-auto">
-                Creá tu cuenta gratis, comprá créditos y desbloqueá el teléfono y email al instante.
+                Creá tu cuenta gratis y desbloqueá el teléfono y email al instante.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/broker">

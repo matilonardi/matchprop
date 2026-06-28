@@ -309,48 +309,17 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Pricing ── */}
+      {/* ── CTA final ── */}
       <section className="py-20 px-4 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950 overflow-hidden">
         <div className="max-w-4xl mx-auto text-center text-white">
           <AnimateIn variant="scale-up">
             <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70 animate-float" />
-            <h2 className="text-3xl font-bold mb-4">Un crédito = un contacto real</h2>
+            <h2 className="text-3xl font-bold mb-4">Empezá gratis hoy</h2>
             <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto">
-              Comprás créditos solo cuando los necesitás. Ves el pedido completo antes de decidir si vale la pena desbloquearlo.
+              Registrate, explorá las búsquedas activas y contactá compradores reales en Córdoba.
             </p>
           </AnimateIn>
-
-          <div className="grid sm:grid-cols-4 gap-3 max-w-3xl mx-auto mb-10">
-            {[
-              { credits: '3 créditos', price: '$80.000', per: '$26.667 c/u', popular: false, unlimited: false, delay: 0 },
-              { credits: '5 créditos', price: '$100.000', per: '$20.000 c/u', popular: true, unlimited: false, delay: 100 },
-              { credits: '10 créditos', price: '$180.000', per: '$18.000 c/u', popular: false, unlimited: false, delay: 200 },
-              { credits: 'Ilimitado', price: '$350.000', per: 'por mes', popular: false, unlimited: true, delay: 300 },
-            ].map(({ credits, price, per, popular, unlimited, delay }) => (
-              <AnimateIn key={credits} variant="scale-up" delay={delay}
-                className={`rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
-                  unlimited
-                    ? 'bg-gradient-to-br from-orange-500 to-orange-600 text-white border-orange-400 shadow-xl'
-                    : popular
-                    ? 'bg-white text-gray-900 border-white shadow-xl scale-105'
-                    : 'bg-white/10 text-white border-white/20 hover:bg-white/15'
-                }`}
-              >
-                {popular && (
-                  <div className="text-xs font-bold uppercase tracking-wide text-orange-500 mb-2">★ Más popular</div>
-                )}
-                {unlimited && (
-                  <div className="text-xs font-bold uppercase tracking-wide text-white/80 mb-2">∞ Plan Pro</div>
-                )}
-                <div className="font-semibold text-sm mb-1">{credits}</div>
-                <div className="text-2xl font-bold">{price}</div>
-                <div className={`text-xs mt-1 ${popular ? 'text-orange-400' : 'text-orange-200/70'}`}>{per}</div>
-              </AnimateIn>
-            ))}
-          </div>
-
-          <AnimateIn variant="fade-up" delay={400}>
-            <p className="text-xs text-white/40 mb-8">Precios en pesos argentinos · créditos válidos 30 días</p>
+          <AnimateIn variant="fade-up" delay={200}>
             <Link href="/broker">
               <Button size="lg" className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200 text-white font-bold px-10 rounded-2xl">
                 Empezar ahora
