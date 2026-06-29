@@ -398,14 +398,6 @@ export default function PublicarWizard() {
               <h3 className="font-bold text-lg text-gray-900 mb-1">Alquilar</h3>
               <p className="text-sm text-gray-500">Alquiler de casa, depto, local u oficina</p>
             </button>
-            <button
-              onClick={() => setRequestType('car')}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all"
-            >
-              <div className="text-5xl mb-3">🚗</div>
-              <h3 className="font-bold text-lg text-gray-900 mb-1">Auto</h3>
-              <p className="text-sm text-gray-500">Sedán, SUV, pickup, hatchback u otro vehículo</p>
-            </button>
           </div>
         </div>
       </div>

@@ -13,9 +13,8 @@ import { supabase } from '@/lib/supabase'
 type Specialty = 'propiedades' | 'vehiculos' | 'ambos'
 
 const SPECIALTIES: { value: Specialty; label: string; sublabel: string; icon: string }[] = [
-  { value: 'propiedades', label: 'Propiedades',  sublabel: 'Casas, deptos, terrenos', icon: '🏠' },
-  { value: 'vehiculos',   label: 'Vehículos',    sublabel: 'Autos, motos, camiones', icon: '🚗' },
-  { value: 'ambos',       label: 'Ambos',         sublabel: 'Todo tipo de activos',   icon: '✨' },
+  { value: 'propiedades', label: 'Propiedades', sublabel: 'Casas, deptos, terrenos', icon: '🏠' },
+  { value: 'ambos',       label: 'Ambos',       sublabel: 'Todo tipo de activos',   icon: '✨' },
 ]
 
 export default function BrokerRegisterForm() {
@@ -145,7 +144,7 @@ export default function BrokerRegisterForm() {
       {/* Specialty selector */}
       <div>
         <Label className="text-sm mb-2 block">¿En qué te especializás? *</Label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2">
           {SPECIALTIES.map(({ value, label, sublabel, icon }) => (
             <button
               key={value}

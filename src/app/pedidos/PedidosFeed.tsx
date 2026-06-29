@@ -591,32 +591,6 @@ export default function PedidosFeed({
 
   return (
     <div>
-      {/* Tab switcher */}
-      <div className="flex gap-1 mb-5 bg-gray-100 rounded-2xl p-1 w-fit">
-        {[
-          { id: 'property', label: '🏠 Propiedades' },
-          { id: 'car', label: '🚗 Autos' },
-        ].map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => {
-              setActiveTab(id as 'property' | 'car')
-              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
-              setTextSearch('')
-              setDebouncedTextSearch('')
-              setZoneDropdownOpen(false)
-              setTypeDropdownOpen(false)
-              setDateDropdownOpen(false)
-              setPage(1)
-            }}
-            className={`px-5 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeTab === id ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
 
       {/* Text search */}
       <div className="relative mb-4">
