@@ -3,7 +3,7 @@ import { CheckCircle2, ArrowRight, Bell, Lock, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import TawkChat from '@/components/TawkChat'
 import BrokerAuthSection from './BrokerAuthSection'
 
 export default async function BrokerPage({
@@ -115,7 +115,7 @@ export default async function BrokerPage({
         </div>
       </div>
       <Footer />
-      <WhatsAppButton />
+      <TawkChat />
     </div>
   )
 }

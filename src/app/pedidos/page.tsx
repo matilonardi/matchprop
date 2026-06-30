@@ -1,6 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import TawkChat from '@/components/TawkChat'
 import PedidosFeed from './PedidosFeed'
 
 export default async function PedidosPage({
@@ -40,7 +40,7 @@ export default async function PedidosPage({
 
       </div>
       <Footer />
-      <WhatsAppButton />
+      <TawkChat />
     </div>
   )
 }

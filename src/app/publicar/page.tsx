@@ -1,6 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import WhatsAppButton from '@/components/WhatsAppButton'
+import TawkChat from '@/components/TawkChat'
 import PublicarWizard from './PublicarWizard'
 
 export default function PublicarPage() {
@@ -21,7 +21,7 @@ export default function PublicarPage() {
         </div>
       </div>
       <Footer />
-      <WhatsAppButton />
+      <TawkChat />
     </div>
   )
 }
