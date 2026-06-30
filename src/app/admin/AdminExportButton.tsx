@@ -50,6 +50,7 @@ interface Row {
   budget_usd: number
   financing_types: string[] | null
   description: string | null
+  operation_type: string | null
 }
 
 export default function AdminExportButton() {
@@ -83,9 +84,12 @@ export default function AdminExportButton() {
         const zones = (r.zones || []).join(' / ')
         const entregaMenor = (r.financing_types || []).includes('credito') ? 'Sí' : 'No'
 
+        const operacion = r.operation_type === 'alquiler' ? 'Alquiler' : r.operation_type === 'compra' ? 'Venta' : ''
+
         return {
           'Código': r.id.slice(0, 8).toUpperCase(),
           'Fecha': fmtDate(r.created_at),
+          'Operación': operacion,
           'Pedido': pedido,
           'Teléfono': r.contact_phone || '',
           'Zona': zones,

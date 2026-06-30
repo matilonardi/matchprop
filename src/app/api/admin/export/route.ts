@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
 
   let query = supabase
     .from('buyer_requests')
-    .select('id, created_at, property_types, zones, bedrooms_min, bedrooms_max, contact_phone, budget_usd, financing_types, description, status')
+    .select('id, created_at, property_types, zones, bedrooms_min, bedrooms_max, contact_phone, budget_usd, financing_types, description, status, operation_type')
     .order('created_at', { ascending: false })
 
   if (from) query = query.gte('created_at', new Date(from).toISOString())
