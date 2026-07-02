@@ -362,7 +362,7 @@ export default function PedidosFeed({
   function toggleBedroomsFilter(val: string) {
     setFilters((f) => ({
       ...f,
-      bedroomsMin: f.bedroomsMin.includes(val) ? f.bedroomsMin.filter((v) => v !== val) : [...f.bedroomsMin, val],
+      bedroomsMin: f.bedroomsMin.includes(val) ? [] : [val],
     }))
     setPage(1)
   }
@@ -400,7 +400,11 @@ export default function PedidosFeed({
         {/* Zona — macro sectores */}
         <div className="shrink-0 relative">
           <button
-            onClick={() => { setPendingZones(filters.zones); setZoneDropdownOpen(v => !v); setBarrioDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            onClick={() => {
+              if (zoneDropdownOpen) { setFilters(f => ({ ...f, zones: pendingZones })); setPage(1) }
+              else { setPendingZones(filters.zones); setBarrioDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }
+              setZoneDropdownOpen(v => !v)
+            }}
             className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.zones.length ? pillActive : pillInactive}`}
           >
             <span className="font-medium">📍 Zona:</span>
@@ -441,7 +445,11 @@ export default function PedidosFeed({
         {/* Barrio — búsqueda en los 261 barrios */}
         <div className="shrink-0 relative">
           <button
-            onClick={() => { setPendingBarrios(filters.barrios); setBarrioDropdownOpen(v => !v); setZoneDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }}
+            onClick={() => {
+              if (barrioDropdownOpen) { setFilters(f => ({ ...f, barrios: pendingBarrios })); setPage(1) }
+              else { setPendingBarrios(filters.barrios); setZoneDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }
+              setBarrioDropdownOpen(v => !v)
+            }}
             className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.barrios.length ? pillActive : pillInactive}`}
           >
             <span className="font-medium">🏘️ Barrio:</span>
@@ -492,7 +500,11 @@ export default function PedidosFeed({
         {/* Tipo — multi-select */}
         <div className="shrink-0 relative">
             <button
-              onClick={() => { setPendingTypes(filters.types); setTypeDropdownOpen((v) => !v); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }}
+              onClick={() => {
+                if (typeDropdownOpen) { setFilters(f => ({ ...f, types: pendingTypes })); setPage(1) }
+                else { setPendingTypes(filters.types); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }
+                setTypeDropdownOpen(v => !v)
+              }}
               className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
                 filters.types.length ? pillActive : pillInactive
               }`}
