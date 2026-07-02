@@ -12,8 +12,6 @@ import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Progress } from '@/components/ui/progress'
 import { ZONAS_CORDOBA, ZONES_CORDOBA, REQUIREMENTS, SEGURIDAD_TIPOS, URGENCY_OPTIONS, PRIORITY_OPTIONS, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
-import PublicarWizardAuto from './PublicarWizardAuto'
-
 type PropertyType = 'casa' | 'departamento' | 'duplex' | 'ph' | 'terreno' | 'local' | 'renta' | 'revaluo'
 type FinancingType = 'efectivo' | 'credito' | 'ambos'
 
@@ -25,6 +23,8 @@ interface FormData {
   bedrooms_max: string
   bathrooms_min: string
   budget_usd: string
+  budget_ars: string
+  budget_currency: 'usd' | 'ars'
   financing: FinancingType | ''
   financing_types: string[]
   financing_cash_pct: string
@@ -83,7 +83,7 @@ interface LoggedBroker {
 
 export default function PublicarWizard() {
   const router = useRouter()
-  const [requestType, setRequestType] = useState<null | 'property' | 'car'>(null)
+  const [requestType, setRequestType] = useState<null | 'property'>(null)
   const [step, setStep] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -94,6 +94,7 @@ export default function PublicarWizard() {
   const [loggedBroker, setLoggedBroker] = useState<LoggedBroker | null | 'loading'>('loading')
   const [upsell, setUpsell] = useState<{ id: string; closeToken: string } | null>(null)
   const [upsellLoading, setUpsellLoading] = useState(false)
+  const [showRequisitos, setShowRequisitos] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -113,6 +114,8 @@ export default function PublicarWizard() {
     bedrooms_max: '',
     bathrooms_min: '',
     budget_usd: '',
+    budget_ars: '',
+    budget_currency: 'usd' as const,
     financing: '',
     financing_types: [],
     financing_cash_pct: '',
@@ -154,8 +157,8 @@ export default function PublicarWizard() {
       case 1: return form.property_types.length > 0
       case 2: return form.zones.length > 0
       case 3: return isTerrenoOnly || !!form.bedrooms_min
-      case 4: return !!form.budget_usd && (form.operation_type === 'alquiler' || form.financing_types.length > 0) && !!form.search_reason
-      case 5: return isTerrenoOnly || ((form.requirements.length + form.requirements_excluyentes.length) >= 1 && form.description.trim().length >= 10)
+      case 4: return !!(form.budget_currency === 'ars' ? form.budget_ars : form.budget_usd) && (form.operation_type === 'alquiler' || form.financing_types.length > 0) && !!form.search_reason
+      case 5: return isTerrenoOnly || form.description.trim().length >= 10
       case 6:
         if (loggedBroker && loggedBroker !== 'loading') {
           return !!form.contact_name && !!form.contact_phone
@@ -206,7 +209,8 @@ export default function PublicarWizard() {
           bedrooms_min: intOrNull(form.bedrooms_min),
           bedrooms_max: intOrNull(form.bedrooms_max),
           bathrooms_min: intOrNull(form.bathrooms_min),
-          budget_usd: parseInt(form.budget_usd),
+          budget_usd: form.budget_currency === 'ars' ? 0 : parseInt(form.budget_usd) || 0,
+          budget_ars: form.budget_currency === 'ars' ? parseInt(form.budget_ars) || null : null,
           financing: derivedFinancing,
           financing_types: form.financing_types,
           financing_cash_pct: intOrNull(form.financing_cash_pct),
@@ -280,7 +284,8 @@ export default function PublicarWizard() {
           bedrooms_min: intOrNull(form.bedrooms_min),
           bedrooms_max: intOrNull(form.bedrooms_max),
           bathrooms_min: intOrNull(form.bathrooms_min),
-          budget_usd: parseInt(form.budget_usd),
+          budget_usd: form.budget_currency === 'ars' ? 0 : parseInt(form.budget_usd) || 0,
+          budget_ars: form.budget_currency === 'ars' ? parseInt(form.budget_ars) || null : null,
           financing: derivedFinancing,
           financing_types: form.financing_types,
           description: form.description || null,
@@ -402,10 +407,6 @@ export default function PublicarWizard() {
         </div>
       </div>
     )
-  }
-
-  if (requestType === 'car') {
-    return <PublicarWizardAuto onBack={() => setRequestType(null)} />
   }
 
   return (
@@ -744,34 +745,82 @@ export default function PublicarWizard() {
             {/* Budget */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                {form.operation_type === 'alquiler' ? 'Presupuesto mensual máximo en USD' : 'Presupuesto máximo en USD'} <span className="text-red-500">*</span>
+                {form.operation_type === 'alquiler' ? 'Presupuesto mensual máximo' : 'Presupuesto máximo'} <span className="text-red-500">*</span>
               </Label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">USD</span>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder={form.operation_type === 'alquiler' ? '600' : '230.000'}
-                  value={form.budget_usd ? form.budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
-                  onChange={(e) => {
-                    const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-                    setForm((f) => ({ ...f, budget_usd: raw }))
-                  }}
-                  className="pl-12"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2 mt-3">
-                {(form.operation_type === 'alquiler'
-                  ? ['300', '500', '700', '1000', '1500']
-                  : ['70000', '150000', '230000', '400000', '620000']
-                ).map((v) => (
-                  <button key={v} type="button"
-                    onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
-                    className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                    USD {parseInt(v).toLocaleString()}
-                  </button>
-                ))}
-              </div>
+
+              {/* Currency toggle — solo para alquiler */}
+              {form.operation_type === 'alquiler' && (
+                <div className="flex gap-1 mb-3 bg-gray-100 p-1 rounded-xl w-fit">
+                  {(['usd', 'ars'] as const).map((c) => (
+                    <button key={c} type="button"
+                      onClick={() => setForm((f) => ({ ...f, budget_currency: c }))}
+                      className={`text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors ${form.budget_currency === c ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                      {c === 'usd' ? 'USD' : '$ Pesos'}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Input USD */}
+              {form.budget_currency !== 'ars' && (
+                <>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">USD</span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder={form.operation_type === 'alquiler' ? '600' : '230.000'}
+                      value={form.budget_usd ? form.budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                        setForm((f) => ({ ...f, budget_usd: raw }))
+                      }}
+                      className="pl-12"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {(form.operation_type === 'alquiler'
+                      ? ['300', '500', '700', '1000', '1500']
+                      : ['70000', '150000', '230000', '400000', '620000']
+                    ).map((v) => (
+                      <button key={v} type="button"
+                        onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        USD {parseInt(v).toLocaleString()}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {/* Input ARS */}
+              {form.budget_currency === 'ars' && (
+                <>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="1.500.000"
+                      value={form.budget_ars ? form.budget_ars.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                      onChange={(e) => {
+                        const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                        setForm((f) => ({ ...f, budget_ars: raw }))
+                      }}
+                      className="pl-6"
+                    />
+                  </div>
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {['500000', '800000', '1000000', '1500000', '2000000'].map((v) => (
+                      <button key={v} type="button"
+                        onClick={() => setForm((f) => ({ ...f, budget_ars: v }))}
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_ars === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        $ {parseInt(v).toLocaleString('es-AR')}
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Financing types — multi-select with conditional sub-fields — hidden for alquiler */}
@@ -895,69 +944,7 @@ export default function PublicarWizard() {
           const total = form.requirements.length + form.requirements_excluyentes.length
           return (
             <div className="space-y-6">
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  Requisitos de la propiedad <span className="text-red-500">*</span>
-                </p>
-                <p className="text-xs text-gray-400 mb-3">
-                  Tocá una vez = <span className="text-blue-600 font-medium">Importante</span> · Tocá de nuevo = <span className="text-red-600 font-medium">Excluyente</span> · Tocá otra vez = Quitar
-                </p>
-                <div className="grid grid-cols-2 gap-2">
-                  {REQUIREMENTS.map(({ id, label }) => {
-                    const state = getReqState(id)
-                    return (
-                      <button key={id} type="button" onClick={() => cycleReq(id)}
-                        className={`p-3 rounded-xl border-2 text-left text-sm transition-all relative ${
-                          state === 'excluyente' ? 'border-red-400 bg-red-50'
-                          : state === 'importante' ? 'border-blue-400 bg-blue-50'
-                          : 'border-gray-200 hover:border-gray-300'
-                        }`}>
-                        <span className={state === 'none' ? 'text-gray-700' : state === 'importante' ? 'text-blue-800' : 'text-red-800'}>
-                          {label}
-                        </span>
-                        {state !== 'none' && (
-                          <span className={`block text-xs font-semibold mt-0.5 ${state === 'importante' ? 'text-blue-600' : 'text-red-600'}`}>
-                            {state === 'importante' ? '✓ Importante' : '⛔ Excluyente'}
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-                <p className={`text-xs mt-2 ${total === 0 ? 'text-gray-400' : 'text-green-600'}`}>
-                  {total === 0 ? 'Seleccioná al menos un requisito' : `✓ ${total} requisito${total > 1 ? 's' : ''} marcado${total > 1 ? 's' : ''}`}
-                </p>
-              </div>
-
-              {/* Seguridad específica */}
-              <div>
-                <p className="text-sm font-medium text-gray-700 mb-1">
-                  Seguridad mínima requerida <span className="text-gray-400 font-normal text-xs">— opcional</span>
-                </p>
-                <p className="text-xs text-gray-400 mb-3">Marcá el tipo de seguridad que necesitás.</p>
-                <div className="grid grid-cols-2 gap-2">
-                  {SEGURIDAD_TIPOS.map(({ id, label }) => {
-                    const selected = form.seguridad_tipos.includes(id)
-                    return (
-                      <label key={id}
-                        className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors text-sm ${
-                          selected ? 'border-orange-400 bg-orange-50 text-orange-800' : 'border-gray-200 hover:border-gray-300 text-gray-700'
-                        }`}>
-                        <Checkbox
-                          checked={selected}
-                          onCheckedChange={() => setForm((f) => ({
-                            ...f,
-                            seguridad_tipos: toggleArrayItem(f.seguridad_tipos, id)
-                          }))}
-                        />
-                        {label}
-                      </label>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Description — mandatory */}
+              {/* Description — principal */}
               <div>
                 <Label className="text-sm font-medium text-gray-700 mb-1 block">
                   Contanos más sobre tu búsqueda <span className="text-red-500">*</span>
@@ -971,11 +958,86 @@ export default function PublicarWizard() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={4} className="resize-none"
                 />
-                <p className={`text-xs mt-1 ${form.description.trim().length < 15 ? 'text-gray-400' : 'text-green-600'}`}>
+                <p className={`text-xs mt-1 ${form.description.trim().length < 10 ? 'text-gray-400' : 'text-green-600'}`}>
                   {form.description.trim().length < 10
                     ? `Mínimo 10 caracteres (${form.description.trim().length}/10)`
                     : '✓ Listo'}
                 </p>
+              </div>
+
+              {/* Requisitos — colapsables */}
+              <div>
+                <button
+                  type="button"
+                  onClick={() => setShowRequisitos(s => !s)}
+                  className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  <span className={`transition-transform ${showRequisitos ? 'rotate-90' : ''}`}>›</span>
+                  {showRequisitos ? 'Ocultar requisitos' : 'Agregar requisitos'}
+                  {total > 0 && (
+                    <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                      {total} seleccionado{total > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </button>
+
+                {showRequisitos && (
+                  <div className="mt-4 space-y-5">
+                    <div>
+                      <p className="text-xs text-gray-400 mb-3">
+                        Tocá una vez = <span className="text-blue-600 font-medium">Importante</span> · Tocá de nuevo = <span className="text-red-600 font-medium">Excluyente</span> · Tocá otra vez = Quitar
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {REQUIREMENTS.map(({ id, label }) => {
+                          const state = getReqState(id)
+                          return (
+                            <button key={id} type="button" onClick={() => cycleReq(id)}
+                              className={`p-3 rounded-xl border-2 text-left text-sm transition-all ${
+                                state === 'excluyente' ? 'border-red-400 bg-red-50'
+                                : state === 'importante' ? 'border-blue-400 bg-blue-50'
+                                : 'border-gray-200 hover:border-gray-300'
+                              }`}>
+                              <span className={state === 'none' ? 'text-gray-700' : state === 'importante' ? 'text-blue-800' : 'text-red-800'}>
+                                {label}
+                              </span>
+                              {state !== 'none' && (
+                                <span className={`block text-xs font-semibold mt-0.5 ${state === 'importante' ? 'text-blue-600' : 'text-red-600'}`}>
+                                  {state === 'importante' ? '✓ Importante' : '⛔ Excluyente'}
+                                </span>
+                              )}
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <p className="text-sm font-medium text-gray-700 mb-1">
+                        Seguridad mínima requerida <span className="text-gray-400 font-normal text-xs">— opcional</span>
+                      </p>
+                      <div className="grid grid-cols-2 gap-2">
+                        {SEGURIDAD_TIPOS.map(({ id, label }) => {
+                          const selected = form.seguridad_tipos.includes(id)
+                          return (
+                            <label key={id}
+                              className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors text-sm ${
+                                selected ? 'border-orange-400 bg-orange-50 text-orange-800' : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                              }`}>
+                              <Checkbox
+                                checked={selected}
+                                onCheckedChange={() => setForm((f) => ({
+                                  ...f,
+                                  seguridad_tipos: toggleArrayItem(f.seguridad_tipos, id)
+                                }))}
+                              />
+                              {label}
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )
@@ -1020,7 +1082,7 @@ export default function PublicarWizard() {
                 <span>📦 {form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
                 <span>📍 {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
                 {form.bedrooms_min && <span>🛏 {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>}
-                <span>💰 USD {parseInt(form.budget_usd || '0').toLocaleString()}</span>
+                <span>💰 {form.budget_currency === 'ars' ? `$ ${parseInt(form.budget_ars || '0').toLocaleString('es-AR')}` : `USD ${parseInt(form.budget_usd || '0').toLocaleString()}`}</span>
               </div>
             </div>
 
@@ -1147,7 +1209,7 @@ export default function PublicarWizard() {
                 <span>📦 {form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
                 <span>📍 {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
                 <span>🛏 {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>
-                <span>💰 USD {parseInt(form.budget_usd).toLocaleString()}</span>
+                <span>💰 {form.budget_currency === 'ars' ? `$ ${parseInt(form.budget_ars).toLocaleString('es-AR')}` : `USD ${parseInt(form.budget_usd).toLocaleString()}`}</span>
               </div>
             </div>
 

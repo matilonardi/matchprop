@@ -4,24 +4,9 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown, Search } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
-import { ZONAS_CORDOBA, ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS, CAR_BODY_STYLE_LABELS, CAR_BRANDS, CAR_FUEL_TYPES, CAR_TRANSMISSION_OPTIONS } from '@/lib/constants'
+import { ZONAS_CORDOBA, ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
-
-// ---------------------------------------------------------------------------
-// Car extra fields (not in PublicBuyerRequest type yet)
-// ---------------------------------------------------------------------------
-interface CarFields {
-  car_body_styles?: string[]
-  car_brands?: string[]
-  car_year_min?: number | null
-  car_year_max?: number | null
-  car_condition?: string | null
-  car_km_max?: number | null
-  car_fuel_types?: string[]
-  car_transmission?: string | null
-  request_type?: string
-}
 
 // ---------------------------------------------------------------------------
 // Demo data
@@ -80,41 +65,6 @@ const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
   },
 ]
 
-const DEMO_CAR_REQUESTS: (PublicBuyerRequest & CarFields & { demo?: boolean })[] = [
-  {
-    id: 'demo-car-1', property_types: [], zones: ['Córdoba Capital', 'Nueva Córdoba'],
-    budget_usd: 18000, financing: 'efectivo',
-    requirements: [], description: 'Busco Toyota Corolla o similar, 2019 en adelante. Buen estado.',
-    urgency: 'este_mes', status: 'active', views_count: 8, leads_count: 1,
-    request_type: 'car', car_body_styles: ['sedan'], car_brands: ['Toyota', 'Honda'],
-    car_year_min: 2019, car_condition: 'usado', car_km_max: 80000,
-    car_fuel_types: ['nafta'], car_transmission: 'automatico',
-    created_at: new Date(Date.now() - 3 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 57 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-car-2', property_types: [], zones: ['Mendiolaza', 'Villa Allende', 'La Calera'],
-    budget_usd: 35000, financing: 'efectivo',
-    requirements: [], description: 'Necesito una SUV para familia. Ford Kuga, Nissan Kicks o similar. GNC ideal.',
-    urgency: 'en_3_meses', status: 'active', views_count: 12, leads_count: 2,
-    request_type: 'car', car_body_styles: ['suv'], car_brands: ['Ford', 'Nissan', 'Hyundai'],
-    car_year_min: 2020, car_year_max: 2024, car_condition: 'usado', car_km_max: 60000,
-    car_fuel_types: ['nafta', 'gnc'],
-    created_at: new Date(Date.now() - 6 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 54 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-car-3', property_types: [], zones: ['Centro', 'General Paz', 'Güemes'],
-    budget_usd: 12000, financing: 'efectivo',
-    requirements: [], description: 'Busco auto chico económico para ciudad. Cualquier marca.',
-    urgency: 'esta_semana', status: 'active', views_count: 5, leads_count: 0,
-    request_type: 'car', car_body_styles: ['hatchback', 'sedan'], car_brands: [],
-    car_condition: 'usado', car_km_max: 100000, car_fuel_types: ['gnc', 'nafta'],
-    created_at: new Date(Date.now() - 10 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 50 * 24 * 3600000).toISOString(), demo: true,
-  },
-]
-
 // ---------------------------------------------------------------------------
 // Config
 // ---------------------------------------------------------------------------
@@ -127,16 +77,6 @@ const TYPE_CONFIG: Record<string, { gradient: string; emoji: string }> = {
   local:        { gradient: 'from-orange-400 to-red-500',      emoji: '🏪' },
   renta:        { gradient: 'from-green-400 to-emerald-500',   emoji: '💵' },
   revaluo:      { gradient: 'from-pink-400 to-rose-500',       emoji: '📈' },
-}
-
-const CAR_TYPE_CONFIG: Record<string, { gradient: string; emoji: string }> = {
-  suv:         { gradient: 'from-slate-500 to-zinc-600',   emoji: '🚙' },
-  sedan:       { gradient: 'from-blue-500 to-indigo-600',  emoji: '🚗' },
-  pickup:      { gradient: 'from-amber-500 to-orange-600', emoji: '🛻' },
-  hatchback:   { gradient: 'from-violet-500 to-purple-600',emoji: '🚗' },
-  monovolumen: { gradient: 'from-teal-500 to-cyan-600',    emoji: '🚐' },
-  coupe:       { gradient: 'from-red-500 to-rose-600',     emoji: '🏎️' },
-  default:     { gradient: 'from-gray-500 to-slate-600',   emoji: '🚗' },
 }
 
 // ---------------------------------------------------------------------------
@@ -213,7 +153,13 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
           {/* Price + financing */}
           <div className="flex items-baseline justify-between gap-2">
             <div className="text-2xl font-bold text-gray-900 tracking-tight">
-              {req.budget_usd === 999999 ? 'Sin límite' : `USD ${req.budget_usd.toLocaleString()}`}
+              {req.budget_usd === 999999
+                ? 'Sin límite'
+                : (req as any).budget_ars
+                  ? `$ ${((req as any).budget_ars as number).toLocaleString('es-AR')}`
+                  : req.budget_usd === 0
+                    ? 'Sin Precio Definido'
+                    : `USD ${req.budget_usd.toLocaleString()}`}
               {req.operation_type === 'alquiler' && <span className="text-sm font-normal text-gray-400">/mes</span>}
             </div>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -299,105 +245,31 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
   )
 }
 
-function CarRequestCard({ req, isDemo }: { req: PublicBuyerRequest & CarFields; isDemo?: boolean }) {
-  const primaryStyle = req.car_body_styles?.[0] || 'default'
-  const { gradient, emoji } = CAR_TYPE_CONFIG[primaryStyle] || CAR_TYPE_CONFIG.default
-  const styleLabels = req.car_body_styles?.map((s) => CAR_BODY_STYLE_LABELS[s] || s) || []
-
-  return (
-    <Link href={isDemo ? '#' : `/pedidos/${req.id}`} onClick={isDemo ? (e) => e.preventDefault() : undefined}>
-      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
-        {/* Same header pattern as RequestCard but with car gradient */}
-        <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
-          <span className="text-7xl select-none opacity-75 group-hover:scale-110 group-hover:opacity-90 transition-all duration-500">{emoji}</span>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-          <div className="absolute top-3 right-3">
-            <span className="bg-white/95 backdrop-blur-sm text-green-600 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">✓ Activa</span>
-          </div>
-          {isDemo && (
-            <div className="absolute top-3 left-3">
-              <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">Ejemplo</span>
-            </div>
-          )}
-          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-white/90 text-xs font-medium">
-              <Eye className="h-3.5 w-3.5" />{req.views_count} vista{req.views_count !== 1 ? 's' : ''}
-            </div>
-            <div className="text-white/70 text-xs">{timeAgo(req.created_at)}</div>
-          </div>
-        </div>
-
-        <div className="p-5 flex flex-col flex-1 gap-2.5">
-          {/* Budget */}
-          <div className="text-2xl font-bold text-gray-900 tracking-tight">
-            USD {req.budget_usd.toLocaleString()}
-          </div>
-
-          {/* Body style */}
-          <p className="text-sm font-semibold text-gray-800">
-            {styleLabels.join(' · ') || 'Auto'}
-          </p>
-
-          {/* Brands */}
-          <p className="text-sm text-gray-500">
-            {(req.car_brands?.length ?? 0) > 0 ? req.car_brands!.slice(0, 3).join(', ') : 'Cualquier marca'}
-          </p>
-
-          {/* Location */}
-          <div className="flex items-start gap-1 text-xs text-gray-500">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-orange-400 mt-0.5" />
-            <span className="leading-relaxed">
-              <span className="text-gray-400">Busca en: </span>
-              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2} zonas` : ''}
-            </span>
-          </div>
-
-          {/* Year + condition */}
-          <div className="flex items-center gap-4 text-sm text-gray-600 py-2.5 border-y border-gray-100">
-            {(req.car_year_min || req.car_year_max) && (
-              <span className="flex items-center gap-1.5">
-                📅 {req.car_year_min || '...'}{req.car_year_max ? `–${req.car_year_max}` : '+'}
-              </span>
-            )}
-            {req.car_condition && (
-              <span className="text-xs">
-                {req.car_condition === 'nuevo' ? '✨ 0km' : req.car_condition === 'usado' ? '🔑 Usado' : '🔄 Cualquiera'}
-              </span>
-            )}
-            {req.car_km_max && (
-              <span className="text-xs text-gray-400 ml-auto">
-                ≤{(req.car_km_max / 1000).toFixed(0)}k km
-              </span>
-            )}
-          </div>
-
-          {/* Fuel types */}
-          {(req.car_fuel_types?.length ?? 0) > 0 && (
-            <div className="flex flex-wrap gap-1.5">
-              {req.car_fuel_types!.map((f) => (
-                <span key={f} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full">
-                  ⛽ {f}
-                </span>
-              ))}
-            </div>
-          )}
-
-          {/* CTA */}
-          <div className="mt-auto pt-1">
-            <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${isDemo ? 'bg-gray-100 text-gray-400' : 'bg-orange-500 group-hover:bg-orange-600 text-white shadow-sm'}`}>
-              <Lock className="h-3.5 w-3.5" />
-              {isDemo ? 'Contacto oculto · ejemplo' : 'Ver contacto · 1 crédito'}
-            </div>
-          </div>
-        </div>
-      </article>
-    </Link>
-  )
-}
+// ---------------------------------------------------------------------------
+// Feed
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Feed
 // ---------------------------------------------------------------------------
+interface FiltersState {
+  zones: string[]
+  barrios: string[]
+  types: string[]
+  bedroomsMin: string[]
+  financing: string
+  minBudget: string
+  maxBudget: string
+  minBudgetArs: string
+  maxBudgetArs: string
+  since: string
+  dateFrom: string
+  dateTo: string
+  sort: string
+  publisherType: string
+  operationType: string
+}
+
 interface FeedProps {
   initialZone?: string
   initialType?: string
@@ -413,8 +285,7 @@ export default function PedidosFeed({
   initialMaxBudget = '',
   initialSince = '',
 }: FeedProps) {
-  const [activeTab, setActiveTab] = useState<'property' | 'car'>('property')
-  const [requests, setRequests] = useState<(PublicBuyerRequest & CarFields)[]>([])
+  const [requests, setRequests] = useState<PublicBuyerRequest[]>([])
   const [loading, setLoading] = useState(true)
   const [loggedBrokerId, setLoggedBrokerId] = useState<string | null>(null)
   const [gridKey, setGridKey] = useState(0)
@@ -425,7 +296,7 @@ export default function PedidosFeed({
 
   const FILTER_SESSION_KEY = 'pedidos_filters'
 
-  const [filters, setFilters] = useState(() => {
+  const [filters, setFilters] = useState<FiltersState>(() => {
     const hasInitial = initialZone || initialType || initialFinancing || initialMaxBudget || initialSince
     if (!hasInitial && typeof window !== 'undefined') {
       try {
@@ -438,14 +309,11 @@ export default function PedidosFeed({
       barrios: [] as string[],
       types: initialType ? [initialType] : [] as string[],
       bedroomsMin: [] as string[],
-      carCondition: '',
-      carBrands: [] as string[],
-      carTransmission: '',
-      carFuels: [] as string[],
-      carKmMax: '',
       financing: initialFinancing,
       minBudget: '',
       maxBudget: initialMaxBudget,
+      minBudgetArs: '',
+      maxBudgetArs: '',
       since: initialSince,
       dateFrom: '',
       dateTo: '',
@@ -467,8 +335,6 @@ export default function PedidosFeed({
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false)
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
-  const [carBrandDropdownOpen, setCarBrandDropdownOpen] = useState(false)
-  const [carFuelDropdownOpen, setCarFuelDropdownOpen] = useState(false)
 
   // Persist filters to sessionStorage
   useEffect(() => {
@@ -496,7 +362,7 @@ export default function PedidosFeed({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [textSearch])
 
-  const hasFilters = !!(filters.zones.length || filters.barrios.length || filters.types.length || filters.bedroomsMin.length || filters.carCondition || filters.carBrands.length || filters.carTransmission || filters.carFuels.length || filters.carKmMax || filters.financing || filters.minBudget || filters.maxBudget || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
+  const hasFilters = !!(filters.zones.length || filters.barrios.length || filters.types.length || filters.bedroomsMin.length || filters.financing || filters.minBudget || filters.maxBudget || filters.minBudgetArs || filters.maxBudgetArs || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -508,27 +374,23 @@ export default function PedidosFeed({
   const fetchRequests = useCallback(async () => {
     setLoading(true)
     const params = new URLSearchParams({ page: String(page) })
-    params.set('requestType', activeTab)
     if (debouncedTextSearch) params.set('q', debouncedTextSearch)
     const allZones = [...filters.zones, ...filters.barrios]
     if (allZones.length) params.set('zones', allZones.join(','))
-    if (activeTab === 'property' && filters.types.length) params.set('types', filters.types.join(','))
-    if (activeTab === 'property' && filters.bedroomsMin.length) params.set('bedroomsMin', filters.bedroomsMin.join(','))
-    if (activeTab === 'car' && filters.carCondition) params.set('condition', filters.carCondition)
-    if (activeTab === 'car' && filters.carBrands.length) params.set('carBrands', filters.carBrands.join(','))
-    if (activeTab === 'car' && filters.carTransmission) params.set('carTransmission', filters.carTransmission)
-    if (activeTab === 'car' && filters.carFuels.length) params.set('carFuels', filters.carFuels.join(','))
-    if (activeTab === 'car' && filters.carKmMax) params.set('carKmMax', filters.carKmMax)
+    if (filters.types.length) params.set('types', filters.types.join(','))
+    if (filters.bedroomsMin.length) params.set('bedroomsMin', filters.bedroomsMin.join(','))
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.minBudget) params.set('minBudget', filters.minBudget)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
+    if (filters.minBudgetArs) params.set('minBudgetArs', filters.minBudgetArs)
+    if (filters.maxBudgetArs) params.set('maxBudgetArs', filters.maxBudgetArs)
     if (filters.since) params.set('since', filters.since)
     if (filters.dateFrom) params.set('dateFrom', filters.dateFrom)
     if (filters.dateTo) params.set('dateTo', filters.dateTo)
     if (filters.sort && filters.sort !== 'recent') params.set('sort', filters.sort)
     if (filters.publisherType === 'mis' && loggedBrokerId) params.set('brokerPublisherId', loggedBrokerId)
     else if (filters.publisherType) params.set('publisherType', filters.publisherType)
-    if (activeTab === 'property' && filters.operationType) params.set('operationType', filters.operationType)
+    if (filters.operationType) params.set('operationType', filters.operationType)
 
     try {
       const res = await fetch(`/api/pedidos?${params}`)
@@ -536,7 +398,7 @@ export default function PedidosFeed({
       const data = json.data || []
       const noFilterApplied = !filters.zones.length && !filters.barrios.length && !filters.types.length && !filters.financing && !filters.maxBudget
       if (data.length === 0 && page === 1 && noFilterApplied) {
-        setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
+        setRequests(DEMO_REQUESTS)
         setTotalPages(1)
         setTotal(0)
         setShowingDemo(true)
@@ -547,14 +409,14 @@ export default function PedidosFeed({
         setShowingDemo(false)
       }
     } catch {
-      setRequests(activeTab === 'car' ? DEMO_CAR_REQUESTS : DEMO_REQUESTS)
+      setRequests(DEMO_REQUESTS)
       setTotalPages(1)
       setTotal(0)
       setShowingDemo(true)
     }
     setLoading(false)
     setGridKey((k) => k + 1)
-  }, [page, filters, activeTab, debouncedTextSearch, loggedBrokerId])
+  }, [page, filters, debouncedTextSearch, loggedBrokerId])
 
   useEffect(() => {
     fetchRequests()
@@ -613,7 +475,7 @@ export default function PedidosFeed({
       </div>
 
       {/* Filter bar */}
-      <div key={activeTab} className="animate-tab-fade relative z-10 flex items-center gap-2 flex-wrap mb-6">
+      <div className="animate-tab-fade relative z-10 flex items-center gap-2 flex-wrap mb-6">
 
         {/* Zona — macro sectores */}
         <div className="shrink-0 relative">
@@ -707,9 +569,8 @@ export default function PedidosFeed({
           )}
         </div>
 
-        {/* Tipo — multi-select for property, single for car */}
-        {activeTab === 'property' ? (
-          <div className="shrink-0 relative">
+        {/* Tipo — multi-select */}
+        <div className="shrink-0 relative">
             <button
               onClick={() => { setPendingTypes(filters.types); setTypeDropdownOpen((v) => !v); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }}
               className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
@@ -743,133 +604,10 @@ export default function PedidosFeed({
                 </div>
               </>
             )}
-          </div>
-        ) : (<>
-          {/* Condición */}
-          <div className="shrink-0 w-44">
-            <Select value={filters.carCondition || 'todos'} onValueChange={(v) => handleFilterChange('carCondition', v)}>
-              <SelectTrigger className={`${pillBase} ${filters.carCondition ? pillActive : pillInactive} px-4`}>
-                <span className="flex items-center gap-1 truncate text-left">
-                  <span className="shrink-0 font-medium">🚗 Condición:</span>
-                  <span className="truncate">{filters.carCondition === 'nuevo' ? '0km' : filters.carCondition === 'usado' ? 'usado' : 'todas'}</span>
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Cualquier condición</SelectItem>
-                <SelectItem value="nuevo">✨ 0km</SelectItem>
-                <SelectItem value="usado">🔑 Usado</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        </div>
 
-          {/* Marca — multi-select dropdown */}
-          <div className="shrink-0 relative">
-            <button
-              onClick={() => { setCarBrandDropdownOpen(v => !v); setCarFuelDropdownOpen(false); setZoneDropdownOpen(false); setDateDropdownOpen(false); setSortDropdownOpen(false) }}
-              className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.carBrands.length ? pillActive : pillInactive}`}
-            >
-              <span className="font-medium">🏷️ Marca:</span>
-              {filters.carBrands.length === 0 ? 'todas' : filters.carBrands.length === 1 ? filters.carBrands[0] : `${filters.carBrands.length} marcas`}
-              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-            </button>
-            {carBrandDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setCarBrandDropdownOpen(false)} />
-                <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-48 py-2 max-h-64 overflow-y-auto">
-                  {CAR_BRANDS.map((brand) => (
-                    <label key={brand} className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${filters.carBrands.includes(brand) ? 'bg-orange-50' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={filters.carBrands.includes(brand)}
-                        onChange={() => {
-                          setFilters(f => ({ ...f, carBrands: f.carBrands.includes(brand) ? f.carBrands.filter(x => x !== brand) : [...f.carBrands, brand] }))
-                          setPage(1)
-                        }}
-                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                      />
-                      {brand}
-                    </label>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Transmisión */}
-          <div className="shrink-0 w-44">
-            <Select value={filters.carTransmission || 'todos'} onValueChange={(v) => handleFilterChange('carTransmission', v)}>
-              <SelectTrigger className={`${pillBase} ${filters.carTransmission ? pillActive : pillInactive} px-4`}>
-                <span className="flex items-center gap-1 truncate text-left">
-                  <span className="shrink-0 font-medium">⚙️ Caja:</span>
-                  <span className="truncate">{filters.carTransmission === 'manual' ? 'Manual' : filters.carTransmission === 'automatico' ? 'Auto.' : 'todas'}</span>
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Cualquier caja</SelectItem>
-                {CAR_TRANSMISSION_OPTIONS.filter(o => o.id !== 'cualquiera').map(o => (
-                  <SelectItem key={o.id} value={o.id}>{o.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Combustible — multi-select dropdown */}
-          <div className="shrink-0 relative">
-            <button
-              onClick={() => { setCarFuelDropdownOpen(v => !v); setCarBrandDropdownOpen(false); setZoneDropdownOpen(false); setDateDropdownOpen(false); setSortDropdownOpen(false) }}
-              className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.carFuels.length ? pillActive : pillInactive}`}
-            >
-              <span className="font-medium">⛽ Combustible:</span>
-              {filters.carFuels.length === 0 ? 'todos' : filters.carFuels.length === 1 ? CAR_FUEL_TYPES.find(f => f.id === filters.carFuels[0])?.label || filters.carFuels[0] : `${filters.carFuels.length} tipos`}
-              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-            </button>
-            {carFuelDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => setCarFuelDropdownOpen(false)} />
-                <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-44 py-2">
-                  {CAR_FUEL_TYPES.map(({ id, label }) => (
-                    <label key={id} className={`flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm ${filters.carFuels.includes(id) ? 'bg-orange-50' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={filters.carFuels.includes(id)}
-                        onChange={() => {
-                          setFilters(f => ({ ...f, carFuels: f.carFuels.includes(id) ? f.carFuels.filter(x => x !== id) : [...f.carFuels, id] }))
-                          setPage(1)
-                        }}
-                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* KM máximos — solo para usados */}
-          {(filters.carCondition === 'usado' || !filters.carCondition) && (
-            <div
-              className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.carKmMax ? pillActive : pillInactive}`}
-              style={{ width: '12rem' }}
-            >
-              <span className="shrink-0 font-medium">🔢 KM máx:</span>
-              <input
-                type="number"
-                min="0"
-                step="10000"
-                placeholder="libre"
-                value={filters.carKmMax || ''}
-                onChange={(e) => { setFilters(f => ({ ...f, carKmMax: e.target.value || '' })); setPage(1) }}
-                onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-                className="w-full min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-              />
-            </div>
-          )}
-        </>)}
-
-        {/* Dormitorios — solo propiedades, multi-select */}
-        {activeTab === 'property' && (
-          <div className="shrink-0 flex items-center gap-1">
+        {/* Dormitorios — multi-select */}
+        <div className="shrink-0 flex items-center gap-1">
             <span className="text-sm font-medium text-gray-500 mr-1">🛏 Dorm:</span>
             {['1','2','3','4'].map((v) => (
               <button
@@ -883,7 +621,6 @@ export default function PedidosFeed({
               </button>
             ))}
           </div>
-        )}
 
         {/* Presupuesto Desde */}
         <div
@@ -923,9 +660,46 @@ export default function PedidosFeed({
           />
         </div>
 
-        {/* Financiación (solo propiedades) */}
-        {activeTab === 'property' && (
-          <div className="shrink-0 w-52">
+        {/* Presupuesto ARS mín */}
+        <div
+          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudgetArs ? pillActive : pillInactive}`}
+        >
+          <span className="shrink-0 font-medium">🏠 $ mín:</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="libre"
+            value={fmtMiles(filters.minBudgetArs)}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+              handleFilterChange('minBudgetArs', raw || null)
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            className="w-24 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
+          />
+        </div>
+
+        {/* Presupuesto ARS máx */}
+        <div
+          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudgetArs ? pillActive : pillInactive}`}
+        >
+          <span className="shrink-0 font-medium">🏠 $ máx:</span>
+          <input
+            type="text"
+            inputMode="numeric"
+            placeholder="libre"
+            value={fmtMiles(filters.maxBudgetArs)}
+            onChange={(e) => {
+              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+              handleFilterChange('maxBudgetArs', raw || null)
+            }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
+            className="w-24 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
+          />
+        </div>
+
+        {/* Financiación */}
+        <div className="shrink-0 w-52">
             <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
               <SelectTrigger className={`${pillBase} ${filters.financing ? pillActive : pillInactive} px-4`}>
                 <span className="flex items-center gap-1 truncate text-left">
@@ -950,11 +724,9 @@ export default function PedidosFeed({
               </SelectContent>
             </Select>
           </div>
-        )}
 
         {/* Operación: compra / alquiler */}
-        {activeTab === 'property' && (
-          <div className="shrink-0">
+        <div className="shrink-0">
             <Select value={filters.operationType || 'todos'} onValueChange={(v) => { setFilters(f => ({ ...f, operationType: v === 'todos' ? '' : v })); setPage(1) }}>
               <SelectTrigger className={`${pillBase} ${filters.operationType ? pillActive : pillInactive} px-4`}>
                 <span className="flex items-center gap-1 truncate text-left">
@@ -973,11 +745,9 @@ export default function PedidosFeed({
               </SelectContent>
             </Select>
           </div>
-        )}
 
-        {/* Quién publica (solo propiedades) */}
-        {activeTab === 'property' && (
-          <div className="shrink-0">
+        {/* Quién publica */}
+        <div className="shrink-0">
             <Select value={filters.publisherType || 'todos'} onValueChange={(v) => handleFilterChange('publisherType', v === 'todos' ? '' : v)}>
               <SelectTrigger className={`${pillBase} ${filters.publisherType ? pillActive : pillInactive} px-4`}>
                 <span className="flex items-center gap-1 truncate text-left">
@@ -1000,7 +770,6 @@ export default function PedidosFeed({
               </SelectContent>
             </Select>
           </div>
-        )}
 
         {/* Fecha — presets + rango personalizado */}
         <div className="shrink-0 relative">
@@ -1102,7 +871,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: [] as string[], carCondition: '', carBrands: [], carTransmission: '', carFuels: [], carKmMax: '', financing: '', minBudget: '', maxBudget: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
+              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: [] as string[], financing: '', minBudget: '', maxBudget: '', minBudgetArs: '', maxBudgetArs: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setPage(1)
@@ -1118,9 +887,7 @@ export default function PedidosFeed({
       {/* Results count */}
       {!loading && !showingDemo && (
         <p className="text-sm font-medium text-gray-600 mb-5">
-          {activeTab === 'car'
-            ? `${total} búsqueda${total !== 1 ? 's' : ''} de autos activa${total !== 1 ? 's' : ''}`
-            : `${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
+          {`${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
         </p>
       )}
 
@@ -1159,17 +926,10 @@ export default function PedidosFeed({
               className="animate-card-enter"
               style={{ animationDelay: `${Math.min(i * 55, 400)}ms` }}
             >
-              {activeTab === 'car' ? (
-                <CarRequestCard
-                  req={req}
-                  isDemo={(req as PublicBuyerRequest & CarFields & { demo?: boolean }).demo}
-                />
-              ) : (
-                <RequestCard
-                  req={req}
-                  isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
-                />
-              )}
+              <RequestCard
+                req={req}
+                isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
+              />
             </div>
           ))}
         </div>

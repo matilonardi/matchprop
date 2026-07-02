@@ -46,10 +46,21 @@ Ejemplos de mapeo:
 - "Alta Cba" o "Alta Córdoba" → "Alta Córdoba"
 - "Nva Cba" → "Nueva Córdoba"
 
-Para el presupuesto:
-- "USD X" o "u$s X" → budget_usd: X
-- "$X millones" → dividí por 1200 para convertir a USD
-- "a convenir", "consultar", sin mención → budget_usd: 0
+operation_type:
+- Si el mensaje dice "alquiler", "alquilar", "en alquiler", "para alquilar", "rentar", "arriendo" → "alquiler"
+- Si dice "compra", "comprar", "quiere comprar", "para comprar" o no especifica → "compra"
+
+Para el presupuesto (mercado inmobiliario de Córdoba — MUY IMPORTANTE):
+Las COMPRAS se cotizan en DÓLARES aunque el mensaje use "$".
+Los ALQUILERES se cotizan en PESOS ARGENTINOS (ARS).
+
+Reglas:
+- "USD X", "u$s X", "U$S X", "dólares X" → budget_usd: X, budget_ars: null (ya es en dólares)
+- Si es COMPRA y dice "$X" o "$X.000" sin aclarar moneda → budget_usd: X, budget_ars: null (son dólares)
+- Si es ALQUILER y dice "$X" sin aclarar "USD/dólares/u$s" → budget_ars: X (número sin separadores de miles), budget_usd: 0
+- "$1.500.000/mes" en alquiler → budget_ars: 1500000, budget_usd: 0
+- "$X millones" en alquiler → budget_ars: X*1000000, budget_usd: 0
+- "a convenir", "consultar", sin mención → budget_usd: 0, budget_ars: null
 - "permuta" → financing: "permuta_propiedad"
 - "crédito hipotecario" → financing: "credito"
 - "efectivo" o sin mención → financing: "efectivo"
@@ -59,12 +70,14 @@ Respondé SOLO con JSON válido o la palabra null. Sin explicaciones.
 
 Formato JSON:
 {
+  "operation_type": "compra",
   "property_types": ["casa"],
   "zones": ["Argüello", "Villa Belgrano"],
   "bedrooms_min": 3,
   "bedrooms_max": null,
   "bathrooms_min": null,
   "budget_usd": 200000,
+  "budget_ars": null,
   "financing": "efectivo",
   "description": "Resumen breve de la búsqueda en máx 150 caracteres"
 }`
@@ -125,7 +138,7 @@ async function parseMessage(text) {
         model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
-          { role: 'user', content: `Mensaje: "${text}"` },
+          { role: 'user', content: `Mensaje: "${text.slice(0, 700)}"` },
         ],
         max_tokens: 400,
         temperature: 0,

@@ -16,6 +16,8 @@ export async function GET(request: NextRequest) {
   const financing = searchParams.get('financing')
   const minBudget = searchParams.get('minBudget')
   const maxBudget = searchParams.get('maxBudget')
+  const minBudgetArs = searchParams.get('minBudgetArs')
+  const maxBudgetArs = searchParams.get('maxBudgetArs')
   const since = searchParams.get('since') // '24h' | '7d' | '30d'
   const dateFrom = searchParams.get('dateFrom') // 'YYYY-MM-DD'
   const dateTo = searchParams.get('dateTo')     // 'YYYY-MM-DD'
@@ -42,7 +44,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, featured_until, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
+      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, budget_ars, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, featured_until, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
       { count: 'exact' }
     )
     .eq('status', 'active')
@@ -72,11 +74,19 @@ export async function GET(request: NextRequest) {
   if (brokerPublisherId) query = query.eq('publisher_broker_id', brokerPublisherId)
   else if (publisherType) query = query.eq('publisher_type', publisherType)
   if (since) {
-    const sinceMap: Record<string, number> = { '24h': 1, '7d': 7, '30d': 30 }
-    const days = sinceMap[since]
-    if (days) {
-      const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
-      query = query.gte('created_at', cutoff)
+    if (since === '24h') {
+      // Desde medianoche de hoy en Argentina (UTC-3)
+      const argNow = new Date(Date.now() - 3 * 60 * 60 * 1000)
+      const todayArg = argNow.toISOString().slice(0, 10) // YYYY-MM-DD en hora argentina
+      const cutoff = new Date(todayArg + 'T03:00:00.000Z') // medianoche ARG = 03:00 UTC
+      query = query.gte('created_at', cutoff.toISOString())
+    } else {
+      const sinceMap: Record<string, number> = { '7d': 7, '30d': 30 }
+      const days = sinceMap[since]
+      if (days) {
+        const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString()
+        query = query.gte('created_at', cutoff)
+      }
     }
   }
   if (dateFrom) query = query.gte('created_at', dateFrom)
@@ -93,6 +103,8 @@ export async function GET(request: NextRequest) {
   if (bedroomsMin.length && requestType !== 'car') query = query.in('bedrooms_min', bedroomsMin.map(Number))
   if (minBudget) query = query.gte('budget_usd', parseInt(minBudget))
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
+  if (minBudgetArs) query = query.gte('budget_ars', parseInt(minBudgetArs))
+  if (maxBudgetArs) query = query.lte('budget_ars', parseInt(maxBudgetArs))
   if (q) query = query.or(`description.ilike.%${q}%,search_reason.ilike.%${q}%`)
 
   const { data, error, count } = await query
@@ -117,6 +129,7 @@ export async function POST(request: NextRequest) {
     bedrooms_max,
     bathrooms_min,
     budget_usd,
+    budget_ars,
     financing,
     requirements,
     requirements_excluyentes,
@@ -145,7 +158,7 @@ export async function POST(request: NextRequest) {
   const isCarRequest = request_type === 'car'
 
   const isAlquiler = operation_type === 'alquiler'
-  if (!zones?.length || !budget_usd || (!isAlquiler && !financing) || !contact_name || !contact_phone) {
+  if (!zones?.length || (!budget_usd && !budget_ars) || (!isAlquiler && !financing) || !contact_name || !contact_phone) {
     return Response.json({ error: 'Campos requeridos faltantes' }, { status: 400 })
   }
   if (!isCarRequest && !property_types?.length) {
@@ -164,7 +177,8 @@ export async function POST(request: NextRequest) {
       bedrooms_min: bedrooms_min || null,
       bedrooms_max: bedrooms_max || null,
       bathrooms_min: bathrooms_min || null,
-      budget_usd,
+      budget_usd: budget_usd || 0,
+      budget_ars: budget_ars || null,
       financing: financing ?? (isAlquiler ? 'efectivo' : null),
       requirements: requirements || [],
       requirements_excluyentes: requirements_excluyentes || [],
