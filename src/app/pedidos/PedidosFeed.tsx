@@ -8,62 +8,6 @@ import { ZONAS_CORDOBA, ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS } 
 import type { PublicBuyerRequest } from '@/lib/supabase'
 import { supabase } from '@/lib/supabase'
 
-// ---------------------------------------------------------------------------
-// Demo data
-// ---------------------------------------------------------------------------
-const DEMO_REQUESTS: (PublicBuyerRequest & { demo?: boolean })[] = [
-  {
-    id: 'demo-1', property_types: ['casa'], zones: ['Mendiolaza', 'Valle Escondido'],
-    bedrooms_min: 3, bedrooms_max: 4, bathrooms_min: 2, budget_usd: 230000,
-    financing: 'ambos', requirements: ['cochera', 'gas_natural', 'calles_asfaltadas'],
-    description: 'Busco algo moderno, no más de 10 años de antigüedad. Cocina amplia integrada al living.',
-    urgency: 'este_mes', status: 'active', views_count: 14, leads_count: 3,
-    created_at: new Date(Date.now() - 2 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 58 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-2', property_types: ['casa', 'duplex'], zones: ['Villa Belgrano', 'Cerro de las Rosas'],
-    bedrooms_min: 3, bathrooms_min: 2, budget_usd: 620000,
-    financing: 'efectivo', requirements: ['pileta', 'cochera', 'living_amplio'],
-    description: 'Solo barrios cerrados: Los Cielos, Santina, Los Árboles o Los Sueños. Living amplio imprescindible.',
-    urgency: 'flexible', status: 'active', views_count: 9, leads_count: 2,
-    created_at: new Date(Date.now() - 5 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 55 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-3', property_types: ['departamento'], zones: ['Nueva Córdoba', 'General Paz'],
-    bedrooms_min: 1, bedrooms_max: 2, bathrooms_min: 1, budget_usd: 70000,
-    financing: 'credito', requirements: ['luz_natural', 'cochera'],
-    urgency: 'esta_semana', status: 'active', views_count: 21, leads_count: 5,
-    created_at: new Date(Date.now() - 8 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 52 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-4', property_types: ['casa'], zones: ['Mendiolaza', 'Valle del Sol', 'Sierra Nueva'],
-    bedrooms_min: 3, bathrooms_min: 1, budget_usd: 150000,
-    financing: 'credito', requirements: ['calles_asfaltadas', 'gas_natural'],
-    urgency: 'en_3_meses', status: 'active', views_count: 6, leads_count: 1,
-    created_at: new Date(Date.now() - 18 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 42 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-5', property_types: ['casa', 'duplex'], zones: ['Unquillo', 'Rio Ceballos', 'La Calera'],
-    bedrooms_min: 2, bedrooms_max: 3, bathrooms_min: 1, budget_usd: 120000,
-    financing: 'ambos', requirements: ['jardin', 'gas_natural'],
-    description: 'Buscamos algo tranquilo, con jardín para los chicos. No es urgente pero queremos cerrar antes de fin de año.',
-    urgency: 'flexible', status: 'active', views_count: 4, leads_count: 0,
-    created_at: new Date(Date.now() - 26 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 34 * 24 * 3600000).toISOString(), demo: true,
-  },
-  {
-    id: 'demo-6', property_types: ['departamento', 'duplex'], zones: ['Güemes', 'Nueva Córdoba', 'Alberdi'],
-    bedrooms_min: 2, bathrooms_min: 1, budget_usd: 95000,
-    financing: 'efectivo', requirements: ['luz_natural', 'terraza'],
-    urgency: 'este_mes', status: 'active', views_count: 11, leads_count: 2,
-    created_at: new Date(Date.now() - 36 * 3600000).toISOString(),
-    expires_at: new Date(Date.now() + 24 * 24 * 3600000).toISOString(), demo: true,
-  },
-]
 
 // ---------------------------------------------------------------------------
 // Config
@@ -104,13 +48,13 @@ function urgencyLabel(urgency?: string): string {
 // ---------------------------------------------------------------------------
 // Cards
 // ---------------------------------------------------------------------------
-function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolean }) {
+function RequestCard({ req }: { req: PublicBuyerRequest }) {
   const primaryType = req.property_types[0]
   const { gradient, emoji } = TYPE_CONFIG[primaryType] || { gradient: 'from-blue-400 to-blue-600', emoji: '🏠' }
   const typeLabels = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
 
   return (
-    <Link href={isDemo ? '#' : `/pedidos/${req.id}`} onClick={isDemo ? (e) => e.preventDefault() : undefined}>
+    <Link href={`/pedidos/${req.id}`}>
       <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
 
         {/* Visual header */}
@@ -130,14 +74,6 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
               </span>
             </div>
           )}
-          {isDemo && !req.featured_until && (
-            <div className="absolute top-3 left-3">
-              <span className="bg-amber-400 text-amber-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-                Ejemplo
-              </span>
-            </div>
-          )}
-
           <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-white/90 text-xs font-medium">
               <Eye className="h-3.5 w-3.5" />
@@ -230,13 +166,9 @@ function RequestCard({ req, isDemo }: { req: PublicBuyerRequest; isDemo?: boolea
 
           {/* CTA */}
           <div className="mt-auto pt-1">
-            <div className={`w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-              isDemo
-                ? 'bg-gray-100 text-gray-400'
-                : 'bg-orange-500 group-hover:bg-orange-600 text-white shadow-sm hover:shadow-md'
-            }`}>
+            <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all bg-orange-500 group-hover:bg-orange-600 text-white shadow-sm hover:shadow-md">
               <Lock className="h-3.5 w-3.5" />
-              {isDemo ? 'Contacto oculto · ejemplo' : 'Ver contacto · 1 crédito'}
+              Ver contacto · 1 crédito
             </div>
           </div>
         </div>
@@ -292,8 +224,6 @@ export default function PedidosFeed({
   const [page, setPage] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const [total, setTotal] = useState(0)
-  const [showingDemo, setShowingDemo] = useState(false)
-
   const FILTER_SESSION_KEY = 'pedidos_filters'
 
   const [filters, setFilters] = useState<FiltersState>(() => {
@@ -396,23 +326,13 @@ export default function PedidosFeed({
       const res = await fetch(`/api/pedidos?${params}`)
       const json = await res.json()
       const data = json.data || []
-      const noFilterApplied = !filters.zones.length && !filters.barrios.length && !filters.types.length && !filters.financing && !filters.maxBudget && !filters.minBudget && !filters.minBudgetArs && !filters.maxBudgetArs && !filters.since && !filters.dateFrom && !filters.dateTo && !filters.operationType && filters.sort === 'recent'
-      if (data.length === 0 && page === 1 && noFilterApplied) {
-        setRequests(DEMO_REQUESTS)
-        setTotalPages(1)
-        setTotal(0)
-        setShowingDemo(true)
-      } else {
-        setRequests(data)
-        setTotalPages(json.totalPages || 1)
-        setTotal(json.count || 0)
-        setShowingDemo(false)
-      }
+      setRequests(data)
+      setTotalPages(json.totalPages || 1)
+      setTotal(json.count || 0)
     } catch {
-      setRequests(DEMO_REQUESTS)
+      setRequests([])
       setTotalPages(1)
       setTotal(0)
-      setShowingDemo(true)
     }
     setLoading(false)
     setGridKey((k) => k + 1)
@@ -885,13 +805,11 @@ export default function PedidosFeed({
       </div>
 
       {/* Results count */}
-      {!loading && !showingDemo && (
+      {!loading && (
         <p className="text-sm font-medium text-gray-600 mb-5">
           {`${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
         </p>
       )}
-
-      {/* Demo banner */}
 
       {/* Grid */}
       {loading ? (
@@ -926,10 +844,7 @@ export default function PedidosFeed({
               className="animate-card-enter"
               style={{ animationDelay: `${Math.min(i * 55, 400)}ms` }}
             >
-              <RequestCard
-                req={req}
-                isDemo={(req as PublicBuyerRequest & { demo?: boolean }).demo}
-              />
+              <RequestCard req={req} />
             </div>
           ))}
         </div>
