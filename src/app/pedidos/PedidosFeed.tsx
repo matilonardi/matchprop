@@ -602,7 +602,7 @@ export default function PedidosFeed({
                   <select
                     value={pendingBedroomsMin}
                     onChange={e => setPendingBedroomsMin(e.target.value)}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
                   >
                     <option value="">Sin mínimo</option>
                     {['1','2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
@@ -610,7 +610,7 @@ export default function PedidosFeed({
                   <select
                     value={pendingBedroomsMax}
                     onChange={e => setPendingBedroomsMax(e.target.value)}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
                   >
                     <option value="">Sin máximo</option>
                     {['1','2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
@@ -674,7 +674,7 @@ export default function PedidosFeed({
                     placeholder="Desde"
                     value={fmtMiles(pendingPriceMin)}
                     onChange={e => setPendingPriceMin(e.target.value.replace(/\./g, '').replace(/\D/g, ''))}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
                   />
                   <input
                     type="text"
@@ -682,7 +682,7 @@ export default function PedidosFeed({
                     placeholder="Hasta"
                     value={fmtMiles(pendingPriceMax)}
                     onChange={e => setPendingPriceMax(e.target.value.replace(/\./g, '').replace(/\D/g, ''))}
-                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
                   />
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-gray-100">
