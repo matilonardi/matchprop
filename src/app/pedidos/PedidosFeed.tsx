@@ -396,7 +396,7 @@ export default function PedidosFeed({
       const res = await fetch(`/api/pedidos?${params}`)
       const json = await res.json()
       const data = json.data || []
-      const noFilterApplied = !filters.zones.length && !filters.barrios.length && !filters.types.length && !filters.financing && !filters.maxBudget
+      const noFilterApplied = !filters.zones.length && !filters.barrios.length && !filters.types.length && !filters.financing && !filters.maxBudget && !filters.minBudget && !filters.minBudgetArs && !filters.maxBudgetArs && !filters.since && !filters.dateFrom && !filters.dateTo && !filters.operationType && filters.sort === 'recent'
       if (data.length === 0 && page === 1 && noFilterApplied) {
         setRequests(DEMO_REQUESTS)
         setTotalPages(1)
