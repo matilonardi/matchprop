@@ -188,7 +188,8 @@ interface FiltersState {
   zones: string[]
   barrios: string[]
   types: string[]
-  bedroomsMin: string[]
+  bedroomsMin: string
+  bedroomsMax: string
   financing: string
   minBudget: string
   maxBudget: string
@@ -238,7 +239,8 @@ export default function PedidosFeed({
       zones: initialZone ? [initialZone] : [] as string[],
       barrios: [] as string[],
       types: initialType ? [initialType] : [] as string[],
-      bedroomsMin: [] as string[],
+      bedroomsMin: '',
+      bedroomsMax: '',
       financing: initialFinancing,
       minBudget: '',
       maxBudget: initialMaxBudget,
@@ -265,6 +267,13 @@ export default function PedidosFeed({
   const [typeDropdownOpen, setTypeDropdownOpen] = useState(false)
   const [dateDropdownOpen, setDateDropdownOpen] = useState(false)
   const [sortDropdownOpen, setSortDropdownOpen] = useState(false)
+  const [priceDropdownOpen, setPriceDropdownOpen] = useState(false)
+  const [dormDropdownOpen, setDormDropdownOpen] = useState(false)
+  const [pendingPriceCurrency, setPendingPriceCurrency] = useState<'usd' | 'ars'>('usd')
+  const [pendingPriceMin, setPendingPriceMin] = useState('')
+  const [pendingPriceMax, setPendingPriceMax] = useState('')
+  const [pendingBedroomsMin, setPendingBedroomsMin] = useState('')
+  const [pendingBedroomsMax, setPendingBedroomsMax] = useState('')
 
   // Persist filters to sessionStorage
   useEffect(() => {
@@ -292,7 +301,7 @@ export default function PedidosFeed({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current) }
   }, [textSearch])
 
-  const hasFilters = !!(filters.zones.length || filters.barrios.length || filters.types.length || filters.bedroomsMin.length || filters.financing || filters.minBudget || filters.maxBudget || filters.minBudgetArs || filters.maxBudgetArs || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
+  const hasFilters = !!(filters.zones.length || filters.barrios.length || filters.types.length || filters.bedroomsMin || filters.bedroomsMax || filters.financing || filters.minBudget || filters.maxBudget || filters.minBudgetArs || filters.maxBudgetArs || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
     { id: 'recent',     label: '🕐 Más recientes' },
@@ -308,7 +317,8 @@ export default function PedidosFeed({
     const allZones = [...filters.zones, ...filters.barrios]
     if (allZones.length) params.set('zones', allZones.join(','))
     if (filters.types.length) params.set('types', filters.types.join(','))
-    if (filters.bedroomsMin.length) params.set('bedroomsMin', filters.bedroomsMin.join(','))
+    if (filters.bedroomsMin) params.set('bedroomsMin', filters.bedroomsMin)
+    if (filters.bedroomsMax) params.set('bedroomsMax', filters.bedroomsMax)
     if (filters.financing) params.set('financing', filters.financing)
     if (filters.minBudget) params.set('minBudget', filters.minBudget)
     if (filters.maxBudget) params.set('maxBudget', filters.maxBudget)
@@ -359,12 +369,41 @@ export default function PedidosFeed({
     setPage(1)
   }
 
-  function toggleBedroomsFilter(val: string) {
-    setFilters((f) => ({
+  function openPriceDropdown() {
+    const hasDollar = !!(filters.minBudget || filters.maxBudget)
+    const cur: 'usd' | 'ars' = hasDollar ? 'usd' : (filters.minBudgetArs || filters.maxBudgetArs) ? 'ars' : 'usd'
+    setPendingPriceCurrency(cur)
+    setPendingPriceMin(cur === 'usd' ? filters.minBudget : filters.minBudgetArs)
+    setPendingPriceMax(cur === 'usd' ? filters.maxBudget : filters.maxBudgetArs)
+    setPriceDropdownOpen(true)
+    setDormDropdownOpen(false); setZoneDropdownOpen(false); setBarrioDropdownOpen(false)
+    setTypeDropdownOpen(false); setDateDropdownOpen(false); setSortDropdownOpen(false)
+  }
+
+  function commitPrice() {
+    setFilters(f => ({
       ...f,
-      bedroomsMin: f.bedroomsMin.includes(val) ? [] : [val],
+      minBudget: pendingPriceCurrency === 'usd' ? pendingPriceMin : '',
+      maxBudget: pendingPriceCurrency === 'usd' ? pendingPriceMax : '',
+      minBudgetArs: pendingPriceCurrency === 'ars' ? pendingPriceMin : '',
+      maxBudgetArs: pendingPriceCurrency === 'ars' ? pendingPriceMax : '',
     }))
     setPage(1)
+    setPriceDropdownOpen(false)
+  }
+
+  function openDormDropdown() {
+    setPendingBedroomsMin(filters.bedroomsMin)
+    setPendingBedroomsMax(filters.bedroomsMax)
+    setDormDropdownOpen(true)
+    setPriceDropdownOpen(false); setZoneDropdownOpen(false); setBarrioDropdownOpen(false)
+    setTypeDropdownOpen(false); setDateDropdownOpen(false); setSortDropdownOpen(false)
+  }
+
+  function commitDorm() {
+    setFilters(f => ({ ...f, bedroomsMin: pendingBedroomsMin, bedroomsMax: pendingBedroomsMax }))
+    setPage(1)
+    setDormDropdownOpen(false)
   }
 
   const pillBase = 'rounded-full text-sm font-medium border transition-colors w-full h-9'
@@ -538,96 +577,121 @@ export default function PedidosFeed({
             )}
         </div>
 
-        {/* Dormitorios — multi-select */}
-        <div className="shrink-0 flex items-center gap-1">
-            <span className="text-sm font-medium text-gray-500 mr-1">🛏 Dorm:</span>
-            {['1','2','3','4'].map((v) => (
+        {/* Dormitorios — dropdown min/max */}
+        <div className="shrink-0 relative">
+          <button
+            onClick={() => dormDropdownOpen ? commitDorm() : openDormDropdown()}
+            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${(filters.bedroomsMin || filters.bedroomsMax) ? pillActive : pillInactive}`}
+          >
+            <span className="font-medium">🛏 Dorm:</span>
+            {!filters.bedroomsMin && !filters.bedroomsMax
+              ? 'cualquiera'
+              : filters.bedroomsMin && filters.bedroomsMax
+                ? `${filters.bedroomsMin}–${filters.bedroomsMax}`
+                : filters.bedroomsMin
+                  ? `${filters.bedroomsMin}+`
+                  : `hasta ${filters.bedroomsMax}`}
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          </button>
+          {dormDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={commitDorm} />
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Dormitorios</p>
+                <div className="flex gap-2 mb-4">
+                  <select
+                    value={pendingBedroomsMin}
+                    onChange={e => setPendingBedroomsMin(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                  >
+                    <option value="">Sin mínimo</option>
+                    {['1','2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                  <select
+                    value={pendingBedroomsMax}
+                    onChange={e => setPendingBedroomsMax(e.target.value)}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                  >
+                    <option value="">Sin máximo</option>
+                    {['1','2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
+                  </select>
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <button onClick={() => { setPendingBedroomsMin(''); setPendingBedroomsMax('') }} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Limpiar</button>
+                  <button onClick={commitDorm} className="text-sm font-semibold px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors">Ver resultados</button>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Precio — dropdown USD / ARS */}
+        <div className="shrink-0 relative">
+          {(() => {
+            const hasUsd = !!(filters.minBudget || filters.maxBudget)
+            const hasArs = !!(filters.minBudgetArs || filters.maxBudgetArs)
+            const hasPriceFilter = hasUsd || hasArs
+            const label = hasUsd
+              ? `USD ${filters.minBudget ? fmtMiles(filters.minBudget) : '0'} – ${filters.maxBudget ? fmtMiles(filters.maxBudget) : '∞'}`
+              : hasArs
+                ? `$ ${filters.minBudgetArs ? fmtMiles(filters.minBudgetArs) : '0'} – ${filters.maxBudgetArs ? fmtMiles(filters.maxBudgetArs) : '∞'}`
+                : 'Precio'
+            return (
               <button
-                key={v}
-                onClick={() => toggleBedroomsFilter(v)}
-                className={`h-9 px-3 rounded-full text-sm font-medium border transition-colors ${
-                  filters.bedroomsMin.includes(v) ? pillActive : pillInactive
-                }`}
+                onClick={() => priceDropdownOpen ? commitPrice() : openPriceDropdown()}
+                className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${hasPriceFilter ? pillActive : pillInactive}`}
               >
-                {v}+
+                <span className="font-medium">💰 {label}</span>
+                <ChevronDown className="h-3.5 w-3.5 shrink-0" />
               </button>
-            ))}
-          </div>
-
-        {/* Presupuesto Desde */}
-        <div
-          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudget ? pillActive : pillInactive}`}
-        >
-          <span className="shrink-0 font-medium">💰 USD mín:</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="libre"
-            value={fmtMiles(filters.minBudget)}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-              handleFilterChange('minBudget', raw || null)
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
-          />
-        </div>
-
-        {/* Presupuesto Hasta */}
-        <div
-          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudget ? pillActive : pillInactive}`}
-        >
-          <span className="shrink-0 font-medium">💰 USD máx:</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="libre"
-            value={fmtMiles(filters.maxBudget)}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-              handleFilterChange('maxBudget', raw || null)
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="w-20 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
-          />
-        </div>
-
-        {/* Presupuesto ARS mín */}
-        <div
-          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.minBudgetArs ? pillActive : pillInactive}`}
-        >
-          <span className="shrink-0 font-medium">🏠 $ mín:</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="libre"
-            value={fmtMiles(filters.minBudgetArs)}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-              handleFilterChange('minBudgetArs', raw || null)
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="w-24 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
-          />
-        </div>
-
-        {/* Presupuesto ARS máx */}
-        <div
-          className={`shrink-0 flex items-center gap-1.5 rounded-full text-sm font-medium border transition-colors h-9 px-3 ${filters.maxBudgetArs ? pillActive : pillInactive}`}
-        >
-          <span className="shrink-0 font-medium">🏠 $ máx:</span>
-          <input
-            type="text"
-            inputMode="numeric"
-            placeholder="libre"
-            value={fmtMiles(filters.maxBudgetArs)}
-            onChange={(e) => {
-              const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-              handleFilterChange('maxBudgetArs', raw || null)
-            }}
-            onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
-            className="w-24 min-w-0 bg-transparent outline-none placeholder:text-current placeholder:opacity-40"
-          />
+            )
+          })()}
+          {priceDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={commitPrice} />
+              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72 p-4">
+                <p className="text-sm font-semibold text-gray-700 mb-3">Precio</p>
+                {/* Currency radio */}
+                <div className="flex gap-4 mb-4">
+                  {(['usd', 'ars'] as const).map(cur => (
+                    <label key={cur} className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
+                      <input
+                        type="radio"
+                        name="priceCurrency"
+                        checked={pendingPriceCurrency === cur}
+                        onChange={() => { setPendingPriceCurrency(cur); setPendingPriceMin(''); setPendingPriceMax('') }}
+                        className="accent-orange-500 h-4 w-4"
+                      />
+                      {cur === 'usd' ? 'USD' : 'Pesos'}
+                    </label>
+                  ))}
+                </div>
+                {/* Min / Max inputs */}
+                <div className="flex gap-2 mb-4">
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Desde"
+                    value={fmtMiles(pendingPriceMin)}
+                    onChange={e => setPendingPriceMin(e.target.value.replace(/\./g, '').replace(/\D/g, ''))}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                  />
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    placeholder="Hasta"
+                    value={fmtMiles(pendingPriceMax)}
+                    onChange={e => setPendingPriceMax(e.target.value.replace(/\./g, '').replace(/\D/g, ''))}
+                    className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
+                  />
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <button onClick={() => { setPendingPriceMin(''); setPendingPriceMax('') }} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Limpiar</button>
+                  <button onClick={commitPrice} className="text-sm font-semibold px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors">Ver resultados</button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Financiación */}
@@ -803,7 +867,7 @@ export default function PedidosFeed({
         {hasFilters && (
           <button
             onClick={() => {
-              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: [] as string[], financing: '', minBudget: '', maxBudget: '', minBudgetArs: '', maxBudgetArs: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
+              setFilters({ zones: [], barrios: [], types: [], bedroomsMin: '', bedroomsMax: '', financing: '', minBudget: '', maxBudget: '', minBudgetArs: '', maxBudgetArs: '', since: '', dateFrom: '', dateTo: '', sort: 'recent', publisherType: '', operationType: '' })
               setTextSearch('')
               setDebouncedTextSearch('')
               setPage(1)
@@ -816,12 +880,12 @@ export default function PedidosFeed({
         )}
       </div>
 
-      {/* Results count */}
-      {!loading && (
-        <p className="text-sm font-medium text-gray-600 mb-5">
-          {`${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
-        </p>
-      )}
+      {/* Results count — always visible */}
+      <p className="text-sm font-medium text-gray-600 mb-5">
+        {loading
+          ? <span className="inline-block h-4 w-28 bg-gray-200 rounded animate-pulse" />
+          : `${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
+      </p>
 
       {/* Grid */}
       {loading ? (

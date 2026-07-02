@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
   const brokerPublisherId = searchParams.get('brokerPublisherId')
   const operationType = searchParams.get('operationType') // 'compra' | 'alquiler'
   const bedroomsMinParam = searchParams.get('bedroomsMin')
-  const bedroomsMin = bedroomsMinParam ? bedroomsMinParam.split(',').filter(Boolean) : []
+  const bedroomsMaxParam = searchParams.get('bedroomsMax')
   const page = parseInt(searchParams.get('page') || '1')
   const q    = searchParams.get('q')?.trim() || ''   // free-text search
   const limit = 20
@@ -100,7 +100,8 @@ export async function GET(request: NextRequest) {
     }
   }
   if (operationType) query = query.eq('operation_type', operationType)
-  if (bedroomsMin.length && requestType !== 'car') query = query.in('bedrooms_min', bedroomsMin.map(Number))
+  if (bedroomsMinParam) query = query.gte('bedrooms_min', parseInt(bedroomsMinParam))
+  if (bedroomsMaxParam) query = query.lte('bedrooms_min', parseInt(bedroomsMaxParam))
   if (minBudget) query = query.gte('budget_usd', parseInt(minBudget))
   if (maxBudget) query = query.lte('budget_usd', parseInt(maxBudget))
   if (minBudgetArs) query = query.gte('budget_ars', parseInt(minBudgetArs))
