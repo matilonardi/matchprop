@@ -165,7 +165,13 @@ export default function PublicarWizard() {
       case 1: return form.property_types.length > 0
       case 2: return form.zones.length > 0
       case 3: return isTerrenoOnly || !!form.bedrooms_min
-      case 4: return !!(form.budget_currency === 'ars' ? form.budget_ars : form.budget_usd) && (form.operation_type === 'alquiler' || form.financing_types.length > 0) && !!form.search_reason
+      case 4: {
+        const max = form.budget_currency === 'ars' ? form.budget_ars : form.budget_usd
+        const min = form.budget_currency === 'ars' ? form.budget_ars_min : form.budget_usd_min
+        // El "Hasta" es obligatorio y, si hay "Desde", debe ser mayor
+        const rangeOk = !!max && (!min || parseInt(max) > parseInt(min))
+        return rangeOk && (form.operation_type === 'alquiler' || form.financing_types.length > 0) && !!form.search_reason
+      }
       case 5: return isTerrenoOnly || form.description.trim().length >= 10
       case 6:
         if (loggedBroker && loggedBroker !== 'loading') {
@@ -747,6 +753,20 @@ export default function PublicarWizard() {
                   </div>
                 </>
               )}
+
+              {/* Validación: Hasta debe ser mayor que Desde */}
+              {(() => {
+                const min = form.budget_currency === 'ars' ? form.budget_ars_min : form.budget_usd_min
+                const max = form.budget_currency === 'ars' ? form.budget_ars : form.budget_usd
+                if (min && max && parseInt(max) <= parseInt(min)) {
+                  return (
+                    <p className="mt-2 text-xs text-red-500">
+                      El &quot;Hasta&quot; debe ser mayor que el &quot;Desde&quot;.
+                    </p>
+                  )
+                }
+                return null
+              })()}
             </div>
 
             {/* Financing types — multi-select with conditional sub-fields — hidden for alquiler */}
