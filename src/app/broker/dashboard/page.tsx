@@ -667,15 +667,15 @@ export default function BrokerDashboard() {
                     <p className="text-xs text-brand mt-0.5">USD en el mercado</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-brand to-brand rounded-xl p-4 border border-brand/30">
+                  <div className="bg-brand rounded-xl p-4 border border-brand/30">
                     <div className="flex items-center gap-2 mb-1">
-                      <Target className="h-4 w-4 text-brand-dark" />
-                      <span className="text-xs font-medium text-brand-dark">Más buscado</span>
+                      <Target className="h-4 w-4 text-white" />
+                      <span className="text-xs font-medium text-white">Más buscado</span>
                     </div>
-                    <p className="text-3xl font-bold text-brand-dark capitalize">
+                    <p className="text-3xl font-bold text-white capitalize">
                       {topType ? (PROPERTY_TYPE_LABELS[topType[0]] || topType[0]) : '—'}
                     </p>
-                    <p className="text-xs text-brand-dark mt-0.5">
+                    <p className="text-xs text-white/80 mt-0.5">
                       {topType ? `${topType[1]} búsquedas activas` : ''}
                     </p>
                   </div>

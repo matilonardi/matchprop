@@ -21,13 +21,13 @@ export default async function BrokerPage({
           {/* Left — value prop */}
           <div>
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">
-              Para inmobiliarias, concesionarias y particulares
+              Para inmobiliarias y particulares
             </div>
             <h1 className="mt-4 text-3xl md:text-[44px] font-extrabold text-ink tracking-[-0.02em] leading-[1.05]">
               Compradores activos que ya saben lo que quieren
             </h1>
             <p className="mt-5 text-lg text-ink-2 max-w-lg">
-              Accedé a compradores que publicaron exactamente qué propiedad o auto buscan.
+              Accedé a compradores que publicaron exactamente qué propiedad buscan.
               Contactalos directo cuando tengas algo para ofrecerles.
             </p>
 

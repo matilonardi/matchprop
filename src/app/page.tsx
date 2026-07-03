@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowRight, Home, Car, Building2, Pencil, Bell, Phone, Check, Lock } from 'lucide-react'
+import { ArrowRight, Home, Building2, Trees, Pencil, Bell, Phone, Check, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
@@ -77,9 +77,8 @@ export default async function HomePage() {
       {/* Strip utilitario */}
       <div className="pt-16">
         <div className="border-b border-hairline">
-          <div className="max-w-6xl mx-auto px-5 sm:px-11 py-2.5 flex items-center justify-between text-[13px] text-ink-3">
+          <div className="max-w-6xl mx-auto px-5 sm:px-11 py-2.5 flex items-center text-[13px] text-ink-3">
             <span>Córdoba, Argentina · Marketplace de demanda</span>
-            <span className="hidden sm:inline">Beta abierta · 2026</span>
           </div>
         </div>
       </div>
@@ -98,7 +97,7 @@ export default async function HomePage() {
               Publicá lo que buscás. Que te encuentren a vos.
             </h1>
             <p className="mt-6 text-lg md:text-[19px] text-ink-2 max-w-[460px] leading-relaxed">
-              Dejá de scrollear miles de avisos. Contanos qué propiedad o auto querés y los
+              Dejá de scrollear miles de avisos. Contanos qué propiedad buscás y los
               vendedores de Córdoba vienen con la oferta.
             </p>
             <div className="mt-6">
@@ -132,11 +131,11 @@ export default async function HomePage() {
                 floatClass="animate-float-a"
               />
               <SampleCard
-                icon={<Car className="h-5 w-5" strokeWidth={1.5} />}
-                price="25.000"
-                meta="SUV · Nueva Córdoba"
-                tags={['Toyota / Ford', '2020+']}
-                views={8}
+                icon={<Building2 className="h-5 w-5" strokeWidth={1.5} />}
+                price="70.000"
+                meta="Depto · Nueva Córdoba"
+                tags={['1 dormitorio', 'Apto crédito']}
+                views={22}
                 ago="hace 1h"
                 floatClass="animate-float-b ml-8"
               />
@@ -171,7 +170,7 @@ export default async function HomePage() {
 
           <div className="mt-12 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-hairline">
             {[
-              { step: '01', icon: <Pencil className="h-6 w-6" strokeWidth={1.5} />, title: 'Publicás qué buscás', desc: 'Zona, presupuesto y tipo de propiedad o auto. Menos de 3 minutos, sin crear cuenta.' },
+              { step: '01', icon: <Pencil className="h-6 w-6" strokeWidth={1.5} />, title: 'Publicás qué buscás', desc: 'Zona, presupuesto y tipo de propiedad. Menos de 3 minutos, sin crear cuenta.' },
               { step: '02', icon: <Bell className="h-6 w-6" strokeWidth={1.5} />, title: 'Los vendedores te ven', desc: 'Inmobiliarias y particulares reciben alertas por zona. Ven tu búsqueda —nunca tu contacto sin permiso.' },
               { step: '03', icon: <Phone className="h-6 w-6" strokeWidth={1.5} />, title: 'Te contactan con opciones reales', desc: 'Cuando alguien tiene algo para vos, ve tu contacto y te escribe. Cero spam.' },
             ].map(({ step, icon, title, desc }, idx) => (
@@ -228,9 +227,9 @@ export default async function HomePage() {
               tags={['1 dormitorio', 'Balcón']} views={22} ago="hace 4h"
             />
             <SampleCard
-              icon={<Car className="h-5 w-5" strokeWidth={1.5} />}
-              price="25.000" meta="SUV · Nueva Córdoba"
-              tags={['Toyota / Ford', '2020+']} views={8} ago="hace 1h"
+              icon={<Trees className="h-5 w-5" strokeWidth={1.5} />}
+              price="90.000" meta="Lote · La Calera"
+              tags={['600 m²+', 'Escritura inmediata']} views={6} ago="hace 8h"
             />
             <SampleCard
               icon={<Home className="h-5 w-5" strokeWidth={1.5} />}

@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react'
 const TERMS = [
   'Casa en Mendiolaza',
   'Depto en Nueva Córdoba',
-  'SUV 2020+',
   'Duplex en Villa Belgrano',
   'Local en el centro',
   'Lote en las sierras',
