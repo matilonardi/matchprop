@@ -340,8 +340,7 @@ export default async function HomePage() {
               {[
                 'Ves el pedido completo antes de contactar',
                 'Alertas automáticas por zona — propiedades y autos',
-                'Contactás directo al comprador, sin intermediarios',
-                'Gratis mientras dure la beta',
+                'Contactás directo a la punta compradora',
               ].map((text) => (
                 <li key={text} className="flex items-start gap-3">
                   <Check className="h-5 w-5 text-brand shrink-0 mt-0.5" strokeWidth={2} />
