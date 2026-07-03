@@ -13,7 +13,9 @@ export interface BuyerRequest {
   bedrooms_max?: number
   bathrooms_min?: number
   budget_usd: number
+  budget_usd_min?: number | null
   budget_ars?: number | null
+  budget_ars_min?: number | null
   financing: FinancingType
   requirements: string[]
   requirements_excluyentes?: string[]

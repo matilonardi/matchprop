@@ -422,13 +422,17 @@ export default function RequestDetail({
             <div className="bg-gray-50 rounded-xl p-4">
               <div className="flex items-center gap-2 text-gray-500 text-xs mb-1">
                 <DollarSign className="h-3.5 w-3.5" />
-                Presupuesto máximo
+                {(request.budget_usd_min || request.budget_ars_min) ? 'Rango de presupuesto' : 'Presupuesto máximo'}
               </div>
-              <p className="text-xl font-bold text-gray-900">
-                {(request as any).budget_ars
-                  ? `$ ${((request as any).budget_ars as number).toLocaleString('es-AR')}`
+              <p className="text-xl font-bold text-gray-900 tabular">
+                {request.budget_ars
+                  ? request.budget_ars_min
+                    ? `$ ${request.budget_ars_min.toLocaleString('es-AR')} – ${request.budget_ars.toLocaleString('es-AR')}`
+                    : `$ ${request.budget_ars.toLocaleString('es-AR')}`
                   : request.budget_usd && request.budget_usd !== 999999
-                    ? `USD ${request.budget_usd.toLocaleString()}`
+                    ? request.budget_usd_min
+                      ? `USD ${request.budget_usd_min.toLocaleString()} – ${request.budget_usd.toLocaleString()}`
+                      : `USD ${request.budget_usd.toLocaleString()}`
                     : 'A convenir'}
               </p>
             </div>

@@ -23,7 +23,9 @@ interface FormData {
   bedrooms_max: string
   bathrooms_min: string
   budget_usd: string
+  budget_usd_min: string
   budget_ars: string
+  budget_ars_min: string
   budget_currency: 'usd' | 'ars'
   financing: FinancingType | ''
   financing_types: string[]
@@ -105,6 +107,11 @@ export default function PublicarWizard() {
     })
   }, [])
 
+  // Al avanzar/retroceder de paso, llevar la vista al inicio de la nueva pregunta
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [step, requestType])
+
   const [form, setForm] = useState<FormData>({
     operation_type: 'compra',
     property_types: [],
@@ -113,7 +120,9 @@ export default function PublicarWizard() {
     bedrooms_max: '',
     bathrooms_min: '',
     budget_usd: '',
+    budget_usd_min: '',
     budget_ars: '',
+    budget_ars_min: '',
     budget_currency: 'usd' as const,
     financing: '',
     financing_types: [],
@@ -209,7 +218,9 @@ export default function PublicarWizard() {
           bedrooms_max: intOrNull(form.bedrooms_max),
           bathrooms_min: intOrNull(form.bathrooms_min),
           budget_usd: form.budget_currency === 'ars' ? 0 : parseInt(form.budget_usd) || 0,
+          budget_usd_min: form.budget_currency === 'ars' ? null : intOrNull(form.budget_usd_min),
           budget_ars: form.budget_currency === 'ars' ? parseInt(form.budget_ars) || null : null,
+          budget_ars_min: form.budget_currency === 'ars' ? intOrNull(form.budget_ars_min) : null,
           financing: derivedFinancing,
           financing_types: form.financing_types,
           financing_cash_pct: intOrNull(form.financing_cash_pct),
@@ -284,7 +295,9 @@ export default function PublicarWizard() {
           bedrooms_max: intOrNull(form.bedrooms_max),
           bathrooms_min: intOrNull(form.bathrooms_min),
           budget_usd: form.budget_currency === 'ars' ? 0 : parseInt(form.budget_usd) || 0,
+          budget_usd_min: form.budget_currency === 'ars' ? null : intOrNull(form.budget_usd_min),
           budget_ars: form.budget_currency === 'ars' ? parseInt(form.budget_ars) || null : null,
+          budget_ars_min: form.budget_currency === 'ars' ? intOrNull(form.budget_ars_min) : null,
           financing: derivedFinancing,
           financing_types: form.financing_types,
           description: form.description || null,
@@ -641,41 +654,59 @@ export default function PublicarWizard() {
         {/* Step 4: Budget + Financing + Search reason */}
         {step === 4 && (
           <div className="space-y-6">
-            {/* Budget */}
+            {/* Budget — rango Desde/Hasta */}
             <div>
               <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                {form.operation_type === 'alquiler' ? 'Presupuesto mensual máximo' : 'Presupuesto máximo'} <span className="text-red-500">*</span>
+                {form.operation_type === 'alquiler' ? 'Indicar rango de presupuesto mensual' : 'Indicar rango de presupuesto'} <span className="text-red-500">*</span>
               </Label>
+              <p className="text-xs text-ink-3 mb-3">El &quot;Desde&quot; es opcional. El &quot;Hasta&quot; es tu tope.</p>
 
               {/* Currency toggle — solo para alquiler */}
               {form.operation_type === 'alquiler' && (
-                <div className="flex gap-1 mb-3 bg-gray-100 p-1 rounded-xl w-fit">
+                <div className="flex gap-1 mb-3 bg-chip p-1 rounded-xl w-fit">
                   {(['usd', 'ars'] as const).map((c) => (
                     <button key={c} type="button"
                       onClick={() => setForm((f) => ({ ...f, budget_currency: c }))}
-                      className={`text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors ${form.budget_currency === c ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}>
+                      className={`text-sm font-semibold px-4 py-1.5 rounded-lg transition-colors ${form.budget_currency === c ? 'bg-white shadow-[0_1px_3px_rgba(16,23,18,0.08)] text-ink' : 'text-ink-2 hover:text-ink'}`}>
                       {c === 'usd' ? 'USD' : '$ Pesos'}
                     </button>
                   ))}
                 </div>
               )}
 
-              {/* Input USD */}
+              {/* Inputs USD */}
               {form.budget_currency !== 'ars' && (
                 <>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">USD</span>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder={form.operation_type === 'alquiler' ? '600' : '230.000'}
-                      value={form.budget_usd ? form.budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-                        setForm((f) => ({ ...f, budget_usd: raw }))
-                      }}
-                      className="pl-12"
-                    />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="relative flex-1 min-w-0">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 text-sm font-medium">USD</span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Desde (opcional)"
+                        value={form.budget_usd_min ? form.budget_usd_min.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                          setForm((f) => ({ ...f, budget_usd_min: raw }))
+                        }}
+                        className="pl-12"
+                      />
+                    </div>
+                    <span className="hidden sm:inline text-ink-3 text-sm shrink-0">a</span>
+                    <div className="relative flex-1 min-w-0">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 text-sm font-medium">USD</span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder={form.operation_type === 'alquiler' ? 'Hasta · 600' : 'Hasta · 230.000'}
+                        value={form.budget_usd ? form.budget_usd.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                          setForm((f) => ({ ...f, budget_usd: raw }))
+                        }}
+                        className="pl-12"
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     {(form.operation_type === 'alquiler'
@@ -685,36 +716,53 @@ export default function PublicarWizard() {
                       <button key={v} type="button"
                         onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
                         className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                        USD {parseInt(v).toLocaleString()}
+                        Hasta USD {parseInt(v).toLocaleString()}
                       </button>
                     ))}
                   </div>
                 </>
               )}
 
-              {/* Input ARS */}
+              {/* Inputs ARS */}
               {form.budget_currency === 'ars' && (
                 <>
-                  <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-medium">$</span>
-                    <Input
-                      type="text"
-                      inputMode="numeric"
-                      placeholder="1.500.000"
-                      value={form.budget_ars ? form.budget_ars.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
-                      onChange={(e) => {
-                        const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
-                        setForm((f) => ({ ...f, budget_ars: raw }))
-                      }}
-                      className="pl-6"
-                    />
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                    <div className="relative flex-1 min-w-0">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 text-sm font-medium">$</span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Desde (opcional)"
+                        value={form.budget_ars_min ? form.budget_ars_min.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                          setForm((f) => ({ ...f, budget_ars_min: raw }))
+                        }}
+                        className="pl-7"
+                      />
+                    </div>
+                    <span className="hidden sm:inline text-ink-3 text-sm shrink-0">a</span>
+                    <div className="relative flex-1 min-w-0">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-ink-3 text-sm font-medium">$</span>
+                      <Input
+                        type="text"
+                        inputMode="numeric"
+                        placeholder="Hasta · 1.500.000"
+                        value={form.budget_ars ? form.budget_ars.replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''}
+                        onChange={(e) => {
+                          const raw = e.target.value.replace(/\./g, '').replace(/\D/g, '')
+                          setForm((f) => ({ ...f, budget_ars: raw }))
+                        }}
+                        className="pl-7"
+                      />
+                    </div>
                   </div>
                   <div className="flex flex-wrap gap-2 mt-3">
                     {['500000', '800000', '1000000', '1500000', '2000000'].map((v) => (
                       <button key={v} type="button"
                         onClick={() => setForm((f) => ({ ...f, budget_ars: v }))}
                         className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_ars === v ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                        $ {parseInt(v).toLocaleString('es-AR')}
+                        Hasta $ {parseInt(v).toLocaleString('es-AR')}
                       </button>
                     ))}
                   </div>

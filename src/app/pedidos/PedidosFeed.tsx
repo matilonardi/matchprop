@@ -55,9 +55,15 @@ function urgencyLabel(urgency?: string): string {
 
 function priceText(req: PublicBuyerRequest): string {
   if (req.budget_usd === 999999) return 'Sin límite'
-  if ((req as any).budget_ars) return `$ ${((req as any).budget_ars as number).toLocaleString('es-AR')}`
+  if (req.budget_ars) {
+    return req.budget_ars_min
+      ? `$ ${req.budget_ars_min.toLocaleString('es-AR')} – ${req.budget_ars.toLocaleString('es-AR')}`
+      : `$ ${req.budget_ars.toLocaleString('es-AR')}`
+  }
   if (req.budget_usd === 0) return 'A convenir'
-  return `USD ${req.budget_usd.toLocaleString()}`
+  return req.budget_usd_min
+    ? `USD ${req.budget_usd_min.toLocaleString()} – ${req.budget_usd.toLocaleString()}`
+    : `USD ${req.budget_usd.toLocaleString()}`
 }
 
 // ---------------------------------------------------------------------------

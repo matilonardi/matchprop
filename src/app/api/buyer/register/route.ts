@@ -25,6 +25,9 @@ export async function POST(request: NextRequest) {
     bedrooms_max,
     bathrooms_min,
     budget_usd,
+    budget_usd_min,
+    budget_ars,
+    budget_ars_min,
     financing,
     requirements,
     requirements_excluyentes,
@@ -67,7 +70,8 @@ export async function POST(request: NextRequest) {
   if (password.length < 8) {
     return Response.json({ error: 'La contraseña debe tener al menos 8 caracteres' }, { status: 400 })
   }
-  if (!zones?.length || !budget_usd || !financing) {
+  // Presupuesto: puede venir en USD o en ARS (alquileres) — al menos uno es requerido
+  if (!zones?.length || (!budget_usd && !budget_ars) || !financing) {
     return Response.json({ error: 'Datos de la búsqueda incompletos' }, { status: 400 })
   }
 
@@ -131,7 +135,10 @@ export async function POST(request: NextRequest) {
       bedrooms_min: bedrooms_min || null,
       bedrooms_max: bedrooms_max || null,
       bathrooms_min: bathrooms_min || null,
-      budget_usd,
+      budget_usd: budget_usd || 0,
+      budget_usd_min: budget_usd_min || null,
+      budget_ars: budget_ars || null,
+      budget_ars_min: budget_ars_min || null,
       financing,
       requirements: requirements || [],
       requirements_excluyentes: requirements_excluyentes || [],

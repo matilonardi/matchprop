@@ -64,11 +64,34 @@ function SampleCard({
 
 export default async function HomePage() {
   const supabase = createServerClient()
-  const { count } = await supabase
-    .from('buyer_requests')
-    .select('*', { count: 'exact', head: true })
-    .eq('status', 'active')
+  const [{ count }, { data: zoneRows }] = await Promise.all([
+    supabase
+      .from('buyer_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'active'),
+    supabase
+      .from('buyer_requests')
+      .select('zones, budget_usd')
+      .eq('status', 'active')
+      .limit(2000),
+  ])
   const totalBusquedas = count ?? 0
+
+  // Ranking de zonas por demanda (se refresca con revalidate — dinámico por publicación)
+  const zoneStats = new Map<string, { count: number; sum: number; n: number }>()
+  for (const r of zoneRows || []) {
+    for (const z of r.zones || []) {
+      const s = zoneStats.get(z) || { count: 0, sum: 0, n: 0 }
+      s.count++
+      if (r.budget_usd && r.budget_usd !== 999999) { s.sum += r.budget_usd; s.n++ }
+      zoneStats.set(z, s)
+    }
+  }
+  const topZones = [...zoneStats.entries()]
+    .sort((a, b) => b[1].count - a[1].count)
+    .slice(0, 6)
+    .map(([zone, s]) => ({ zone, count: s.count, avgK: s.n ? Math.round(s.sum / s.n / 1000) : 0 }))
+  const maxZoneCount = topZones[0]?.count || 1
 
   return (
     <div className="min-h-screen bg-white">
@@ -239,6 +262,57 @@ export default async function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ── Zonas con más demanda (dinámico) ── */}
+      {topZones.length > 0 && (
+        <section className="border-b border-hairline">
+          <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20 grid md:grid-cols-[.8fr_1.2fr] gap-14 items-center">
+            <div>
+              <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">
+                Demanda en tiempo real
+              </div>
+              <h2 className="mt-4 text-3xl md:text-[34px] font-extrabold text-ink tracking-[-0.02em]">
+                Zonas con más demanda
+              </h2>
+              <p className="mt-4 text-ink-2">
+                Basado en <span className="font-bold text-ink tabular">{totalBusquedas.toLocaleString('es-AR')}</span> búsquedas
+                activas. Se actualiza con cada publicación nueva.
+              </p>
+              <Link href="/broker" className="mt-7 inline-block">
+                <Button size="lg" className="rounded-lg px-5">
+                  Quiero estos contactos
+                  <ArrowRight className="ml-1.5 h-4 w-4" />
+                </Button>
+              </Link>
+            </div>
+
+            <div className="space-y-4">
+              {topZones.map(({ zone, count: zc, avgK }, i) => (
+                <div key={zone}>
+                  <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-1.5">
+                    <div className="flex items-baseline gap-3">
+                      <span className="font-grotesk text-xs font-bold text-brand w-5 shrink-0">
+                        {String(i + 1).padStart(2, '0')}
+                      </span>
+                      <span className="text-[15px] font-semibold text-ink">{zone}</span>
+                    </div>
+                    <span className="pl-8 sm:pl-0 text-sm text-ink-2 tabular">
+                      <span className="font-bold text-ink">{zc}</span> búsquedas
+                      {avgK > 0 && <span className="text-ink-3"> · ~USD {avgK}k</span>}
+                    </span>
+                  </div>
+                  <div className="ml-8 h-1.5 rounded-full bg-chip overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-brand"
+                      style={{ width: `${Math.max(8, Math.round((zc / maxZoneCount) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* ── Para vendedores ── */}
       <section className="bg-surface border-b border-hairline">

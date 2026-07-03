@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
   let query = supabase
     .from('buyer_requests')
     .select(
-      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, budget_ars, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, featured_until, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
+      'id, request_type, operation_type, property_types, zones, bedrooms_min, bedrooms_max, bathrooms_min, budget_usd, budget_usd_min, budget_ars, budget_ars_min, financing, financing_types, financing_cash_pct, financing_bank, financing_precalified, search_reason, requirements, requirements_excluyentes, priorities, description, urgency, status, views_count, leads_count, created_at, featured_until, car_brands, car_body_styles, car_year_min, car_year_max, car_condition, car_km_max, car_fuel_types, car_transmission, publisher_type, agency_name',
       { count: 'exact' }
     )
     .eq('status', 'active')

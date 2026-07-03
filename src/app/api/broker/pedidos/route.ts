@@ -38,7 +38,8 @@ export async function POST(request: NextRequest) {
   if (!fields.contact_name) {
     return Response.json({ error: 'contact_name requerido' }, { status: 400 })
   }
-  if (!fields.property_types?.length || !fields.zones?.length || !fields.budget_usd) {
+  // Presupuesto en USD o en ARS (alquileres) — al menos uno
+  if (!fields.property_types?.length || !fields.zones?.length || (!fields.budget_usd && !fields.budget_ars)) {
     return Response.json({ error: 'Faltan campos obligatorios del pedido' }, { status: 400 })
   }
 
@@ -56,7 +57,10 @@ export async function POST(request: NextRequest) {
       bedrooms_min: fields.bedrooms_min ?? null,
       bedrooms_max: fields.bedrooms_max ?? null,
       bathrooms_min: fields.bathrooms_min ?? null,
-      budget_usd: fields.budget_usd,
+      budget_usd: fields.budget_usd || 0,
+      budget_usd_min: fields.budget_usd_min ?? null,
+      budget_ars: fields.budget_ars ?? null,
+      budget_ars_min: fields.budget_ars_min ?? null,
       financing: fields.financing ?? (fields.operation_type === 'alquiler' ? 'efectivo' : null),
       financing_types: fields.financing_types ?? [],
       description: fields.description ?? null,

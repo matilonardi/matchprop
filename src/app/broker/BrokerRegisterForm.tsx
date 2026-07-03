@@ -89,7 +89,7 @@ export default function BrokerRegisterForm() {
         <div>
           <Label className="text-sm mb-1 block">Inmobiliaria / Agencia</Label>
           <Input
-            placeholder="SIGI Inmobiliaria"
+            placeholder="Opcional"
             value={form.agency_name}
             onChange={(e) => setForm((f) => ({ ...f, agency_name: e.target.value }))}
           />
