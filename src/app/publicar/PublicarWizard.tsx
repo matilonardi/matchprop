@@ -635,61 +635,6 @@ export default function PublicarWizard() {
               </div>
             </div>
 
-            {/* Medidas del terreno */}
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Frente del terreno (m) <span className="text-gray-400 font-normal">— opcional</span>
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Mín"
-                    value={form.terreno_frente_min}
-                    onChange={(e) => setForm((f) => ({ ...f, terreno_frente_min: e.target.value }))}
-                    className="w-20"
-                    min="0"
-                    step="0.5"
-                  />
-                  <span className="text-gray-400 text-sm">a</span>
-                  <Input
-                    type="number"
-                    placeholder="Máx"
-                    value={form.terreno_frente_max}
-                    onChange={(e) => setForm((f) => ({ ...f, terreno_frente_max: e.target.value }))}
-                    className="w-20"
-                    min="0"
-                    step="0.5"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700 mb-2 block">
-                  Fondo del terreno (m) <span className="text-gray-400 font-normal">— opcional</span>
-                </Label>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    placeholder="Mín"
-                    value={form.terreno_fondo_min}
-                    onChange={(e) => setForm((f) => ({ ...f, terreno_fondo_min: e.target.value }))}
-                    className="w-20"
-                    min="0"
-                    step="0.5"
-                  />
-                  <span className="text-gray-400 text-sm">a</span>
-                  <Input
-                    type="number"
-                    placeholder="Máx"
-                    value={form.terreno_fondo_max}
-                    onChange={(e) => setForm((f) => ({ ...f, terreno_fondo_max: e.target.value }))}
-                    className="w-20"
-                    min="0"
-                    step="0.5"
-                  />
-                </div>
-              </div>
-            </div>
           </div>
         )}
 
