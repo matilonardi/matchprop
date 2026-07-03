@@ -64,15 +64,18 @@ function SampleCard({
 
 export default async function HomePage() {
   const supabase = createServerClient()
+  // Solo propiedades — mismo criterio que el feed de /pedidos, para que los números coincidan
   const [{ count }, { data: zoneRows }] = await Promise.all([
     supabase
       .from('buyer_requests')
       .select('*', { count: 'exact', head: true })
-      .eq('status', 'active'),
+      .eq('status', 'active')
+      .eq('request_type', 'property'),
     supabase
       .from('buyer_requests')
       .select('zones, budget_usd')
       .eq('status', 'active')
+      .eq('request_type', 'property')
       .limit(2000),
   ])
   const totalBusquedas = count ?? 0
