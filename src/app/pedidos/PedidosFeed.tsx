@@ -2,7 +2,10 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
-import { MapPin, Bed, Bath, Clock, Eye, Lock, X, CalendarDays, ChevronDown, Search } from 'lucide-react'
+import {
+  Clock, Lock, X, CalendarDays, ChevronDown, Search,
+  Home, Building2, Building, Store, Trees, Banknote, TrendingUp, Car,
+} from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
 import { ZONAS_CORDOBA, ZONES_CORDOBA, PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import type { PublicBuyerRequest } from '@/lib/supabase'
@@ -10,17 +13,22 @@ import { supabase } from '@/lib/supabase'
 
 
 // ---------------------------------------------------------------------------
-// Config
+// Config — iconos de línea por tipo (sin emojis, estilo Tabler/lucide)
 // ---------------------------------------------------------------------------
-const TYPE_CONFIG: Record<string, { gradient: string; emoji: string }> = {
-  casa:         { gradient: 'from-emerald-400 to-teal-500',    emoji: '🏡' },
-  departamento: { gradient: 'from-blue-400 to-indigo-500',     emoji: '🏢' },
-  duplex:       { gradient: 'from-violet-400 to-purple-500',   emoji: '🏘️' },
-  ph:           { gradient: 'from-cyan-400 to-sky-500',        emoji: '🏠' },
-  terreno:      { gradient: 'from-amber-400 to-orange-500',    emoji: '🌿' },
-  local:        { gradient: 'from-orange-400 to-red-500',      emoji: '🏪' },
-  renta:        { gradient: 'from-green-400 to-emerald-500',   emoji: '💵' },
-  revaluo:      { gradient: 'from-pink-400 to-rose-500',       emoji: '📈' },
+const TYPE_ICON: Record<string, React.ComponentType<{ className?: string; strokeWidth?: number }>> = {
+  casa:         Home,
+  departamento: Building2,
+  duplex:       Building,
+  ph:           Building2,
+  terreno:      Trees,
+  local:        Store,
+  renta:        Banknote,
+  revaluo:      TrendingUp,
+}
+
+function getTypeIcon(req: PublicBuyerRequest) {
+  if (req.request_type === 'car') return Car
+  return TYPE_ICON[req.property_types?.[0]] || Home
 }
 
 // ---------------------------------------------------------------------------
@@ -45,141 +53,98 @@ function urgencyLabel(urgency?: string): string {
   return urgency ? (map[urgency] || urgency) : ''
 }
 
+function priceText(req: PublicBuyerRequest): string {
+  if (req.budget_usd === 999999) return 'Sin límite'
+  if ((req as any).budget_ars) return `$ ${((req as any).budget_ars as number).toLocaleString('es-AR')}`
+  if (req.budget_usd === 0) return 'A convenir'
+  return `USD ${req.budget_usd.toLocaleString()}`
+}
+
 // ---------------------------------------------------------------------------
-// Cards
+// Card — anatomía del diseño 2a (icono de línea, sin gradiente ni emoji)
 // ---------------------------------------------------------------------------
 function RequestCard({ req }: { req: PublicBuyerRequest }) {
-  const primaryType = req.property_types[0]
-  const { gradient, emoji } = TYPE_CONFIG[primaryType] || { gradient: 'from-blue-400 to-blue-600', emoji: '🏠' }
+  const Icon = getTypeIcon(req)
   const typeLabels = req.property_types.map((t) => PROPERTY_TYPE_LABELS[t] || t)
+  const isRent = req.operation_type === 'alquiler'
+  const opLabel = isRent ? 'Alquiler' : 'Compra'
+  const featured = req.featured_until && new Date(req.featured_until) > new Date()
+
+  // Chips: dormitorios + baños + requisitos
+  const chips: string[] = []
+  if (req.bedrooms_min) chips.push(`${req.bedrooms_min}${req.bedrooms_max ? `–${req.bedrooms_max}` : '+'} dorm.`)
+  if (req.bathrooms_min) chips.push(`${req.bathrooms_min}+ baños`)
+  ;(req.requirements || []).forEach((r) => chips.push(r.replace(/_/g, ' ')))
+  const visibleChips = chips.slice(0, 3)
+  const extraChips = chips.length - visibleChips.length
+
+  const payLabel = isRent ? 'Alquiler' : (req.financing ? FINANCING_LABELS[req.financing] : '')
 
   return (
-    <Link href={`/pedidos/${req.id}`}>
-      <article className="bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-blue-100/60 border border-gray-100 hover:border-blue-200 hover:-translate-y-1.5 transition-all duration-300 cursor-pointer h-full flex flex-col group">
+    <Link href={`/pedidos/${req.id}`} className="h-full">
+      <article className="group h-full flex flex-col bg-white border border-hairline rounded-[14px] p-5 transition-colors hover:border-ink-3/40">
 
-        {/* Visual header */}
-        <div className={`relative h-44 bg-gradient-to-br ${gradient} flex items-center justify-center overflow-hidden`}>
-          <span className="text-7xl select-none opacity-75 group-hover:scale-110 group-hover:opacity-90 transition-all duration-500">{emoji}</span>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-
-          <div className="absolute top-3 right-3">
-            <span className="bg-white/95 backdrop-blur-sm text-green-600 text-xs font-semibold px-2.5 py-1 rounded-full shadow-sm">
-              ✓ Activa
-            </span>
-          </div>
-          {req.featured_until && new Date(req.featured_until) > new Date() && (
-            <div className="absolute top-3 left-3">
-              <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2.5 py-1 rounded-full shadow-sm">
-                ⭐ Destacado
-              </span>
-            </div>
-          )}
-          <div className="absolute bottom-3 left-4 right-4 flex items-center justify-between">
-            <div className="flex items-center gap-1.5 text-white/90 text-xs font-medium">
-              <Eye className="h-3.5 w-3.5" />
-              {req.views_count} vista{req.views_count !== 1 ? 's' : ''}
-            </div>
-            <div className="text-white/70 text-xs">{timeAgo(req.created_at)}</div>
+        {/* Header: icono + vistas · fecha */}
+        <div className="flex items-center justify-between mb-4">
+          <span className="flex h-[42px] w-[42px] items-center justify-center rounded-[10px] bg-tint text-brand">
+            <Icon className="h-5 w-5" strokeWidth={1.5} />
+          </span>
+          <div className="flex items-center gap-2 text-[13px] text-ink-3">
+            {featured && <span className="text-brand font-semibold">Destacado</span>}
+            <span>{req.views_count} vista{req.views_count !== 1 ? 's' : ''} · {timeAgo(req.created_at)}</span>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-5 flex flex-col flex-1 gap-2.5">
-
-          {/* Price + financing */}
-          <div className="flex items-baseline justify-between gap-2">
-            <div className="text-2xl font-bold text-gray-900 tracking-tight">
-              {req.budget_usd === 999999
-                ? 'Sin límite'
-                : (req as any).budget_ars
-                  ? `$ ${((req as any).budget_ars as number).toLocaleString('es-AR')}`
-                  : req.budget_usd === 0
-                    ? 'Sin Precio Definido'
-                    : `USD ${req.budget_usd.toLocaleString()}`}
-              {req.operation_type === 'alquiler' && <span className="text-sm font-normal text-gray-400">/mes</span>}
-            </div>
-            <div className="flex items-center gap-1.5 shrink-0">
-              {req.operation_type === 'alquiler' && (
-                <span className="text-xs font-semibold bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full">🔑 Alquiler</span>
-              )}
-              {(!req.operation_type || req.operation_type === 'compra') && req.financing && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2.5 py-1 rounded-full">
-                  {FINANCING_LABELS[req.financing]}
-                </span>
-              )}
-            </div>
+        {/* Precio + badge de pago */}
+        <div className="flex items-baseline justify-between gap-2">
+          <div className="text-xl font-bold text-ink tabular leading-tight">
+            {priceText(req)}
+            {isRent && <span className="text-sm font-normal text-ink-3">/mes</span>}
           </div>
-
-          {/* Type */}
-          <p className="text-sm font-semibold text-gray-800 capitalize leading-snug">
-            {typeLabels.join(' · ')}
-          </p>
-
-          {/* Location */}
-          <div className="flex items-start gap-1 text-xs text-gray-500">
-            <MapPin className="h-3.5 w-3.5 flex-shrink-0 text-orange-400 mt-0.5" />
-            <span className="leading-relaxed">
-              <span className="text-gray-400">Busca en: </span>
-              {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2} zonas` : ''}
+          {payLabel && (
+            <span className="shrink-0 text-xs font-medium text-brand bg-tint px-2.5 py-1 rounded-full">
+              {payLabel}
             </span>
-          </div>
-
-          {/* Stats row */}
-          {(req.bedrooms_min || req.bathrooms_min || req.urgency) && (
-            <div className="flex items-center gap-4 text-sm text-gray-600 py-2.5 border-y border-gray-100">
-              {req.bedrooms_min && (
-                <span className="flex items-center gap-1.5">
-                  <Bed className="h-4 w-4 text-gray-400" />
-                  {req.bedrooms_min}{req.bedrooms_max ? `–${req.bedrooms_max}` : '+'} dorm.
-                </span>
-              )}
-              {req.bathrooms_min && (
-                <span className="flex items-center gap-1.5">
-                  <Bath className="h-4 w-4 text-gray-400" />
-                  {req.bathrooms_min}+ baños
-                </span>
-              )}
-              {req.urgency && (
-                <span className="flex items-center gap-1 text-xs text-gray-400 ml-auto">
-                  <Clock className="h-3.5 w-3.5" />
-                  {urgencyLabel(req.urgency)}
-                </span>
-              )}
-            </div>
           )}
+        </div>
 
-          {/* Requirements */}
-          {req.requirements?.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 flex-1">
-              {req.requirements.slice(0, 3).map((r) => (
-                <span key={r} className="text-xs bg-blue-50 text-blue-700 border border-blue-100 px-2.5 py-1 rounded-full">
-                  {r.replace(/_/g, ' ')}
-                </span>
-              ))}
-              {req.requirements.length > 3 && (
-                <span className="text-xs text-gray-400 flex items-center px-1">
-                  +{req.requirements.length - 3} más
-                </span>
-              )}
-            </div>
-          )}
+        {/* Tipo · Operación · Zona */}
+        <p className="mt-1.5 text-[15px] text-ink-2 leading-snug">
+          {[typeLabels.join(' / ') || 'Propiedad', opLabel, req.zones.slice(0, 2).join(', ')].filter(Boolean).join(' · ')}
+          {req.zones.length > 2 ? ` +${req.zones.length - 2}` : ''}
+        </p>
 
-          {/* CTA */}
-          <div className="mt-auto pt-1">
-            <div className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all bg-orange-500 group-hover:bg-orange-600 text-white shadow-sm hover:shadow-md">
-              <Lock className="h-3.5 w-3.5" />
-              Ver contacto · 1 crédito
-            </div>
+        {/* Chips de requisitos */}
+        {visibleChips.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {visibleChips.map((c) => (
+              <span key={c} className="rounded-md bg-chip px-2 py-1 text-xs text-ink-2 capitalize">{c}</span>
+            ))}
+            {extraChips > 0 && <span className="px-1 py-1 text-xs text-ink-3">+{extraChips}</span>}
           </div>
+        )}
+
+        {req.urgency && (
+          <div className="mt-3 inline-flex items-center gap-1.5 text-xs text-ink-3">
+            <Clock className="h-3.5 w-3.5" strokeWidth={1.5} />
+            {urgencyLabel(req.urgency)}
+          </div>
+        )}
+
+        {/* Footer: contacto oculto + CTA gratis */}
+        <div className="mt-auto pt-4 flex items-center justify-between border-t border-hairline mt-4">
+          <span className="inline-flex items-center gap-1.5 text-[13px] text-ink-3">
+            <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Contacto oculto
+          </span>
+          <span className="inline-flex items-center rounded-lg bg-brand px-4 py-2 text-sm font-semibold text-white transition-colors group-hover:bg-brand-dark">
+            Ver contacto
+          </span>
         </div>
       </article>
     </Link>
   )
 }
-
-// ---------------------------------------------------------------------------
-// Feed
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Feed
@@ -257,10 +222,9 @@ export default function PedidosFeed({
   const [textSearch, setTextSearch] = useState('')
   const [debouncedTextSearch, setDebouncedTextSearch] = useState('')
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const [zoneSearch, setZoneSearch] = useState('')
+  const [barrioSearch, setBarrioSearch] = useState('')
   const [zoneDropdownOpen, setZoneDropdownOpen] = useState(false)
   const [pendingZones, setPendingZones] = useState<string[]>([])
-  const [barrioSearch, setBarrioSearch] = useState('')
   const [barrioDropdownOpen, setBarrioDropdownOpen] = useState(false)
   const [pendingBarrios, setPendingBarrios] = useState<string[]>([])
   const [pendingTypes, setPendingTypes] = useState<string[]>([])
@@ -304,10 +268,10 @@ export default function PedidosFeed({
   const hasFilters = !!(filters.zones.length || filters.barrios.length || filters.types.length || filters.bedroomsMin || filters.bedroomsMax || filters.financing || filters.minBudget || filters.maxBudget || filters.minBudgetArs || filters.maxBudgetArs || filters.since || filters.dateFrom || filters.dateTo || filters.sort !== 'recent' || filters.publisherType || filters.operationType || debouncedTextSearch)
 
   const SORT_OPTIONS = [
-    { id: 'recent',     label: '🕐 Más recientes' },
-    { id: 'oldest',     label: '📅 Más antiguos' },
-    { id: 'budget_asc', label: '💰 Menor presupuesto' },
-    { id: 'budget_desc',label: '💰 Mayor presupuesto' },
+    { id: 'recent',     label: 'Más recientes' },
+    { id: 'oldest',     label: 'Más antiguos' },
+    { id: 'budget_asc', label: 'Menor presupuesto' },
+    { id: 'budget_desc',label: 'Mayor presupuesto' },
   ]
 
   const fetchRequests = useCallback(async () => {
@@ -361,14 +325,6 @@ export default function PedidosFeed({
     setPage(1)
   }
 
-  function toggleTypeFilter(typeId: string) {
-    setFilters((f) => ({
-      ...f,
-      types: f.types.includes(typeId) ? f.types.filter((t) => t !== typeId) : [...f.types, typeId],
-    }))
-    setPage(1)
-  }
-
   function openPriceDropdown() {
     const hasDollar = !!(filters.minBudget || filters.maxBudget)
     const cur: 'usd' | 'ars' = hasDollar ? 'usd' : (filters.minBudgetArs || filters.maxBudgetArs) ? 'ars' : 'usd'
@@ -406,27 +362,46 @@ export default function PedidosFeed({
     setDormDropdownOpen(false)
   }
 
-  const pillBase = 'rounded-full text-sm font-medium border transition-colors w-full h-9'
-  const pillActive = 'border-orange-500 bg-orange-50 text-orange-700'
-  const pillInactive = 'border-gray-300 bg-white text-gray-700 hover:border-gray-400'
+  // ── Estilos de pill del handoff: "Label gris + Valor bold + chevron" ──
+  const pillBase = 'flex items-center gap-1.5 rounded-lg border px-3.5 h-10 text-sm whitespace-nowrap transition-colors'
+  const pillActive = 'border-brand bg-tint text-brand'
+  const pillInactive = 'border-field bg-white text-ink hover:border-ink-3'
+  const pillClass = (active: boolean) => `${pillBase} ${active ? pillActive : pillInactive}`
+  const menuClass = 'absolute top-12 left-0 z-50 bg-white border border-hairline rounded-xl shadow-lg'
 
   return (
     <div>
+      {/* Header */}
+      <div className="flex items-end justify-between gap-4 flex-wrap mb-8">
+        <div>
+          <h1 className="text-3xl md:text-[40px] font-extrabold text-ink tracking-[-0.02em] leading-none">
+            Pedidos activos en Córdoba
+          </h1>
+          <p className="mt-3 text-ink-2">
+            Compradores buscando ahora mismo · Contactalos gratis
+          </p>
+        </div>
+        <p className="text-sm text-ink-2">
+          {loading
+            ? <span className="inline-block h-4 w-24 bg-chip rounded animate-pulse align-middle" />
+            : <><span className="font-bold text-ink tabular">{total.toLocaleString('es-AR')}</span> pedido{total !== 1 ? 's' : ''} activo{total !== 1 ? 's' : ''}</>}
+        </p>
+      </div>
 
       {/* Text search */}
       <div className="relative mb-4">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 pointer-events-none" />
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-ink-3 pointer-events-none" strokeWidth={1.5} />
         <input
           type="text"
           value={textSearch}
           onChange={e => setTextSearch(e.target.value)}
           placeholder="Buscar por descripción, zona, tipo de propiedad..."
-          className="w-full h-11 pl-11 pr-10 rounded-2xl border border-gray-200 bg-white text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 shadow-sm transition-all"
+          className="w-full h-11 pl-11 pr-10 rounded-lg border border-field bg-white text-sm text-ink placeholder:text-ink-3 focus:outline-none focus:border-brand transition-colors"
         />
         {textSearch && (
           <button
             onClick={() => { setTextSearch(''); setDebouncedTextSearch(''); setPage(1) }}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ink-3 hover:text-ink transition-colors"
           >
             <X className="h-4 w-4" />
           </button>
@@ -434,9 +409,9 @@ export default function PedidosFeed({
       </div>
 
       {/* Filter bar */}
-      <div className="animate-tab-fade relative z-10 flex items-center gap-2 flex-wrap mb-6">
+      <div className="relative z-10 flex items-center gap-2 flex-wrap pb-6 mb-6 border-b border-hairline">
 
-        {/* Zona — macro sectores */}
+        {/* Zona */}
         <div className="shrink-0 relative">
           <button
             onClick={() => {
@@ -444,34 +419,24 @@ export default function PedidosFeed({
               else { setPendingZones(filters.zones); setBarrioDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }
               setZoneDropdownOpen(v => !v)
             }}
-            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.zones.length ? pillActive : pillInactive}`}
+            className={pillClass(filters.zones.length > 0)}
           >
-            <span className="font-medium">📍 Zona:</span>
-            {filters.zones.length === 0 ? 'todas' : filters.zones.length === 1 ? filters.zones[0] : `${filters.zones.length} zonas`}
+            <span className={filters.zones.length ? '' : 'text-ink-3'}>Zona</span>
+            <span className="font-semibold">{filters.zones.length === 0 ? 'Todas' : filters.zones.length === 1 ? filters.zones[0] : `${filters.zones.length} zonas`}</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
           </button>
           {zoneDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, zones: pendingZones })); setPage(1); setZoneDropdownOpen(false) }} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64">
-                <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                  <input
-                    type="checkbox"
-                    checked={pendingZones.length === 0}
-                    onChange={() => setPendingZones([])}
-                    className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                  />
+              <div className={`${menuClass} w-64`}>
+                <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-chip border-b border-hairline text-sm font-medium text-ink hover:bg-tint">
+                  <input type="checkbox" checked={pendingZones.length === 0} onChange={() => setPendingZones([])} className="rounded border-field accent-brand h-4 w-4" />
                   Todas
                 </label>
                 <div className="max-h-72 overflow-y-auto">
                   {ZONAS_CORDOBA.map((z) => (
-                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${pendingZones.includes(z) ? 'bg-orange-50' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={pendingZones.includes(z)}
-                        onChange={() => setPendingZones(prev => prev.includes(z) ? prev.filter(x => x !== z) : [...prev, z])}
-                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                      />
+                    <label key={z} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-chip ${pendingZones.includes(z) ? 'bg-tint' : ''}`}>
+                      <input type="checkbox" checked={pendingZones.includes(z)} onChange={() => setPendingZones(prev => prev.includes(z) ? prev.filter(x => x !== z) : [...prev, z])} className="rounded border-field accent-brand h-4 w-4" />
                       {z}
                     </label>
                   ))}
@@ -481,7 +446,7 @@ export default function PedidosFeed({
           )}
         </div>
 
-        {/* Barrio — búsqueda en los 261 barrios */}
+        {/* Barrio */}
         <div className="shrink-0 relative">
           <button
             onClick={() => {
@@ -489,44 +454,27 @@ export default function PedidosFeed({
               else { setPendingBarrios(filters.barrios); setZoneDropdownOpen(false); setSortDropdownOpen(false); setDateDropdownOpen(false) }
               setBarrioDropdownOpen(v => !v)
             }}
-            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.barrios.length ? pillActive : pillInactive}`}
+            className={pillClass(filters.barrios.length > 0)}
           >
-            <span className="font-medium">🏘️ Barrio:</span>
-            {filters.barrios.length === 0 ? 'todos' : filters.barrios.length === 1 ? filters.barrios[0] : `${filters.barrios.length} barrios`}
+            <span className={filters.barrios.length ? '' : 'text-ink-3'}>Barrio</span>
+            <span className="font-semibold">{filters.barrios.length === 0 ? 'Todos' : filters.barrios.length === 1 ? filters.barrios[0] : `${filters.barrios.length} barrios`}</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
           </button>
           {barrioDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, barrios: pendingBarrios })); setPage(1); setBarrioDropdownOpen(false) }} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72">
-                <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-gray-50 border-b border-gray-100 text-sm font-medium text-gray-700 hover:bg-gray-100">
-                  <input
-                    type="checkbox"
-                    checked={pendingBarrios.length === 0}
-                    onChange={() => setPendingBarrios([])}
-                    className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                  />
+              <div className={`${menuClass} w-72`}>
+                <label className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer bg-chip border-b border-hairline text-sm font-medium text-ink hover:bg-tint">
+                  <input type="checkbox" checked={pendingBarrios.length === 0} onChange={() => setPendingBarrios([])} className="rounded border-field accent-brand h-4 w-4" />
                   Todos
                 </label>
                 <div className="px-3 pt-2 pb-1">
-                  <input
-                    type="text"
-                    placeholder="Buscar barrio..."
-                    value={barrioSearch}
-                    onChange={(e) => setBarrioSearch(e.target.value)}
-                    className="w-full px-2.5 py-1.5 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-orange-300"
-                    onClick={(e) => e.stopPropagation()}
-                  />
+                  <input type="text" placeholder="Buscar barrio..." value={barrioSearch} onChange={(e) => setBarrioSearch(e.target.value)} className="w-full px-2.5 py-1.5 text-xs border border-field rounded-lg focus:outline-none focus:border-brand" onClick={(e) => e.stopPropagation()} />
                 </div>
                 <div className="max-h-64 overflow-y-auto">
                   {ZONES_CORDOBA.filter(b => !barrioSearch || b.toLowerCase().includes(barrioSearch.toLowerCase())).map((b) => (
-                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-gray-50 ${pendingBarrios.includes(b) ? 'bg-orange-50' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={pendingBarrios.includes(b)}
-                        onChange={() => setPendingBarrios(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b])}
-                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                      />
+                    <label key={b} className={`flex items-center gap-2.5 px-4 py-2 cursor-pointer text-sm hover:bg-chip ${pendingBarrios.includes(b) ? 'bg-tint' : ''}`}>
+                      <input type="checkbox" checked={pendingBarrios.includes(b)} onChange={() => setPendingBarrios(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b])} className="rounded border-field accent-brand h-4 w-4" />
                       {b}
                     </label>
                   ))}
@@ -536,96 +484,91 @@ export default function PedidosFeed({
           )}
         </div>
 
-        {/* Tipo — multi-select */}
+        {/* Tipo */}
         <div className="shrink-0 relative">
-            <button
-              onClick={() => {
-                if (typeDropdownOpen) { setFilters(f => ({ ...f, types: pendingTypes })); setPage(1) }
-                else { setPendingTypes(filters.types); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }
-                setTypeDropdownOpen(v => !v)
-              }}
-              className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${
-                filters.types.length ? pillActive : pillInactive
-              }`}
-            >
-              <span className="font-medium">🏠 Tipo:</span>
-              {filters.types.length === 0
-                ? 'todos'
-                : filters.types.length === 1
-                  ? PROPERTY_TYPE_LABELS[filters.types[0]]
-                  : `${filters.types.length} tipos`
-              }
-              <ChevronDown className="h-3.5 w-3.5 shrink-0" />
-            </button>
-            {typeDropdownOpen && (
-              <>
-                <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, types: pendingTypes })); setPage(1); setTypeDropdownOpen(false) }} />
-                <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg py-2 min-w-52">
-                  {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
-                    <label key={k} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-gray-50 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={pendingTypes.includes(k)}
-                        onChange={() => setPendingTypes(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])}
-                        className="rounded border-gray-300 accent-orange-500 h-4 w-4"
-                      />
-                      {v}
-                    </label>
-                  ))}
-                </div>
-              </>
-            )}
+          <button
+            onClick={() => {
+              if (typeDropdownOpen) { setFilters(f => ({ ...f, types: pendingTypes })); setPage(1) }
+              else { setPendingTypes(filters.types); setZoneDropdownOpen(false); setBarrioDropdownOpen(false) }
+              setTypeDropdownOpen(v => !v)
+            }}
+            className={pillClass(filters.types.length > 0)}
+          >
+            <span className={filters.types.length ? '' : 'text-ink-3'}>Tipo</span>
+            <span className="font-semibold">{filters.types.length === 0 ? 'Todos' : filters.types.length === 1 ? PROPERTY_TYPE_LABELS[filters.types[0]] : `${filters.types.length} tipos`}</span>
+            <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+          </button>
+          {typeDropdownOpen && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => { setFilters(f => ({ ...f, types: pendingTypes })); setPage(1); setTypeDropdownOpen(false) }} />
+              <div className={`${menuClass} py-2 min-w-52`}>
+                {Object.entries(PROPERTY_TYPE_LABELS).map(([k, v]) => (
+                  <label key={k} className="flex items-center gap-3 px-4 py-2 cursor-pointer hover:bg-chip text-sm">
+                    <input type="checkbox" checked={pendingTypes.includes(k)} onChange={() => setPendingTypes(prev => prev.includes(k) ? prev.filter(x => x !== k) : [...prev, k])} className="rounded border-field accent-brand h-4 w-4" />
+                    {v}
+                  </label>
+                ))}
+              </div>
+            </>
+          )}
         </div>
 
-        {/* Dormitorios — dropdown min/max */}
+        {/* Operación */}
+        <div className="shrink-0 w-44">
+          <Select value={filters.operationType || 'todos'} onValueChange={(v) => { setFilters(f => ({ ...f, operationType: v === 'todos' ? '' : v })); setPage(1) }}>
+            <SelectTrigger className={`${pillClass(!!filters.operationType)} w-full`}>
+              <span className="flex items-center gap-1.5 truncate">
+                <span className={filters.operationType ? '' : 'text-ink-3'}>Operación</span>
+                <span className="font-semibold truncate">{filters.operationType === 'compra' ? 'Compra' : filters.operationType === 'alquiler' ? 'Alquiler' : 'Todas'}</span>
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Todas</SelectItem>
+              <SelectItem value="compra">Compra</SelectItem>
+              <SelectItem value="alquiler">Alquiler</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Dormitorios */}
         <div className="shrink-0 relative">
           <button
             onClick={() => dormDropdownOpen ? commitDorm() : openDormDropdown()}
-            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${(filters.bedroomsMin || filters.bedroomsMax) ? pillActive : pillInactive}`}
+            className={pillClass(!!(filters.bedroomsMin || filters.bedroomsMax))}
           >
-            <span className="font-medium">🛏 Dorm:</span>
-            {!filters.bedroomsMin && !filters.bedroomsMax
-              ? 'cualquiera'
-              : filters.bedroomsMin && filters.bedroomsMax
-                ? `${filters.bedroomsMin}–${filters.bedroomsMax}`
-                : filters.bedroomsMin
-                  ? `${filters.bedroomsMin}+`
-                  : `hasta ${filters.bedroomsMax}`}
+            <span className={(filters.bedroomsMin || filters.bedroomsMax) ? '' : 'text-ink-3'}>Dorm.</span>
+            <span className="font-semibold">
+              {!filters.bedroomsMin && !filters.bedroomsMax ? 'Cualquiera'
+                : filters.bedroomsMin && filters.bedroomsMax ? `${filters.bedroomsMin}–${filters.bedroomsMax}`
+                : filters.bedroomsMin ? `${filters.bedroomsMin}+` : `hasta ${filters.bedroomsMax}`}
+            </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
           </button>
           {dormDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={commitDorm} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-4">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Dormitorios</p>
+              <div className={`${menuClass} w-64 p-4`}>
+                <p className="text-[13px] font-bold uppercase tracking-wide text-ink-2 mb-3">Dormitorios</p>
                 <div className="flex gap-2 mb-4">
-                  <select
-                    value={pendingBedroomsMin}
-                    onChange={e => setPendingBedroomsMin(e.target.value)}
-                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
-                  >
+                  <select value={pendingBedroomsMin} onChange={e => setPendingBedroomsMin(e.target.value)} className="flex-1 min-w-0 border border-field rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand">
                     <option value="">Sin mínimo</option>
                     {['1','2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
-                  <select
-                    value={pendingBedroomsMax}
-                    onChange={e => setPendingBedroomsMax(e.target.value)}
-                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
-                  >
+                  <select value={pendingBedroomsMax} onChange={e => setPendingBedroomsMax(e.target.value)} className="flex-1 min-w-0 border border-field rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand">
                     <option value="">Sin máximo</option>
                     {['1','2','3','4','5'].map(v => <option key={v} value={v}>{v}</option>)}
                   </select>
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <button onClick={() => { setPendingBedroomsMin(''); setPendingBedroomsMax('') }} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Limpiar</button>
-                  <button onClick={commitDorm} className="text-sm font-semibold px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors">Ver resultados</button>
+                <div className="flex items-center justify-between pt-3 border-t border-hairline">
+                  <button onClick={() => { setPendingBedroomsMin(''); setPendingBedroomsMax('') }} className="text-sm text-ink-2 hover:text-ink font-medium">Limpiar</button>
+                  <button onClick={commitDorm} className="text-sm font-semibold px-4 py-2 rounded-lg bg-brand text-white hover:bg-brand-dark transition-colors">Ver resultados</button>
                 </div>
               </div>
             </>
           )}
         </div>
 
-        {/* Precio — dropdown USD / ARS */}
+        {/* Precio */}
         <div className="shrink-0 relative">
           {(() => {
             const hasUsd = !!(filters.minBudget || filters.maxBudget)
@@ -635,13 +578,11 @@ export default function PedidosFeed({
               ? `USD ${filters.minBudget ? fmtMiles(filters.minBudget) : '0'} – ${filters.maxBudget ? fmtMiles(filters.maxBudget) : '∞'}`
               : hasArs
                 ? `$ ${filters.minBudgetArs ? fmtMiles(filters.minBudgetArs) : '0'} – ${filters.maxBudgetArs ? fmtMiles(filters.maxBudgetArs) : '∞'}`
-                : 'Precio'
+                : 'Sin límite'
             return (
-              <button
-                onClick={() => priceDropdownOpen ? commitPrice() : openPriceDropdown()}
-                className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${hasPriceFilter ? pillActive : pillInactive}`}
-              >
-                <span className="font-medium">💰 {label}</span>
+              <button onClick={() => priceDropdownOpen ? commitPrice() : openPriceDropdown()} className={pillClass(hasPriceFilter)}>
+                <span className={hasPriceFilter ? '' : 'text-ink-3'}>Presupuesto</span>
+                <span className="font-semibold tabular">{label}</span>
                 <ChevronDown className="h-3.5 w-3.5 shrink-0" />
               </button>
             )
@@ -649,186 +590,121 @@ export default function PedidosFeed({
           {priceDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={commitPrice} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-72 p-4">
-                <p className="text-sm font-semibold text-gray-700 mb-3">Precio</p>
-                {/* Currency radio */}
+              <div className={`${menuClass} w-72 p-4`}>
+                <p className="text-[13px] font-bold uppercase tracking-wide text-ink-2 mb-3">Presupuesto</p>
                 <div className="flex gap-4 mb-4">
                   {(['usd', 'ars'] as const).map(cur => (
-                    <label key={cur} className="flex items-center gap-2 cursor-pointer text-sm font-medium text-gray-700">
-                      <input
-                        type="radio"
-                        name="priceCurrency"
-                        checked={pendingPriceCurrency === cur}
-                        onChange={() => { setPendingPriceCurrency(cur); setPendingPriceMin(''); setPendingPriceMax('') }}
-                        className="accent-orange-500 h-4 w-4"
-                      />
+                    <label key={cur} className="flex items-center gap-2 cursor-pointer text-sm font-medium text-ink">
+                      <input type="radio" name="priceCurrency" checked={pendingPriceCurrency === cur} onChange={() => { setPendingPriceCurrency(cur); setPendingPriceMin(''); setPendingPriceMax('') }} className="accent-brand h-4 w-4" />
                       {cur === 'usd' ? 'USD' : 'Pesos'}
                     </label>
                   ))}
                 </div>
-                {/* Min / Max inputs */}
                 <div className="flex gap-2 mb-4">
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Desde"
-                    value={fmtMiles(pendingPriceMin)}
-                    onChange={e => setPendingPriceMin(e.target.value.replace(/\./g, '').replace(/\D/g, ''))}
-                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
-                  />
-                  <input
-                    type="text"
-                    inputMode="numeric"
-                    placeholder="Hasta"
-                    value={fmtMiles(pendingPriceMax)}
-                    onChange={e => setPendingPriceMax(e.target.value.replace(/\./g, '').replace(/\D/g, ''))}
-                    className="flex-1 min-w-0 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
-                  />
+                  <input type="text" inputMode="numeric" placeholder="Desde" value={fmtMiles(pendingPriceMin)} onChange={e => setPendingPriceMin(e.target.value.replace(/\./g, '').replace(/\D/g, ''))} className="flex-1 min-w-0 border border-field rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
+                  <input type="text" inputMode="numeric" placeholder="Hasta" value={fmtMiles(pendingPriceMax)} onChange={e => setPendingPriceMax(e.target.value.replace(/\./g, '').replace(/\D/g, ''))} className="flex-1 min-w-0 border border-field rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-brand" />
                 </div>
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <button onClick={() => { setPendingPriceMin(''); setPendingPriceMax('') }} className="text-sm text-gray-500 hover:text-gray-700 font-medium">Limpiar</button>
-                  <button onClick={commitPrice} className="text-sm font-semibold px-4 py-2 rounded-lg border border-orange-500 text-orange-600 hover:bg-orange-50 transition-colors">Ver resultados</button>
+                <div className="flex items-center justify-between pt-3 border-t border-hairline">
+                  <button onClick={() => { setPendingPriceMin(''); setPendingPriceMax('') }} className="text-sm text-ink-2 hover:text-ink font-medium">Limpiar</button>
+                  <button onClick={commitPrice} className="text-sm font-semibold px-4 py-2 rounded-lg bg-brand text-white hover:bg-brand-dark transition-colors">Ver resultados</button>
                 </div>
               </div>
             </>
           )}
         </div>
 
-        {/* Financiación */}
-        <div className="shrink-0 w-52">
-            <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
-              <SelectTrigger className={`${pillBase} ${filters.financing ? pillActive : pillInactive} px-4`}>
-                <span className="flex items-center gap-1 truncate text-left">
-                  <span className="shrink-0 font-medium">💳 Pago:</span>
-                  <span className="truncate">{
-                    filters.financing === 'efectivo' ? 'efectivo'
-                    : filters.financing === 'credito' ? 'crédito'
-                    : filters.financing === 'permuta_propiedad' ? 'permuta prop.'
-                    : filters.financing === 'permuta_auto' ? 'permuta auto'
-                    : filters.financing === 'ambos' ? 'efvo. o crédito'
-                    : 'cualquiera'
-                  }</span>
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Cualquier forma</SelectItem>
-                <SelectItem value="efectivo">💵 Efectivo</SelectItem>
-                <SelectItem value="credito">🏦 Crédito hipotecario</SelectItem>
-                <SelectItem value="permuta_propiedad">🏠 Permuta de propiedad</SelectItem>
-                <SelectItem value="permuta_auto">🚗 Permuta de auto</SelectItem>
-                <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Pago */}
+        <div className="shrink-0 w-48">
+          <Select value={filters.financing || 'todos'} onValueChange={(v) => handleFilterChange('financing', v)}>
+            <SelectTrigger className={`${pillClass(!!filters.financing)} w-full`}>
+              <span className="flex items-center gap-1.5 truncate">
+                <span className={filters.financing ? '' : 'text-ink-3'}>Pago</span>
+                <span className="font-semibold truncate">{
+                  filters.financing === 'efectivo' ? 'Efectivo'
+                  : filters.financing === 'credito' ? 'Crédito'
+                  : filters.financing === 'permuta_propiedad' ? 'Permuta prop.'
+                  : filters.financing === 'permuta_auto' ? 'Permuta auto'
+                  : filters.financing === 'ambos' ? 'Efvo. o crédito'
+                  : 'Cualquiera'
+                }</span>
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Cualquier forma</SelectItem>
+              <SelectItem value="efectivo">Efectivo</SelectItem>
+              <SelectItem value="credito">Crédito hipotecario</SelectItem>
+              <SelectItem value="permuta_propiedad">Permuta de propiedad</SelectItem>
+              <SelectItem value="permuta_auto">Permuta de auto</SelectItem>
+              <SelectItem value="ambos">Efectivo o Crédito</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Operación: compra / alquiler */}
-        <div className="shrink-0">
-            <Select value={filters.operationType || 'todos'} onValueChange={(v) => { setFilters(f => ({ ...f, operationType: v === 'todos' ? '' : v })); setPage(1) }}>
-              <SelectTrigger className={`${pillBase} ${filters.operationType ? pillActive : pillInactive} px-4`}>
-                <span className="flex items-center gap-1 truncate text-left">
-                  <span className="shrink-0 font-medium">🔄 Operación:</span>
-                  <span className="truncate">{
-                    filters.operationType === 'compra' ? 'Compra'
-                    : filters.operationType === 'alquiler' ? 'Alquiler'
-                    : 'todas'
-                  }</span>
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todas</SelectItem>
-                <SelectItem value="compra">🏠 Compra</SelectItem>
-                <SelectItem value="alquiler">🔑 Alquiler</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+        {/* Publica */}
+        <div className="shrink-0 w-44">
+          <Select value={filters.publisherType || 'todos'} onValueChange={(v) => handleFilterChange('publisherType', v === 'todos' ? '' : v)}>
+            <SelectTrigger className={`${pillClass(!!filters.publisherType)} w-full`}>
+              <span className="flex items-center gap-1.5 truncate">
+                <span className={filters.publisherType ? '' : 'text-ink-3'}>Publica</span>
+                <span className="font-semibold truncate">{
+                  filters.publisherType === 'mis' ? 'Mis pedidos'
+                  : filters.publisherType === 'particular' ? 'Particular'
+                  : filters.publisherType === 'inmobiliaria' ? 'Inmobiliaria'
+                  : 'Cualquiera'
+                }</span>
+              </span>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="todos">Cualquiera</SelectItem>
+              {loggedBrokerId && <SelectItem value="mis">Mis pedidos</SelectItem>}
+              <SelectItem value="particular">Particular</SelectItem>
+              <SelectItem value="inmobiliaria">Inmobiliaria</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
-        {/* Quién publica */}
-        <div className="shrink-0">
-            <Select value={filters.publisherType || 'todos'} onValueChange={(v) => handleFilterChange('publisherType', v === 'todos' ? '' : v)}>
-              <SelectTrigger className={`${pillBase} ${filters.publisherType ? pillActive : pillInactive} px-4`}>
-                <span className="flex items-center gap-1 truncate text-left">
-                  <span className="shrink-0 font-medium">👤 Publica:</span>
-                  <span className="truncate">{
-                    filters.publisherType === 'mis' ? 'Mis pedidos'
-                    : filters.publisherType === 'particular' ? 'Particular'
-                    : filters.publisherType === 'inmobiliaria' ? 'Inmobiliaria'
-                    : 'cualquiera'
-                  }</span>
-                </span>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Cualquiera</SelectItem>
-                {loggedBrokerId && (
-                  <SelectItem value="mis">🔖 Mis pedidos</SelectItem>
-                )}
-                <SelectItem value="particular">🙋 Particular</SelectItem>
-                <SelectItem value="inmobiliaria">🏢 Inmobiliaria</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-        {/* Fecha — presets + rango personalizado */}
+        {/* Fecha */}
         <div className="shrink-0 relative">
           <button
             onClick={() => { setDateDropdownOpen(v => !v); setZoneDropdownOpen(false); setSortDropdownOpen(false) }}
-            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${(filters.since || filters.dateFrom || filters.dateTo) ? pillActive : pillInactive}`}
+            className={pillClass(!!(filters.since || filters.dateFrom || filters.dateTo))}
           >
-            <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-            <span className="font-medium">Fecha:</span>
-            {filters.dateFrom || filters.dateTo
-              ? `${filters.dateFrom || '…'} → ${filters.dateTo || '…'}`
-              : filters.since === '24h' ? 'hoy'
-              : filters.since === '7d' ? 'esta semana'
-              : filters.since === '30d' ? 'este mes'
-              : 'cualquiera'}
+            <CalendarDays className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+            <span className="font-semibold">
+              {filters.dateFrom || filters.dateTo ? `${filters.dateFrom || '…'} → ${filters.dateTo || '…'}`
+                : filters.since === '24h' ? 'Hoy'
+                : filters.since === '7d' ? 'Esta semana'
+                : filters.since === '30d' ? 'Este mes'
+                : 'Cualquiera'}
+            </span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
           </button>
           {dateDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setDateDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-64 p-3">
-                {/* Presets */}
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rápido</p>
+              <div className={`${menuClass} w-64 p-3`}>
+                <p className="text-xs font-bold text-ink-3 uppercase tracking-wide mb-2">Rápido</p>
                 <div className="grid grid-cols-2 gap-1.5 mb-3">
                   {[
-                    { id: '24h', label: '🔥 Hoy' },
-                    { id: '7d',  label: '📅 Esta semana' },
-                    { id: '30d', label: '🗓️ Este mes' },
-                    { id: '',    label: '✖ Cualquiera' },
+                    { id: '24h', label: 'Hoy' },
+                    { id: '7d',  label: 'Esta semana' },
+                    { id: '30d', label: 'Este mes' },
+                    { id: '',    label: 'Cualquiera' },
                   ].map(opt => (
-                    <button
-                      key={opt.id}
-                      onClick={() => {
-                        setFilters(f => ({ ...f, since: opt.id, dateFrom: '', dateTo: '' }))
-                        setPage(1)
-                        setDateDropdownOpen(false)
-                      }}
-                      className={`text-xs px-3 py-1.5 rounded-lg border transition-colors text-left ${filters.since === opt.id && !filters.dateFrom ? 'border-orange-400 bg-orange-50 text-orange-700 font-medium' : 'border-gray-200 text-gray-600 hover:bg-gray-50'}`}
-                    >
+                    <button key={opt.id} onClick={() => { setFilters(f => ({ ...f, since: opt.id, dateFrom: '', dateTo: '' })); setPage(1); setDateDropdownOpen(false) }} className={`text-xs px-3 py-1.5 rounded-lg border transition-colors text-left ${filters.since === opt.id && !filters.dateFrom ? 'border-brand bg-tint text-brand font-medium' : 'border-hairline text-ink-2 hover:bg-chip'}`}>
                       {opt.label}
                     </button>
                   ))}
                 </div>
-                {/* Custom range */}
-                <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Rango personalizado</p>
+                <p className="text-xs font-bold text-ink-3 uppercase tracking-wide mb-2">Rango personalizado</p>
                 <div className="space-y-2">
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Desde</label>
-                    <input
-                      type="date"
-                      value={filters.dateFrom}
-                      onChange={e => { setFilters(f => ({ ...f, dateFrom: e.target.value, since: '' })); setPage(1) }}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
-                    />
+                    <label className="text-xs text-ink-2 mb-1 block">Desde</label>
+                    <input type="date" value={filters.dateFrom} onChange={e => { setFilters(f => ({ ...f, dateFrom: e.target.value, since: '' })); setPage(1) }} className="w-full border border-field rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand" />
                   </div>
                   <div>
-                    <label className="text-xs text-gray-500 mb-1 block">Hasta</label>
-                    <input
-                      type="date"
-                      value={filters.dateTo}
-                      onChange={e => { setFilters(f => ({ ...f, dateTo: e.target.value, since: '' })); setPage(1) }}
-                      className="w-full border border-gray-200 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-orange-300"
-                    />
+                    <label className="text-xs text-ink-2 mb-1 block">Hasta</label>
+                    <input type="date" value={filters.dateTo} onChange={e => { setFilters(f => ({ ...f, dateTo: e.target.value, since: '' })); setPage(1) }} className="w-full border border-field rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-brand" />
                   </div>
                 </div>
               </div>
@@ -836,26 +712,22 @@ export default function PedidosFeed({
           )}
         </div>
 
-        {/* Ordenar */}
-        <div className="shrink-0 relative">
+        {/* Ordenar — a la derecha */}
+        <div className="shrink-0 relative ml-auto">
           <button
             onClick={() => { setSortDropdownOpen(v => !v); setZoneDropdownOpen(false); setDateDropdownOpen(false) }}
-            className={`flex items-center gap-2 px-4 h-9 rounded-full text-sm font-medium border transition-colors whitespace-nowrap ${filters.sort !== 'recent' ? pillActive : pillInactive}`}
+            className={pillClass(filters.sort !== 'recent')}
           >
-            <span className="font-medium">↕ Ordenar:</span>
-            {SORT_OPTIONS.find(o => o.id === filters.sort)?.label.replace(/^[^\s]+\s/, '') || 'recientes'}
+            <span className={filters.sort !== 'recent' ? '' : 'text-ink-3'}>Ordenar</span>
+            <span className="font-semibold">{SORT_OPTIONS.find(o => o.id === filters.sort)?.label || 'Más recientes'}</span>
             <ChevronDown className="h-3.5 w-3.5 shrink-0" />
           </button>
           {sortDropdownOpen && (
             <>
               <div className="fixed inset-0 z-40" onClick={() => setSortDropdownOpen(false)} />
-              <div className="absolute top-10 left-0 z-50 bg-white border border-gray-200 rounded-xl shadow-lg w-52 py-1">
+              <div className={`${menuClass} right-0 left-auto w-52 py-1`}>
                 {SORT_OPTIONS.map(opt => (
-                  <button
-                    key={opt.id}
-                    onClick={() => { setFilters(f => ({ ...f, sort: opt.id })); setPage(1); setSortDropdownOpen(false) }}
-                    className={`w-full text-left px-4 py-2.5 text-sm hover:bg-gray-50 transition-colors ${filters.sort === opt.id ? 'text-orange-600 font-semibold bg-orange-50' : 'text-gray-700'}`}
-                  >
+                  <button key={opt.id} onClick={() => { setFilters(f => ({ ...f, sort: opt.id })); setPage(1); setSortDropdownOpen(false) }} className={`w-full text-left px-4 py-2.5 text-sm hover:bg-chip transition-colors ${filters.sort === opt.id ? 'text-brand font-semibold bg-tint' : 'text-ink'}`}>
                     {opt.label}
                   </button>
                 ))}
@@ -872,7 +744,7 @@ export default function PedidosFeed({
               setDebouncedTextSearch('')
               setPage(1)
             }}
-            className="shrink-0 h-9 flex items-center gap-1.5 px-4 rounded-full text-sm font-medium text-red-500 border border-red-200 hover:bg-red-50 transition-colors"
+            className="shrink-0 h-10 flex items-center gap-1.5 px-3.5 rounded-lg text-sm font-medium text-ink-2 border border-field hover:border-ink-3 hover:text-ink transition-colors"
           >
             <X className="h-3.5 w-3.5" />
             Limpiar
@@ -880,46 +752,37 @@ export default function PedidosFeed({
         )}
       </div>
 
-      {/* Results count — always visible */}
-      <p className="text-sm font-medium text-gray-600 mb-5">
-        {loading
-          ? <span className="inline-block h-4 w-28 bg-gray-200 rounded animate-pulse" />
-          : `${total} pedido${total !== 1 ? 's' : ''} activo${total !== 1 ? 's' : ''}`}
-      </p>
-
       {/* Grid */}
       {loading ? (
         <div className="relative isolate grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl overflow-hidden animate-pulse shadow-sm">
-              <div className="h-44 bg-gray-200" />
-              <div className="p-5 space-y-3">
-                <div className="h-6 bg-gray-200 rounded-lg w-1/2" />
-                <div className="h-4 bg-gray-100 rounded w-3/4" />
-                <div className="h-4 bg-gray-100 rounded w-1/2" />
-                <div className="flex gap-2 mt-2">
-                  <div className="h-6 bg-gray-100 rounded-full w-16" />
-                  <div className="h-6 bg-gray-100 rounded-full w-20" />
-                </div>
-                <div className="h-10 bg-gray-200 rounded-xl mt-3" />
+            <div key={i} className="bg-white border border-hairline rounded-[14px] p-5 animate-pulse">
+              <div className="flex items-center justify-between mb-4">
+                <div className="h-[42px] w-[42px] rounded-[10px] bg-chip" />
+                <div className="h-3 w-20 bg-chip rounded" />
               </div>
+              <div className="h-6 bg-chip rounded w-1/2 mb-2" />
+              <div className="h-4 bg-chip rounded w-3/4 mb-4" />
+              <div className="flex gap-2 mb-4">
+                <div className="h-6 bg-chip rounded w-16" />
+                <div className="h-6 bg-chip rounded w-20" />
+              </div>
+              <div className="h-10 bg-chip rounded-lg" />
             </div>
           ))}
         </div>
       ) : requests.length === 0 ? (
         <div className="text-center py-20">
-          <div className="text-5xl mb-4">🔍</div>
-          <p className="text-lg font-semibold text-gray-700 mb-2">Sin pedidos con esos filtros</p>
-          <p className="text-sm text-gray-500">Probá con otros criterios o eliminá los filtros</p>
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-tint text-brand">
+            <Search className="h-6 w-6" strokeWidth={1.5} />
+          </div>
+          <p className="text-lg font-semibold text-ink mb-2">Sin pedidos con esos filtros</p>
+          <p className="text-sm text-ink-2">Probá con otros criterios o eliminá los filtros</p>
         </div>
       ) : (
         <div key={gridKey} className="relative isolate grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {requests.map((req, i) => (
-            <div
-              key={req.id}
-              className="animate-card-enter"
-              style={{ animationDelay: `${Math.min(i * 55, 400)}ms` }}
-            >
+            <div key={req.id} className="animate-card-enter" style={{ animationDelay: `${Math.min(i * 55, 400)}ms` }}>
               <RequestCard req={req} />
             </div>
           ))}
@@ -928,16 +791,10 @@ export default function PedidosFeed({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-2 mt-10 flex-wrap">
-          <button
-            disabled={page === 1}
-            onClick={() => setPage((p) => p - 1)}
-            className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
+        <div className="flex justify-center items-center gap-2 mt-12 flex-wrap">
+          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-4 py-2 rounded-lg border border-field text-sm font-medium text-ink hover:border-ink-3 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
             ← Anterior
           </button>
-
-          {/* Números de página */}
           <div className="flex items-center gap-1">
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(p => p === 1 || p === totalPages || Math.abs(p - page) <= 2)
@@ -948,31 +805,15 @@ export default function PedidosFeed({
               }, [])
               .map((p, idx) =>
                 p === '...'
-                  ? <span key={`ellipsis-${idx}`} className="px-1 text-gray-400 text-sm">…</span>
-                  : <button
-                      key={p}
-                      onClick={() => setPage(p as number)}
-                      className={`w-9 h-9 rounded-full text-sm font-medium transition-all ${
-                        page === p
-                          ? 'bg-orange-500 text-white border border-orange-500'
-                          : 'border border-gray-200 text-gray-700 hover:border-orange-300 hover:bg-orange-50'
-                      }`}
-                    >
+                  ? <span key={`ellipsis-${idx}`} className="px-1 text-ink-3 text-sm">…</span>
+                  : <button key={p} onClick={() => setPage(p as number)} className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${page === p ? 'bg-brand text-white border border-brand' : 'border border-field text-ink hover:border-brand hover:bg-tint'}`}>
                       {p}
                     </button>
-              )
-            }
+              )}
           </div>
-
-          <button
-            disabled={page === totalPages}
-            onClick={() => setPage((p) => p + 1)}
-            className="px-4 py-2 rounded-full border border-gray-200 text-sm font-medium text-gray-700 hover:border-gray-400 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all"
-          >
+          <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="px-4 py-2 rounded-lg border border-field text-sm font-medium text-ink hover:border-ink-3 disabled:opacity-40 disabled:cursor-not-allowed transition-all">
             Siguiente →
           </button>
-
-          {/* Ir a página */}
           <form
             onSubmit={e => {
               e.preventDefault()
@@ -981,15 +822,8 @@ export default function PedidosFeed({
             }}
             className="flex items-center gap-1.5 ml-2"
           >
-            <span className="text-xs text-gray-400">Ir a</span>
-            <input
-              name="gotoPage"
-              type="number"
-              min={1}
-              max={totalPages}
-              placeholder={String(page)}
-              className="w-14 px-2 py-1.5 text-sm border border-gray-200 rounded-lg text-center focus:outline-none focus:ring-1 focus:ring-orange-300"
-            />
+            <span className="text-xs text-ink-3">Ir a</span>
+            <input name="gotoPage" type="number" min={1} max={totalPages} placeholder={String(page)} className="w-14 px-2 py-1.5 text-sm border border-field rounded-lg text-center focus:outline-none focus:border-brand" />
           </form>
         </div>
       )}

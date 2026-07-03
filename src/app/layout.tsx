@@ -1,10 +1,20 @@
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import { Hanken_Grotesk, Space_Grotesk } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { PostHogProvider } from "@/components/PostHogProvider"
 import "./globals.css"
 
-const inter = Inter({ subsets: ["latin"] })
+const hanken = Hanken_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-sans",
+  display: "swap",
+})
+
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  variable: "--font-mono",
+  display: "swap",
+})
 
 export const metadata: Metadata = {
   title: "Demandi – Publicá lo que buscás",
@@ -22,8 +32,8 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="es" className="h-full">
-      <body className={`${inter.className} min-h-full antialiased bg-white`}>
+    <html lang="es" className={`h-full ${hanken.variable} ${spaceGrotesk.variable}`}>
+      <body className="min-h-full antialiased bg-white font-sans">
         <PostHogProvider>
           {children}
         </PostHogProvider>

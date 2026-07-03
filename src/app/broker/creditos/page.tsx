@@ -18,8 +18,8 @@ export default function CreditosPage() {
 
           <div className="bg-white rounded-2xl border border-gray-100 p-10 shadow-sm">
             <div className="flex justify-center mb-5">
-              <div className="bg-orange-50 rounded-full p-4">
-                <Gift className="h-10 w-10 text-orange-500" />
+              <div className="bg-tint rounded-full p-4">
+                <Gift className="h-10 w-10 text-brand" />
               </div>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-3">Créditos gratis por ahora</h1>
@@ -28,7 +28,7 @@ export default function CreditosPage() {
             </p>
             <Link
               href="/broker/dashboard"
-              className="inline-flex items-center justify-center px-6 py-2.5 bg-orange-500 hover:bg-orange-600 text-white font-medium rounded-xl transition-colors"
+              className="inline-flex items-center justify-center px-6 py-2.5 bg-brand hover:bg-brand-dark text-white font-medium rounded-xl transition-colors"
             >
               Volver al dashboard
             </Link>

@@ -75,7 +75,7 @@ export default function ChartPublicaciones({ topZones }: Props) {
           <h2 className="text-sm font-semibold text-gray-700">Publicaciones por día</h2>
           <p className="text-xs text-gray-400 mt-0.5">
             {total} publicaciones en los últimos {days} días
-            {hasFilters && <span className="ml-1 text-orange-500">· filtrado</span>}
+            {hasFilters && <span className="ml-1 text-brand">· filtrado</span>}
           </p>
         </div>
         <div className="flex gap-1">
@@ -85,7 +85,7 @@ export default function ChartPublicaciones({ topZones }: Props) {
               onClick={() => setDays(r.days)}
               className={`px-3 py-1.5 text-xs font-medium rounded-lg transition-colors ${
                 days === r.days
-                  ? 'bg-orange-500 text-white'
+                  ? 'bg-brand text-white'
                   : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
               }`}
             >
@@ -105,8 +105,8 @@ export default function ChartPublicaciones({ topZones }: Props) {
               onClick={() => toggleType(t.id)}
               className={`px-2.5 py-1 text-xs font-medium rounded-lg border transition-colors ${
                 types.includes(t.id)
-                  ? 'bg-orange-500 text-white border-orange-500'
-                  : 'bg-white text-gray-500 border-gray-200 hover:border-orange-300'
+                  ? 'bg-brand text-white border-brand'
+                  : 'bg-white text-gray-500 border-gray-200 hover:border-brand/50'
               }`}
             >
               {t.label}
@@ -118,7 +118,7 @@ export default function ChartPublicaciones({ topZones }: Props) {
         <select
           value={zone}
           onChange={e => setZone(e.target.value)}
-          className="text-xs border border-gray-200 rounded-lg px-2.5 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-400"
+          className="text-xs border border-gray-200 rounded-lg px-2.5 py-1 text-gray-600 focus:outline-none focus:ring-1 focus:ring-brand"
         >
           <option value="">Todas las zonas</option>
           {topZones.map(z => (
@@ -134,7 +134,7 @@ export default function ChartPublicaciones({ topZones }: Props) {
             placeholder="Desde"
             value={minPrice}
             onChange={e => setMinPrice(e.target.value)}
-            className="w-20 text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            className="w-20 text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand"
           />
           <span className="text-xs text-gray-300">—</span>
           <input
@@ -142,7 +142,7 @@ export default function ChartPublicaciones({ topZones }: Props) {
             placeholder="Hasta"
             value={maxPrice}
             onChange={e => setMaxPrice(e.target.value)}
-            className="w-20 text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            className="w-20 text-xs border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-1 focus:ring-brand"
           />
         </div>
 
@@ -189,7 +189,7 @@ export default function ChartPublicaciones({ topZones }: Props) {
                 return (
                   <div className="bg-white border border-gray-100 rounded-lg shadow px-3 py-2 text-xs">
                     <div className="font-semibold text-gray-700">{`${day}/${month}/${year}`}</div>
-                    <div className="text-orange-500 font-bold">{d.count} publicaciones</div>
+                    <div className="text-brand font-bold">{d.count} publicaciones</div>
                   </div>
                 )
               }}

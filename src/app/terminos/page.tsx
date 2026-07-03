@@ -159,7 +159,7 @@ export default function TerminosPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Contacto</h2>
                 <p>
                   Para consultas, reclamos o solicitudes relacionadas con estos Términos, podés escribirnos a{' '}
-                  <a href="mailto:hola@matchprop.com.ar" className="text-blue-600 hover:underline">
+                  <a href="mailto:hola@matchprop.com.ar" className="text-brand hover:underline">
                     hola@matchprop.com.ar
                   </a>
                   .
@@ -169,7 +169,7 @@ export default function TerminosPage() {
             </div>
 
             <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3 text-sm">
-              <Link href="/privacidad" className="text-blue-600 hover:underline">
+              <Link href="/privacidad" className="text-brand hover:underline">
                 → Política de Privacidad
               </Link>
               <Link href="/" className="text-gray-500 hover:text-gray-700">

@@ -209,8 +209,8 @@ export default async function AdminPage({
     ((brokersWeek ?? 0) * 5) +
     (totalViews > 0 ? 10 : 0)
   ))
-  const pulsoLabel = pulsoScore >= 60 ? '🔥 Caliente' : pulsoScore >= 25 ? '🌤️ Tibio' : '❄️ Frío'
-  const pulsoColor = pulsoScore >= 60 ? 'text-red-600 bg-red-50 border-red-200' : pulsoScore >= 25 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-blue-600 bg-blue-50 border-blue-200'
+  const pulsoLabel = pulsoScore >= 60 ? 'Caliente' : pulsoScore >= 25 ? 'Tibio' : 'Frío'
+  const pulsoColor = pulsoScore >= 60 ? 'text-red-600 bg-red-50 border-red-200' : pulsoScore >= 25 ? 'text-amber-600 bg-amber-50 border-amber-200' : 'text-brand bg-tint border-brand/30'
 
   const fmtARS = (n: number) =>
     n >= 1000000 ? `$${(n / 1000000).toFixed(1)}M` : `$${(n / 1000).toFixed(0)}k`
@@ -232,7 +232,7 @@ export default async function AdminPage({
             <p className="text-sm text-gray-500 mt-0.5">Demandi · Gestión y métricas</p>
           </div>
           <div className="flex items-center gap-4">
-            <a href="/pedidos" className="text-sm text-orange-500 hover:underline">
+            <a href="/pedidos" className="text-sm text-brand hover:underline">
               ← Ver feed público
             </a>
             <form action={adminLogout}>
@@ -278,11 +278,11 @@ export default async function AdminPage({
         {/* Tabs */}
         <div className="flex gap-1 mb-6 bg-gray-100 p-1 rounded-xl w-fit">
           {[
-            { id: 'pulso', label: '📡 Pulso', count: null },
-            { id: 'requests', label: '📋 Publicaciones', count: totalRequests },
-            { id: 'brokers', label: '🏠 Brokers', count: totalBrokers },
-            { id: 'buyers', label: '🔍 Compradores', count: totalBuyers },
-            { id: 'reports', label: '🚩 Reportes', count: (reports || []).filter(r => r.status === 'pending').length || null },
+            { id: 'pulso', label: 'Pulso', count: null },
+            { id: 'requests', label: 'Publicaciones', count: totalRequests },
+            { id: 'brokers', label: 'Brokers', count: totalBrokers },
+            { id: 'buyers', label: 'Compradores', count: totalBuyers },
+            { id: 'reports', label: 'Reportes', count: (reports || []).filter(r => r.status === 'pending').length || null },
           ].map(t => (
             <a
               key={t.id}
@@ -295,7 +295,7 @@ export default async function AdminPage({
             >
               {t.label}
               {t.count !== null && <span className={`ml-1.5 text-xs px-1.5 py-0.5 rounded-full ${
-                tab === t.id ? 'bg-orange-100 text-orange-600' : 'bg-gray-200 text-gray-500'
+                tab === t.id ? 'bg-tint text-brand-dark' : 'bg-gray-200 text-gray-500'
               }`}>
                 {t.count}
               </span>}
@@ -326,15 +326,14 @@ export default async function AdminPage({
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Esta semana</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Pedidos nuevos', value: pedidosWeek ?? 0, sub: `${pedidosMonth ?? 0} este mes`, emoji: '📥', good: (pedidosWeek ?? 0) > 0 },
-                  { label: 'Contactos desbloqueados', value: leadsWeek ?? 0, sub: `${totalLeads} total`, emoji: '🔓', good: (leadsWeek ?? 0) > 0 },
-                  { label: 'Brokers nuevos', value: brokersWeek ?? 0, sub: `${totalBrokers} registrados`, emoji: '🏢', good: (brokersWeek ?? 0) > 0 },
-                  { label: 'Vistas del feed', value: totalViews, sub: `${conversionRate}% con vistas`, emoji: '👁️', good: totalViews > 0 },
+                  { label: 'Pedidos nuevos', value: pedidosWeek ?? 0, sub: `${pedidosMonth ?? 0} este mes` , good: (pedidosWeek ?? 0) > 0 },
+                  { label: 'Contactos desbloqueados', value: leadsWeek ?? 0, sub: `${totalLeads} total` , good: (leadsWeek ?? 0) > 0 },
+                  { label: 'Brokers nuevos', value: brokersWeek ?? 0, sub: `${totalBrokers} registrados` , good: (brokersWeek ?? 0) > 0 },
+                  { label: 'Vistas del feed', value: totalViews, sub: `${conversionRate}% con vistas` , good: totalViews > 0 },
                 ].map(k => (
                   <div key={k.label} className="bg-white rounded-xl border border-gray-100 p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-2xl">{k.emoji}</span>
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${k.good ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
+                    <div className="flex items-center justify-end mb-2">
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${k.good ? 'bg-tint text-brand' : 'bg-gray-100 text-gray-500'}`}>
                         {k.good ? '● activo' : '○ sin datos'}
                       </span>
                     </div>
@@ -351,13 +350,12 @@ export default async function AdminPage({
               <h2 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">Acumulado total</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {[
-                  { label: 'Pedidos activos',      value: activeRequests,                                            sub: `${totalRequests} total`,                   emoji: '📋' },
-                  { label: 'Brokers registrados',  value: totalBrokers,                                              sub: 'en la plataforma',                         emoji: '🏢' },
-                  { label: 'Desbloqueos totales',  value: totalLeads,                                                sub: `${totalCreditsSpent} créditos gastados`,    emoji: '🔓' },
-                  { label: 'Revenue total',        value: totalRevenueARS > 0 ? fmtARS(totalRevenueARS) : '$0',    sub: `${txns.length} compras realizadas`,          emoji: '💰' },
+                  { label: 'Pedidos activos',      value: activeRequests,                                            sub: `${totalRequests} total` },
+                  { label: 'Brokers registrados',  value: totalBrokers,                                              sub: 'en la plataforma' },
+                  { label: 'Desbloqueos totales',  value: totalLeads,                                                sub: `${totalCreditsSpent} créditos gastados` },
+                  { label: 'Revenue total',        value: totalRevenueARS > 0 ? fmtARS(totalRevenueARS) : '$0',    sub: `${txns.length} compras realizadas` },
                 ].map(k => (
                   <div key={k.label} className="bg-white rounded-xl border border-gray-100 p-4">
-                    <div className="text-2xl mb-2">{k.emoji}</div>
                     <div className="text-3xl font-bold text-gray-900">{k.value}</div>
                     <div className="text-xs font-medium text-gray-600 mt-0.5">{k.label}</div>
                     <div className="text-xs text-gray-400">{k.sub}</div>
@@ -393,7 +391,7 @@ export default async function AdminPage({
                           <tr key={t.id} className="hover:bg-gray-50">
                             <td className="px-4 py-3 font-medium text-gray-700">{broker?.name || broker?.agency_name || '—'}</td>
                             <td className="px-4 py-3 text-gray-500 text-xs">{t.description?.split('—')[0]?.replace('Compra: ','').trim() || '—'}</td>
-                            <td className="px-4 py-3 text-right font-semibold text-orange-500">{t.amount === 999 ? '∞' : t.amount}</td>
+                            <td className="px-4 py-3 text-right font-semibold text-brand">{t.amount === 999 ? '∞' : t.amount}</td>
                             <td className="px-4 py-3 text-right font-semibold text-gray-900">{ars > 0 ? `$${ars.toLocaleString('es-AR')}` : '—'}</td>
                             <td className="px-4 py-3 text-right text-gray-400 text-xs">{new Date(t.created_at).toLocaleDateString('es-AR')}</td>
                           </tr>
@@ -433,7 +431,7 @@ export default async function AdminPage({
                       .map(r => (
                         <tr key={r.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3">
-                            <a href={`/pedidos/${r.id}`} target="_blank" className="text-orange-600 hover:underline font-medium">
+                            <a href={`/pedidos/${r.id}`} target="_blank" className="text-brand-dark hover:underline font-medium">
                               {r.contact_name || 'Sin nombre'}
                             </a>
                           </td>

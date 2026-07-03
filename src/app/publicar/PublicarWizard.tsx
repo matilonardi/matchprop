@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { CheckCircle2, ArrowRight, ArrowLeft, Home, Building2, Layers, MapPin, DollarSign, User, Loader2, Eye, EyeOff } from 'lucide-react'
+import { CheckCircle2, ArrowRight, ArrowLeft, Home, Building2, Building, Store, Trees, Banknote, TrendingUp, Layers, MapPin, DollarSign, User, Loader2, Eye, EyeOff } from 'lucide-react'
 import HCaptcha from '@hcaptcha/react-hcaptcha'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
@@ -64,14 +64,14 @@ const STEPS = [
   { id: 6, title: 'Crear cuenta', icon: User },
 ]
 
-const PROPERTY_TYPES: { id: PropertyType; label: string; icon: string }[] = [
-  { id: 'casa', label: 'Casa', icon: '🏡' },
-  { id: 'departamento', label: 'Departamento', icon: '🏢' },
-  { id: 'duplex', label: 'Dúplex / PH', icon: '🏘' },
-  { id: 'terreno', label: 'Terreno', icon: '🌿' },
-  { id: 'local', label: 'Local Comercial', icon: '🏪' },
-  { id: 'renta', label: 'Para renta (cualquier tipo/zona)', icon: '💵' },
-  { id: 'revaluo', label: 'Para revalúo (cualquier tipo/zona)', icon: '📈' },
+const PROPERTY_TYPES: { id: PropertyType; label: string; Icon: React.ComponentType<{ className?: string; strokeWidth?: number }> }[] = [
+  { id: 'casa', label: 'Casa', Icon: Home },
+  { id: 'departamento', label: 'Departamento', Icon: Building2 },
+  { id: 'duplex', label: 'Dúplex / PH', Icon: Building },
+  { id: 'terreno', label: 'Terreno', Icon: Trees },
+  { id: 'local', label: 'Local Comercial', Icon: Store },
+  { id: 'renta', label: 'Para renta (cualquier tipo/zona)', Icon: Banknote },
+  { id: 'revaluo', label: 'Para revalúo (cualquier tipo/zona)', Icon: TrendingUp },
 ]
 
 interface LoggedBroker {
@@ -93,7 +93,6 @@ export default function PublicarWizard() {
   const captchaRef = useRef<HCaptcha>(null)
   const [loggedBroker, setLoggedBroker] = useState<LoggedBroker | null | 'loading'>('loading')
   const [upsell, setUpsell] = useState<{ id: string; closeToken: string } | null>(null)
-  const [upsellLoading, setUpsellLoading] = useState(false)
   const [showRequisitos, setShowRequisitos] = useState(false)
 
   useEffect(() => {
@@ -308,73 +307,29 @@ export default function PublicarWizard() {
     }
   }
 
-  async function handleDestacar() {
-    if (!upsell) return
-    setUpsellLoading(true)
-    try {
-      const res = await fetch('/api/checkout/feature', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id: upsell.id }),
-      })
-      const data = await res.json()
-      if (data.init_point) {
-        window.location.href = data.init_point
-      }
-    } catch {
-      setUpsellLoading(false)
-    }
-  }
-
-  // Upsell screen shown after successful submit
+  // Success screen shown after successful submit
   if (upsell) {
     const isBroker = !upsell.closeToken
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-hairline overflow-hidden">
         <div className="p-8 text-center">
-          <div className="text-5xl mb-4">🎉</div>
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">¡Búsqueda publicada!</h2>
-          <p className="text-gray-500 mb-8">Ya está visible para todos los brokers de Córdoba.</p>
-
-          <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border border-yellow-200 rounded-2xl p-6 mb-6 text-left">
-            <div className="flex items-start gap-4">
-              <span className="text-4xl">⭐</span>
-              <div>
-                <h3 className="font-bold text-gray-900 text-lg mb-1">Destacá tu búsqueda</h3>
-                <p className="text-gray-600 text-sm mb-3">
-                  Aparece <strong>primero en el feed</strong> con badge dorado durante <strong>45 días</strong>.
-                  Más visibilidad = más brokers contactándote.
-                </p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-gray-900">$15.000</span>
-                  <span className="text-gray-500 text-sm">ARS · pago único</span>
-                </div>
-              </div>
-            </div>
+          <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-full bg-tint text-brand">
+            <CheckCircle2 className="h-7 w-7" strokeWidth={1.5} />
           </div>
+          <h2 className="text-2xl font-bold text-ink mb-2">Búsqueda publicada</h2>
+          <p className="text-ink-2 mb-8 max-w-sm mx-auto">
+            Ya está visible para los vendedores de Córdoba. Te van a contactar cuando tengan algo para vos.
+          </p>
 
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={handleDestacar}
-              disabled={upsellLoading}
-              className="w-full py-3 rounded-xl bg-yellow-400 hover:bg-yellow-500 text-yellow-900 font-bold text-base transition-all shadow-sm disabled:opacity-60 flex items-center justify-center gap-2"
-            >
-              {upsellLoading ? (
-                <><span className="animate-spin">⏳</span> Preparando pago...</>
-              ) : (
-                <>⭐ Destacar mi búsqueda — $15.000</>
-              )}
-            </button>
-            <button
-              onClick={() => {
-                if (isBroker) router.push('/broker/dashboard?pedido=nuevo')
-                else router.push(`/pedidos/${upsell.id}?nuevo=1&close_token=${upsell.closeToken}`)
-              }}
-              className="w-full py-3 rounded-xl border border-gray-200 text-gray-500 text-sm hover:bg-gray-50 transition-all"
-            >
-              No gracias, ver mi búsqueda
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              if (isBroker) router.push('/broker/dashboard?pedido=nuevo')
+              else router.push(`/pedidos/${upsell.id}?nuevo=1&close_token=${upsell.closeToken}`)
+            }}
+            className="w-full py-3 rounded-lg bg-brand hover:bg-brand-dark text-white font-semibold text-base transition-colors"
+          >
+            Ver mi búsqueda
+          </button>
         </div>
       </div>
     )
@@ -382,26 +337,26 @@ export default function PublicarWizard() {
 
   if (requestType === null) {
     return (
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-2xl border border-hairline overflow-hidden">
         <div className="p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2 text-center">¿Qué estás buscando?</h2>
-          <p className="text-gray-500 text-center mb-8">Elegí el tipo de búsqueda para empezar</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <h2 className="text-2xl font-bold text-ink mb-2 text-center">¿Qué estás buscando?</h2>
+          <p className="text-ink-2 text-center mb-8">Elegí el tipo de búsqueda para empezar</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button
               onClick={() => { setRequestType('property'); setForm(f => ({ ...f, operation_type: 'compra' })) }}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all"
+              className="group p-6 rounded-2xl border-2 border-hairline hover:border-brand hover:bg-tint text-left transition-all"
             >
-              <div className="text-5xl mb-3">🏠</div>
-              <h3 className="font-bold text-lg text-gray-900 mb-1">Comprar</h3>
-              <p className="text-sm text-gray-500">Compra de casa, depto, terreno, local o inversión</p>
+              <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-tint text-brand"><Home className="h-6 w-6" strokeWidth={1.5} /></span>
+              <h3 className="font-bold text-lg text-ink mt-3 mb-1">Comprar</h3>
+              <p className="text-sm text-ink-2">Compra de casa, depto, terreno, local o inversión</p>
             </button>
             <button
               onClick={() => { setRequestType('property'); setForm(f => ({ ...f, operation_type: 'alquiler' })) }}
-              className="p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 text-left transition-all"
+              className="group p-6 rounded-2xl border-2 border-hairline hover:border-brand hover:bg-tint text-left transition-all"
             >
-              <div className="text-5xl mb-3">🔑</div>
-              <h3 className="font-bold text-lg text-gray-900 mb-1">Alquilar</h3>
-              <p className="text-sm text-gray-500">Alquiler de casa, depto, local u oficina</p>
+              <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-tint text-brand"><Building2 className="h-6 w-6" strokeWidth={1.5} /></span>
+              <h3 className="font-bold text-lg text-ink mt-3 mb-1">Alquilar</h3>
+              <p className="text-sm text-ink-2">Alquiler de casa, depto, local u oficina</p>
             </button>
           </div>
         </div>
@@ -410,14 +365,14 @@ export default function PublicarWizard() {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+    <div className="bg-white rounded-2xl border border-hairline overflow-hidden">
       {/* Progress */}
-      <div className="px-6 pt-6 pb-4 border-b border-gray-100">
+      <div className="px-6 pt-6 pb-4 border-b border-hairline">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium text-gray-900">
+          <span className="text-sm font-semibold text-ink">
             Paso {step} de {STEPS.length}: {step === 3 && isTerrenoOnly ? 'Superficie' : STEPS[step - 1].title}
           </span>
-          <span className="text-sm text-gray-400">{Math.round(progress)}%</span>
+          <span className="text-sm text-ink-3 tabular">{Math.round(progress)}%</span>
         </div>
         <Progress value={progress} className="h-1.5" />
       </div>
@@ -428,29 +383,28 @@ export default function PublicarWizard() {
           <div>
             <p className="text-gray-600 mb-5">¿Qué tipo de propiedad buscás? Podés elegir más de una.</p>
             <div className="grid grid-cols-2 gap-3">
-              {PROPERTY_TYPES.map(({ id, label, icon }) => (
-                <button
-                  key={id}
-                  type="button"
-                  onClick={() =>
-                    setForm((f) => ({
-                      ...f,
-                      property_types: toggleArrayItem(f.property_types, id),
-                    }))
-                  }
-                  className={`p-4 rounded-xl border-2 text-left transition-all ${
-                    form.property_types.includes(id)
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-gray-200 hover:border-gray-300'
-                  }`}
-                >
-                  <div className="text-2xl mb-2">{icon}</div>
-                  <div className="font-medium text-gray-900">{label}</div>
-                  {form.property_types.includes(id) && (
-                    <CheckCircle2 className="h-4 w-4 text-orange-500 mt-1" />
-                  )}
-                </button>
-              ))}
+              {PROPERTY_TYPES.map(({ id, label, Icon }) => {
+                const selected = form.property_types.includes(id)
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() =>
+                      setForm((f) => ({
+                        ...f,
+                        property_types: toggleArrayItem(f.property_types, id),
+                      }))
+                    }
+                    className={`p-4 rounded-xl border-2 text-left transition-all ${
+                      selected ? 'border-brand bg-tint' : 'border-hairline hover:border-ink-3'
+                    }`}
+                  >
+                    <div className={`mb-2 ${selected ? 'text-brand' : 'text-ink'}`}><Icon className="h-6 w-6" strokeWidth={1.5} /></div>
+                    <div className="font-medium text-ink">{label}</div>
+                    {selected && <CheckCircle2 className="h-4 w-4 text-brand mt-1" strokeWidth={2} />}
+                  </button>
+                )
+              })}
             </div>
           </div>
         )}
@@ -468,7 +422,7 @@ export default function PublicarWizard() {
                   key={zone}
                   className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer border transition-colors ${
                     form.zones.includes(zone)
-                      ? 'bg-orange-50 border-orange-200'
+                      ? 'bg-tint border-brand/40'
                       : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200'
                   }`}
                 >
@@ -490,7 +444,7 @@ export default function PublicarWizard() {
               placeholder="Buscar barrio..."
               value={zoneSearch}
               onChange={(e) => setZoneSearch(e.target.value)}
-              className="w-full mb-2 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-300"
+              className="w-full mb-2 px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-brand"
             />
             <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
               {ZONES_CORDOBA.filter(b => !zoneSearch || b.toLowerCase().includes(zoneSearch.toLowerCase())).map((barrio) => (
@@ -498,7 +452,7 @@ export default function PublicarWizard() {
                   key={barrio}
                   className={`flex items-center gap-3 p-2.5 rounded-lg cursor-pointer border transition-colors ${
                     form.zones.includes(barrio)
-                      ? 'bg-orange-50 border-orange-200'
+                      ? 'bg-tint border-brand/40'
                       : 'border-gray-100 hover:bg-gray-50 hover:border-gray-200'
                   }`}
                 >
@@ -514,8 +468,8 @@ export default function PublicarWizard() {
             </div>
 
             {form.zones.length > 0 && (
-              <p className="mt-3 text-xs text-orange-500 font-medium">
-                ✓ {form.zones.length} seleccionado{form.zones.length > 1 ? 's' : ''}: {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}
+              <p className="mt-3 text-xs text-brand font-medium">
+                {form.zones.length} seleccionado{form.zones.length > 1 ? 's' : ''}: {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}
               </p>
             )}
           </div>
@@ -525,8 +479,8 @@ export default function PublicarWizard() {
         {step === 3 && (
           <div className="space-y-6">
             {isTerrenoOnly && (
-              <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-xl px-4 py-3">
-                <span className="text-green-700 text-sm">🌿 Para terrenos no aplican dormitorios, baños ni cocheras. Completá las medidas si las tenés.</span>
+              <div className="flex items-center gap-2 bg-tint border border-brand/30 rounded-xl px-4 py-3">
+                <span className="text-brand-dark text-sm">Para terrenos no aplican dormitorios, baños ni cocheras. Completá las medidas si las tenés.</span>
               </div>
             )}
             {!isTerrenoOnly && (<>
@@ -542,7 +496,7 @@ export default function PublicarWizard() {
                     onClick={() => setForm((f) => ({ ...f, bedrooms_min: n === '5+' ? '5' : n }))}
                     className={`w-12 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.bedrooms_min === (n === '5+' ? '5' : n)
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        ? 'border-brand bg-tint text-brand'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -569,7 +523,7 @@ export default function PublicarWizard() {
                     }}
                     className={`w-12 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.bedrooms_max === (n === '5+' ? '5' : n)
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        ? 'border-brand bg-tint text-brand'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -590,7 +544,7 @@ export default function PublicarWizard() {
                     onClick={() => setForm((f) => ({ ...f, bathrooms_min: n === '3+' ? '3' : n }))}
                     className={`px-4 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.bathrooms_min === (n === '3+' ? '3' : n)
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        ? 'border-brand bg-tint text-brand'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -616,7 +570,7 @@ export default function PublicarWizard() {
                     }))}
                     className={`w-12 h-12 rounded-xl border-2 font-medium text-sm transition-all ${
                       form.cocheras_min === (n === '3+' ? '3' : n)
-                        ? 'border-orange-500 bg-orange-50 text-orange-600'
+                        ? 'border-brand bg-tint text-brand'
                         : 'border-gray-200 text-gray-700 hover:border-gray-300'
                     }`}
                   >
@@ -785,7 +739,7 @@ export default function PublicarWizard() {
                     ).map((v) => (
                       <button key={v} type="button"
                         onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                         USD {parseInt(v).toLocaleString()}
                       </button>
                     ))}
@@ -814,7 +768,7 @@ export default function PublicarWizard() {
                     {['500000', '800000', '1000000', '1500000', '2000000'].map((v) => (
                       <button key={v} type="button"
                         onClick={() => setForm((f) => ({ ...f, budget_ars: v }))}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_ars === v ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
+                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_ars === v ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
                         $ {parseInt(v).toLocaleString('es-AR')}
                       </button>
                     ))}
@@ -831,15 +785,15 @@ export default function PublicarWizard() {
               <p className="text-xs text-gray-400 mb-3">Podés combinar varias opciones.</p>
               <div className="space-y-2">
                 {[
-                  { id: 'efectivo', label: '💵 Efectivo' },
-                  { id: 'credito', label: '🏦 Crédito hipotecario' },
-                  { id: 'permuta_propiedad', label: '🏠 Doy propiedad como parte de pago' },
-                  { id: 'permuta_auto', label: '🚗 Doy auto como parte de pago' },
+                  { id: 'efectivo', label: 'Efectivo' },
+                  { id: 'credito', label: 'Crédito hipotecario' },
+                  { id: 'permuta_propiedad', label: 'Doy propiedad como parte de pago' },
+                  { id: 'permuta_auto', label: 'Doy auto como parte de pago' },
                 ].map(({ id, label }) => {
                   const selected = form.financing_types.includes(id)
                   return (
                     <div key={id}>
-                      <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selected ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-gray-300'}`}>
+                      <label className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${selected ? 'border-brand bg-tint' : 'border-gray-200 hover:border-gray-300'}`}>
                         <Checkbox checked={selected}
                           onCheckedChange={() => setForm((f) => ({ ...f, financing_types: toggleArrayItem(f.financing_types, id) }))} />
                         <span className="text-sm font-medium text-gray-800">{label}</span>
@@ -852,7 +806,7 @@ export default function PublicarWizard() {
                             {['25', '50', '75', '100'].map((pct) => (
                               <button key={pct} type="button"
                                 onClick={() => setForm((f) => ({ ...f, financing_cash_pct: f.financing_cash_pct === pct ? '' : pct }))}
-                                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.financing_cash_pct === pct ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600'}`}>
+                                className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.financing_cash_pct === pct ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600'}`}>
                                 {pct}%
                               </button>
                             ))}
@@ -870,7 +824,7 @@ export default function PublicarWizard() {
                             {['si', 'no'].map((opt) => (
                               <button key={opt} type="button"
                                 onClick={() => setForm((f) => ({ ...f, financing_precalified: f.financing_precalified === opt ? '' : opt }))}
-                                className={`text-xs px-4 py-1.5 rounded-full border transition-colors font-medium ${form.financing_precalified === opt ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-200 text-gray-600'}`}>
+                                className={`text-xs px-4 py-1.5 rounded-full border transition-colors font-medium ${form.financing_precalified === opt ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600'}`}>
                                 {opt === 'si' ? 'Sí' : 'No'}
                               </button>
                             ))}
@@ -890,16 +844,16 @@ export default function PublicarWizard() {
               </Label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'primera_vivienda', label: '🏡 Primera vivienda' },
-                  { id: 'cambio_vivienda', label: '🔄 Cambio de vivienda' },
-                  { id: 'inversion_renta', label: '💵 Inversión para renta' },
-                  { id: 'inversion_revaluo', label: '📈 Inversión para revalúo' },
-                  { id: 'mudanza', label: '📦 Mudanza de zona' },
-                  { id: 'otro', label: '💬 Otro motivo' },
+                  { id: 'primera_vivienda', label: 'Primera vivienda' },
+                  { id: 'cambio_vivienda', label: 'Cambio de vivienda' },
+                  { id: 'inversion_renta', label: 'Inversión para renta' },
+                  { id: 'inversion_revaluo', label: 'Inversión para revalúo' },
+                  { id: 'mudanza', label: 'Mudanza de zona' },
+                  { id: 'otro', label: 'Otro motivo' },
                 ].map(({ id, label }) => (
                   <button key={id} type="button"
                     onClick={() => setForm((f) => ({ ...f, search_reason: f.search_reason === id ? '' : id }))}
-                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${form.search_reason === id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
+                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${form.search_reason === id ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
                     {label}
                   </button>
                 ))}
@@ -913,7 +867,7 @@ export default function PublicarWizard() {
                 {URGENCY_OPTIONS.map(({ id, label }) => (
                   <button key={id} type="button"
                     onClick={() => setForm((f) => ({ ...f, urgency: f.urgency === id ? '' : id }))}
-                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${form.urgency === id ? 'border-blue-500 bg-blue-50 text-blue-700' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
+                    className={`p-3 rounded-xl border-2 text-left text-xs font-medium transition-all ${form.urgency === id ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-700 hover:border-gray-300'}`}>
                     {label}
                   </button>
                 ))}
@@ -958,10 +912,10 @@ export default function PublicarWizard() {
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={4} className="resize-none"
                 />
-                <p className={`text-xs mt-1 ${form.description.trim().length < 10 ? 'text-gray-400' : 'text-green-600'}`}>
+                <p className={`text-xs mt-1 ${form.description.trim().length < 10 ? 'text-ink-3' : 'text-brand'}`}>
                   {form.description.trim().length < 10
                     ? `Mínimo 10 caracteres (${form.description.trim().length}/10)`
-                    : '✓ Listo'}
+                    : 'Listo'}
                 </p>
               </div>
 
@@ -975,7 +929,7 @@ export default function PublicarWizard() {
                   <span className={`transition-transform ${showRequisitos ? 'rotate-90' : ''}`}>›</span>
                   {showRequisitos ? 'Ocultar requisitos' : 'Agregar requisitos'}
                   {total > 0 && (
-                    <span className="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded-full">
+                    <span className="bg-tint text-brand text-xs font-semibold px-2 py-0.5 rounded-full">
                       {total} seleccionado{total > 1 ? 's' : ''}
                     </span>
                   )}
@@ -985,7 +939,7 @@ export default function PublicarWizard() {
                   <div className="mt-4 space-y-5">
                     <div>
                       <p className="text-xs text-gray-400 mb-3">
-                        Tocá una vez = <span className="text-blue-600 font-medium">Importante</span> · Tocá de nuevo = <span className="text-red-600 font-medium">Excluyente</span> · Tocá otra vez = Quitar
+                        Tocá una vez = <span className="text-brand font-medium">Importante</span> · Tocá de nuevo = <span className="text-red-600 font-medium">Excluyente</span> · Tocá otra vez = Quitar
                       </p>
                       <div className="grid grid-cols-2 gap-2">
                         {REQUIREMENTS.map(({ id, label }) => {
@@ -994,15 +948,15 @@ export default function PublicarWizard() {
                             <button key={id} type="button" onClick={() => cycleReq(id)}
                               className={`p-3 rounded-xl border-2 text-left text-sm transition-all ${
                                 state === 'excluyente' ? 'border-red-400 bg-red-50'
-                                : state === 'importante' ? 'border-blue-400 bg-blue-50'
+                                : state === 'importante' ? 'border-brand bg-tint'
                                 : 'border-gray-200 hover:border-gray-300'
                               }`}>
-                              <span className={state === 'none' ? 'text-gray-700' : state === 'importante' ? 'text-blue-800' : 'text-red-800'}>
+                              <span className={state === 'none' ? 'text-gray-700' : state === 'importante' ? 'text-brand-dark' : 'text-red-800'}>
                                 {label}
                               </span>
                               {state !== 'none' && (
-                                <span className={`block text-xs font-semibold mt-0.5 ${state === 'importante' ? 'text-blue-600' : 'text-red-600'}`}>
-                                  {state === 'importante' ? '✓ Importante' : '⛔ Excluyente'}
+                                <span className={`block text-xs font-semibold mt-0.5 ${state === 'importante' ? 'text-brand' : 'text-red-600'}`}>
+                                  {state === 'importante' ? 'Importante' : 'Excluyente'}
                                 </span>
                               )}
                             </button>
@@ -1021,7 +975,7 @@ export default function PublicarWizard() {
                           return (
                             <label key={id}
                               className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-colors text-sm ${
-                                selected ? 'border-orange-400 bg-orange-50 text-orange-800' : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                                selected ? 'border-brand bg-tint text-brand' : 'border-gray-200 hover:border-gray-300 text-gray-700'
                               }`}>
                               <Checkbox
                                 checked={selected}
@@ -1046,9 +1000,9 @@ export default function PublicarWizard() {
         {/* Step 6: Create account (or broker shortcut) */}
         {step === 6 && loggedBroker && loggedBroker !== 'loading' && (
           <div className="space-y-5">
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
-              <p className="font-semibold mb-1">📋 Último paso: datos del cliente</p>
-              <p className="text-blue-700">
+            <div className="bg-tint border border-brand/20 rounded-xl p-4 text-sm text-brand-dark">
+              <p className="font-semibold mb-1">Último paso: datos del cliente</p>
+              <p>
                 Publicás como <strong>{loggedBroker.agency_name || loggedBroker.name}</strong>. Ingresá el nombre y teléfono del cliente que busca.
               </p>
             </div>
@@ -1079,10 +1033,10 @@ export default function PublicarWizard() {
             <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
               <p className="font-medium text-gray-900 mb-3">Resumen de la búsqueda:</p>
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
-                <span>📦 {form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
-                <span>📍 {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
-                {form.bedrooms_min && <span>🛏 {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>}
-                <span>💰 {form.budget_currency === 'ars' ? `$ ${parseInt(form.budget_ars || '0').toLocaleString('es-AR')}` : `USD ${parseInt(form.budget_usd || '0').toLocaleString()}`}</span>
+                <span>{form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
+                <span>· {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
+                {form.bedrooms_min && <span>· {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>}
+                <span>· {form.budget_currency === 'ars' ? `$ ${parseInt(form.budget_ars || '0').toLocaleString('es-AR')}` : `USD ${parseInt(form.budget_usd || '0').toLocaleString()}`}</span>
               </div>
             </div>
 
@@ -1094,16 +1048,16 @@ export default function PublicarWizard() {
 
         {step === 6 && (!loggedBroker || loggedBroker === 'loading') && (
           <div className="space-y-5">
-            <div className="bg-orange-50 border border-orange-100 rounded-xl p-4 text-sm text-orange-800">
-              <p className="font-semibold mb-1">📋 Último paso: creá tu cuenta gratis</p>
-              <p className="text-orange-700">Así podés ver los mensajes de los brokers y gestionar tus búsquedas.</p>
+            <div className="bg-tint border border-brand/20 rounded-xl p-4 text-sm text-brand-dark">
+              <p className="font-semibold mb-1">Último paso: creá tu cuenta gratis</p>
+              <p>Así podés ver los mensajes de los vendedores y gestionar tus búsquedas.</p>
             </div>
 
             {/* Publisher type */}
             <div className="flex gap-3">
               {([
-                { id: 'particular', label: '🙋 Soy Particular' },
-                { id: 'inmobiliaria', label: '🏢 Soy Inmobiliaria' },
+                { id: 'particular', label: 'Soy Particular' },
+                { id: 'inmobiliaria', label: 'Soy Inmobiliaria' },
               ] as const).map(({ id, label }) => (
                 <button
                   key={id}
@@ -1111,7 +1065,7 @@ export default function PublicarWizard() {
                   onClick={() => setForm((f) => ({ ...f, publisher_type: id, agency_name: id === 'particular' ? '' : f.agency_name }))}
                   className={`flex-1 py-3 rounded-xl border-2 font-medium text-sm transition-all ${
                     form.publisher_type === id
-                      ? 'border-orange-500 bg-orange-50 text-orange-600'
+                      ? 'border-brand bg-tint text-brand'
                       : 'border-gray-200 text-gray-700 hover:border-gray-300'
                   }`}
                 >
@@ -1191,25 +1145,25 @@ export default function PublicarWizard() {
                 <p className="text-xs text-red-500 mt-1">Mínimo 8 caracteres ({form.contact_password.length}/8)</p>
               )}
               {form.contact_password.length >= 8 && (
-                <p className="text-xs text-green-600 mt-1">✓ Contraseña válida</p>
+                <p className="text-xs text-brand mt-1">Contraseña válida</p>
               )}
             </div>
 
-            <p className="text-xs text-gray-500">
+            <p className="text-xs text-ink-2">
               ¿Ya tenés cuenta?{' '}
-              <a href="/comprador/login" className="text-orange-500 underline hover:text-orange-600">
+              <a href="/comprador/login" className="text-brand underline hover:text-brand-dark">
                 Iniciá sesión
               </a>
             </p>
 
             {/* Summary */}
-            <div className="bg-gray-50 rounded-xl p-4 space-y-2 text-sm">
-              <p className="font-medium text-gray-900 mb-3">Resumen de tu búsqueda:</p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-600">
-                <span>📦 {form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
-                <span>📍 {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
-                <span>🛏 {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>
-                <span>💰 {form.budget_currency === 'ars' ? `$ ${parseInt(form.budget_ars).toLocaleString('es-AR')}` : `USD ${parseInt(form.budget_usd).toLocaleString()}`}</span>
+            <div className="bg-chip rounded-xl p-4 space-y-2 text-sm">
+              <p className="font-medium text-ink mb-3">Resumen de tu búsqueda:</p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-ink-2">
+                <span>{form.property_types.map((t) => PROPERTY_TYPE_LABELS[t]).join(', ')}</span>
+                <span>· {form.zones.slice(0, 3).join(', ')}{form.zones.length > 3 ? ` +${form.zones.length - 3}` : ''}</span>
+                <span>· {form.bedrooms_min}{form.bedrooms_max ? `–${form.bedrooms_max}` : '+'} dorm.</span>
+                <span>· {form.budget_currency === 'ars' ? `$ ${parseInt(form.budget_ars).toLocaleString('es-AR')}` : `USD ${parseInt(form.budget_usd).toLocaleString()}`}</span>
               </div>
             </div>
 
@@ -1220,16 +1174,16 @@ export default function PublicarWizard() {
                 onCheckedChange={(v) => setAcceptedTerms(!!v)}
                 className="mt-0.5"
               />
-              <span className="text-sm text-gray-600">
+              <span className="text-sm text-ink-2">
                 Leí y acepto los{' '}
-                <a href="/terminos" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+                <a href="/terminos" target="_blank" className="text-brand underline hover:text-brand-dark">
                   términos y condiciones
                 </a>{' '}
                 y la{' '}
-                <a href="/privacidad" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+                <a href="/privacidad" target="_blank" className="text-brand underline hover:text-brand-dark">
                   política de privacidad
                 </a>
-                . Entiendo que mis datos de contacto serán visibles para brokers que paguen para verlos.
+                . Entiendo que mi contacto será visible para los vendedores que quieran ofrecerme algo.
               </span>
             </label>
 
@@ -1267,8 +1221,7 @@ export default function PublicarWizard() {
                 <Button
                   onClick={handleBrokerSubmit}
                   disabled={!canProceed() || loading}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
+                                 >
                   {loading ? (
                     <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Publicando...</>
                   ) : (
@@ -1282,8 +1235,7 @@ export default function PublicarWizard() {
                 <Button
                   onClick={() => setStep((s) => s === 4 && isTerrenoOnly ? 6 : s + 1)}
                   disabled={!canProceed()}
-                  className="bg-orange-500 hover:bg-orange-600"
-                >
+                                 >
                   Siguiente
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Button>
@@ -1303,8 +1255,7 @@ export default function PublicarWizard() {
               <Button
                 onClick={handleSubmitClick}
                 disabled={!canProceed() || loading}
-                className="bg-orange-500 hover:bg-orange-600"
-              >
+                             >
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />

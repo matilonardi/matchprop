@@ -49,7 +49,7 @@ function CreditBar({ spent, remaining }: { spent: number; remaining: number }) {
     <div className="flex items-center gap-2 min-w-[120px]">
       <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
         <div
-          className="h-full bg-orange-400 rounded-full"
+          className="h-full bg-brand rounded-full"
           style={{ width: `${pct}%` }}
         />
       </div>
@@ -93,7 +93,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                     {b.agency_name && (
                       <div className="text-xs text-gray-400">{b.agency_name}</div>
                     )}
-                    <div className="text-xs text-blue-500">{b.email}</div>
+                    <div className="text-xs text-brand">{b.email}</div>
                     {b.phone && (
                       <div className="text-xs text-gray-400 flex items-center gap-1 mt-0.5">
                         <Phone className="h-3 w-3" />{b.phone}
@@ -113,7 +113,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <div className="text-center">
-                        <div className="text-base font-bold text-orange-500">{b.credits}</div>
+                        <div className="text-base font-bold text-brand">{b.credits}</div>
                         <div className="text-[10px] text-gray-400">disponibles</div>
                       </div>
                       <div className="text-center">
@@ -121,7 +121,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                         <div className="text-[10px] text-gray-400">gastados</div>
                       </div>
                       <div className="text-center">
-                        <div className="text-base font-bold text-blue-600">{b.credits_total}</div>
+                        <div className="text-base font-bold text-brand">{b.credits_total}</div>
                         <div className="text-[10px] text-gray-400">total</div>
                       </div>
                     </div>
@@ -135,8 +135,8 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                   {/* Pedidos loaded */}
                   <td className="px-4 py-3">
                     {b.pedidos_loaded > 0 ? (
-                      <div className="flex items-center gap-1.5 text-purple-700 font-medium">
-                        <Home className="h-3.5 w-3.5 text-purple-400" />
+                      <div className="flex items-center gap-1.5 text-brand-dark font-medium">
+                        <Home className="h-3.5 w-3.5 text-brand-dark" />
                         {b.pedidos_loaded}
                       </div>
                     ) : (
@@ -166,7 +166,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                   {/* Zones */}
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1 text-xs text-gray-500">
-                      <MapPin className="h-3 w-3 text-orange-400 flex-shrink-0" />
+                      <MapPin className="h-3 w-3 text-brand flex-shrink-0" />
                       <span>
                         {(b.zones || []).slice(0, 2).join(', ')}
                         {(b.zones || []).length > 2 && (
@@ -193,7 +193,7 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
         {brokers.length > 0 && (
           <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-6 text-xs text-gray-500">
             <span className="flex items-center gap-1.5">
-              <CreditCard className="h-3.5 w-3.5 text-orange-500" />
+              <CreditCard className="h-3.5 w-3.5 text-brand" />
               Créditos totales vendidos:{' '}
               <strong className="text-gray-700">
                 {brokers.reduce((s, b) => s + b.credits_total, 0)}
@@ -272,13 +272,13 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
                     {b.property > 0 && (
-                      <Badge className="bg-orange-100 text-orange-700 border-0 gap-1 text-xs py-0.5">
+                      <Badge className="bg-tint text-brand-dark border-0 gap-1 text-xs py-0.5">
                         <Home className="h-3 w-3" />
                         {b.property} prop.
                       </Badge>
                     )}
                     {b.car > 0 && (
-                      <Badge className="bg-blue-100 text-blue-700 border-0 gap-1 text-xs py-0.5">
+                      <Badge className="bg-tint text-brand-dark border-0 gap-1 text-xs py-0.5">
                         <Car className="h-3 w-3" />
                         {b.car} auto{b.car !== 1 ? 's' : ''}
                       </Badge>
@@ -306,14 +306,14 @@ export default function AdminUsersTable({ type, users }: AdminUsersTableProps) {
       {buyers.length > 0 && (
         <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex items-center gap-6 text-xs text-gray-500">
           <span className="flex items-center gap-1.5">
-            <Home className="h-3.5 w-3.5 text-orange-500" />
+            <Home className="h-3.5 w-3.5 text-brand" />
             Búsquedas de propiedades:{' '}
             <strong className="text-gray-700">
               {buyers.reduce((s, b) => s + b.property, 0)}
             </strong>
           </span>
           <span className="flex items-center gap-1.5">
-            <Car className="h-3.5 w-3.5 text-blue-500" />
+            <Car className="h-3.5 w-3.5 text-brand" />
             Búsquedas de autos:{' '}
             <strong className="text-gray-700">
               {buyers.reduce((s, b) => s + b.car, 0)}

@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { MapPin, DollarSign, MessageCircle, Eye, PlusCircle, LogOut, Clock, Pencil } from 'lucide-react'
+import { MapPin, DollarSign, MessageCircle, Eye, PlusCircle, LogOut, Clock, Pencil, Search } from 'lucide-react'
+import { PropiLogoFull } from '@/components/PropiLogo'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -91,7 +92,7 @@ export default function BuyerDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand" />
       </div>
     )
   }
@@ -102,10 +103,10 @@ export default function BuyerDashboard() {
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div>
-            <Link href="/" className="text-lg font-black">
-              <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
+            <Link href="/" className="flex items-center">
+              <PropiLogoFull size="sm" />
             </Link>
-            <p className="text-xs text-gray-500 mt-0.5">Hola, {userName} 👋</p>
+            <p className="text-xs text-ink-3 mt-0.5">Hola, {userName}</p>
           </div>
           <button
             onClick={handleSignOut}
@@ -121,7 +122,7 @@ export default function BuyerDashboard() {
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-xl font-bold text-gray-900">Mis búsquedas</h1>
           <Link href="/publicar">
-            <Button className="bg-orange-500 hover:bg-orange-600 text-sm" size="sm">
+            <Button className="bg-brand hover:bg-brand-dark text-sm" size="sm">
               <PlusCircle className="h-4 w-4 mr-1.5" />
               Nueva búsqueda
             </Button>
@@ -129,14 +130,14 @@ export default function BuyerDashboard() {
         </div>
 
         {requests.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-            <div className="text-5xl mb-4">🔍</div>
+          <div className="bg-white rounded-2xl border border-hairline p-12 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-tint text-brand"><Search className="h-6 w-6" strokeWidth={1.5} /></div>
             <h2 className="text-lg font-semibold text-gray-900 mb-2">Todavía no publicaste nada</h2>
             <p className="text-gray-500 text-sm mb-6">
               Publicá tu búsqueda y los brokers de Córdoba te van a contactar.
             </p>
             <Link href="/publicar">
-              <Button className="bg-orange-500 hover:bg-orange-600">
+              <Button className="bg-brand hover:bg-brand-dark">
                 Publicar mi primera búsqueda
               </Button>
             </Link>
@@ -159,14 +160,14 @@ export default function BuyerDashboard() {
                           {req.status === 'active' ? 'Activa' : 'Cerrada'}
                         </Badge>
                         {(req.unread_count ?? 0) > 0 && (
-                          <span className="bg-orange-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+                          <span className="bg-brand text-white text-xs font-bold px-2 py-0.5 rounded-full">
                             {req.unread_count} nuevo{(req.unread_count ?? 0) > 1 ? 's' : ''}
                           </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 mt-1.5 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3 text-orange-400" />
+                          <MapPin className="h-3 w-3 text-brand" />
                           {req.zones.slice(0, 2).join(', ')}{req.zones.length > 2 ? ` +${req.zones.length - 2}` : ''}
                         </span>
                         <span className="flex items-center gap-1">
@@ -187,10 +188,10 @@ export default function BuyerDashboard() {
                       {req.views_count} vista{req.views_count !== 1 ? 's' : ''}
                     </span>
                     {(req.unread_count ?? 0) > 0 ? (
-                      <span className="flex items-center gap-1.5 text-orange-600 font-semibold">
+                      <span className="flex items-center gap-1.5 text-brand-dark font-semibold">
                         <MessageCircle className="h-3.5 w-3.5" />
                         {req.unread_count} mensaje{(req.unread_count ?? 0) > 1 ? 's' : ''} sin leer
-                        <span className="inline-block w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                        <span className="inline-block w-2 h-2 rounded-full bg-brand animate-pulse" />
                       </span>
                     ) : (
                       <span className="flex items-center gap-1 text-gray-400">
@@ -205,8 +206,8 @@ export default function BuyerDashboard() {
                       href={`/pedidos/${req.id}`}
                       className={`inline-flex items-center gap-2 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors ${
                         (req.unread_count ?? 0) > 0
-                          ? 'bg-orange-500 hover:bg-orange-600 ring-2 ring-orange-300'
-                          : 'bg-orange-500 hover:bg-orange-600'
+                          ? 'bg-brand hover:bg-brand-dark ring-2 ring-brand/40'
+                          : 'bg-brand hover:bg-brand-dark'
                       }`}
                     >
                       <MessageCircle className="h-4 w-4" />

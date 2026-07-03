@@ -134,7 +134,7 @@ export default function EditRequestForm({
   if (checkingAuth) {
     return (
       <div className="flex items-center justify-center py-24">
-        <Loader2 className="h-6 w-6 animate-spin text-orange-500" />
+        <Loader2 className="h-6 w-6 animate-spin text-brand" />
       </div>
     )
   }
@@ -186,7 +186,7 @@ export default function EditRequestForm({
           {/* Zones */}
           <div>
             <Label className="text-sm font-semibold text-gray-800 mb-3 block flex items-center gap-1.5">
-              <MapPin className="h-4 w-4 text-orange-500" />
+              <MapPin className="h-4 w-4 text-brand" />
               Zonas donde buscás
             </Label>
 
@@ -197,7 +197,7 @@ export default function EditRequestForm({
                   <button
                     key={z}
                     onClick={() => toggleZone(z)}
-                    className="flex items-center gap-1 bg-orange-100 text-orange-800 text-xs px-2.5 py-1 rounded-full hover:bg-orange-200 transition-colors"
+                    className="flex items-center gap-1 bg-tint text-brand-dark text-xs px-2.5 py-1 rounded-full hover:bg-brand/20 transition-colors"
                   >
                     {z}
                     <X className="h-3 w-3" />
@@ -219,7 +219,7 @@ export default function EditRequestForm({
                   onClick={() => toggleZone(zone)}
                   className={`text-left text-xs px-2.5 py-1.5 rounded-lg transition-colors ${
                     zones.includes(zone)
-                      ? 'bg-orange-500 text-white font-medium'
+                      ? 'bg-brand text-white font-medium'
                       : 'hover:bg-gray-100 text-gray-700'
                   }`}
                 >
@@ -240,7 +240,7 @@ export default function EditRequestForm({
                     onClick={() => togglePropertyType(key)}
                     className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
                       propertyTypes.includes(key)
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-brand text-white border-brand'
                         : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -277,7 +277,7 @@ export default function EditRequestForm({
                   onClick={() => setFinancing(key as FinancingType)}
                   className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
                     financing === key
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-brand text-white border-brand'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -337,7 +337,7 @@ export default function EditRequestForm({
                     onClick={() => toggleRequirement(req.id)}
                     className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
                       requirements.includes(req.id)
-                        ? 'bg-blue-600 text-white border-blue-600'
+                        ? 'bg-brand text-white border-brand'
                         : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
                     }`}
                   >
@@ -358,7 +358,7 @@ export default function EditRequestForm({
                   onClick={() => setUrgency(opt.id)}
                   className={`text-sm px-3.5 py-1.5 rounded-full border transition-colors ${
                     urgency === opt.id
-                      ? 'bg-blue-600 text-white border-blue-600'
+                      ? 'bg-brand text-white border-brand'
                       : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300'
                   }`}
                 >
@@ -378,7 +378,7 @@ export default function EditRequestForm({
               onChange={e => setDescription(e.target.value)}
               rows={3}
               placeholder="Contá más sobre lo que buscás..."
-              className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+              className="w-full text-sm border border-gray-200 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand resize-none"
               maxLength={600}
             />
             <p className="text-xs text-gray-400 text-right mt-1">{description.length}/600</p>
@@ -396,7 +396,7 @@ export default function EditRequestForm({
             <Button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 bg-orange-500 hover:bg-orange-600"
+              className="flex-1 bg-brand hover:bg-brand-dark"
             >
               {saving ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Guardando...</>

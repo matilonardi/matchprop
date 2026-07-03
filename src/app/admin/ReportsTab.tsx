@@ -82,7 +82,7 @@ export default function ReportsTab({
       <tr className="hover:bg-gray-50 border-t border-gray-100">
         <td className="px-4 py-3">
           {req ? (
-            <a href={`/pedidos/${r.request_id}`} target="_blank" className="text-orange-600 hover:underline font-medium text-sm">
+            <a href={`/pedidos/${r.request_id}`} target="_blank" className="text-brand-dark hover:underline font-medium text-sm">
               {req.contact_name || 'Sin nombre'}
             </a>
           ) : (
@@ -143,7 +143,7 @@ export default function ReportsTab({
         </div>
         {pending.length === 0 ? (
           <div className="px-5 py-10 text-center text-sm text-gray-400">
-            No hay reportes pendientes. 🎉
+            No hay reportes pendientes.
           </div>
         ) : (
           <table className="w-full text-sm">

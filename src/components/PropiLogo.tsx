@@ -9,7 +9,7 @@
 //  Colores: #2E8B57 (verde esmeralda moderno)
 // ─────────────────────────────────────────────────────────────
 
-const BRAND_GREEN = '#2E8B57'
+const BRAND_GREEN = '#2E8B58'
 
 // ── Pin SVG (reemplaza la "i") ────────────────────────────────
 function PinIcon({ height = 28 }: { height?: number }) {

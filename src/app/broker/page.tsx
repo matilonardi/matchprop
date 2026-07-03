@@ -1,9 +1,7 @@
-import Link from 'next/link'
-import { CheckCircle2, ArrowRight, Bell, Lock, BarChart3 } from 'lucide-react'
-import { Button } from '@/components/ui/button'
+import { Check, Bell, Lock, BarChart3 } from 'lucide-react'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import TawkChat from '@/components/TawkChat'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import BrokerAuthSection from './BrokerAuthSection'
 
 export default async function BrokerPage({
@@ -15,107 +13,72 @@ export default async function BrokerPage({
   const defaultMode = params.login === '1' ? 'login' : 'register'
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
-      <div className="pt-20 pb-16">
-        {/* Hero */}
-        <div className="bg-gradient-to-b from-blue-600 to-blue-700 text-white py-16 px-4 mb-12">
-          <div className="max-w-4xl mx-auto text-center">
-            <h1 className="text-4xl font-bold mb-4">
+      <div className="pt-16">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-14 grid md:grid-cols-[1.15fr_.85fr] gap-14">
+
+          {/* Left — value prop */}
+          <div>
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">
+              Para inmobiliarias, concesionarias y particulares
+            </div>
+            <h1 className="mt-4 text-3xl md:text-[44px] font-extrabold text-ink tracking-[-0.02em] leading-[1.05]">
               Compradores activos que ya saben lo que quieren
             </h1>
-            <p className="text-blue-100 text-lg max-w-2xl mx-auto mb-8">
+            <p className="mt-5 text-lg text-ink-2 max-w-lg">
               Accedé a compradores que publicaron exactamente qué propiedad o auto buscan.
-              Solo pagás cuando encontrás un match real.
+              Contactalos directo cuando tengas algo para ofrecerles.
             </p>
-            <div className="flex flex-wrap justify-center gap-6 text-sm">
+
+            <ul className="mt-8 space-y-3">
               {[
-                'Ves el pedido completo antes de pagar',
-                'Sin suscripción forzada',
+                'Ves el pedido completo antes de contactar',
                 'Alertas por zona automáticas',
+                'Compradores con alta intención — ya saben qué quieren',
               ].map((item) => (
-                <div key={item} className="flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-green-300" />
-                  {item}
+                <li key={item} className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-brand shrink-0 mt-0.5" strokeWidth={2} />
+                  <span className="text-ink-2">{item}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* How it works */}
+            <div className="mt-12 space-y-6">
+              {[
+                { icon: <Bell className="h-5 w-5" strokeWidth={1.5} />, title: 'Alertas por tus zonas', desc: 'Registrás tus zonas de interés y recibís avisos cada vez que alguien publica una búsqueda compatible.' },
+                { icon: <Lock className="h-5 w-5" strokeWidth={1.5} />, title: 'Ves la búsqueda completa', desc: 'Leés zona, presupuesto y requisitos antes de decidir si contactar al comprador.' },
+                { icon: <BarChart3 className="h-5 w-5" strokeWidth={1.5} />, title: 'Inteligencia de mercado', desc: 'Sabés qué demanda el mercado en tiempo real: zonas calientes, tickets promedio, requisitos más pedidos.' },
+              ].map(({ icon, title, desc }) => (
+                <div key={title} className="flex gap-4">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-tint text-brand">{icon}</span>
+                  <div>
+                    <h3 className="font-bold text-ink mb-1">{title}</h3>
+                    <p className="text-sm text-ink-2">{desc}</p>
+                  </div>
                 </div>
               ))}
             </div>
+
+            {/* Free beta note (reemplaza los packs de precio) */}
+            <div className="mt-8 rounded-2xl border border-brand/20 bg-tint p-5">
+              <p className="font-semibold text-brand-dark mb-1">Gratis durante la beta</p>
+              <p className="text-sm text-ink-2">
+                Mientras dure la etapa inicial, ver el contacto de los compradores es sin costo.
+                Creá tu cuenta y empezá a contactar hoy.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="grid md:grid-cols-2 gap-12">
-            {/* Benefits */}
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">¿Cómo funciona para vos?</h2>
-              <div className="space-y-6">
-                {[
-                  {
-                    icon: <Bell className="h-5 w-5 text-orange-500" />,
-                    title: 'Alertas por tus zonas',
-                    desc: 'Registrás tus zonas de interés y recibís notificaciones cada vez que alguien publica una búsqueda compatible.',
-                  },
-                  {
-                    icon: <Lock className="h-5 w-5 text-orange-500" />,
-                    title: 'Ves todo, pagás el contacto',
-                    desc: 'Podés leer la búsqueda completa — zona, presupuesto, requisitos — antes de decidir si vale la pena desbloquear el contacto.',
-                  },
-                  {
-                    icon: <BarChart3 className="h-5 w-5 text-orange-500" />,
-                    title: 'Inteligencia de mercado',
-                    desc: 'Sabés qué está demandando el mercado en tiempo real: zonas calientes, tickets promedio, requisitos más pedidos.',
-                  },
-                ].map(({ icon, title, desc }) => (
-                  <div key={title} className="flex gap-4">
-                    <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0">
-                      {icon}
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900 mb-1">{title}</h3>
-                      <p className="text-sm text-gray-500">{desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Pricing quick reference */}
-              <div className="mt-8 bg-blue-50 rounded-xl p-5">
-                <p className="font-semibold text-blue-900 mb-3">Precios transparentes</p>
-                <div className="space-y-2 text-sm">
-                  {[
-                    { label: '3 créditos', price: '$80.000', per: '$26.667 por contacto' },
-                    { label: '5 créditos', price: '$100.000', per: '$20.000 por contacto', popular: true },
-                    { label: '10 créditos', price: '$180.000', per: '$18.000 por contacto' },
-                    { label: 'Ilimitado mensual', price: '$350.000', per: 'sin límite' },
-                  ].map(({ label, price, per, popular }) => (
-                    <div key={label} className="flex items-center justify-between">
-                      <span className="text-blue-800">
-                        {label}
-                        {popular && (
-                          <span className="ml-2 text-xs bg-blue-200 text-blue-700 px-1.5 py-0.5 rounded-full">
-                            Popular
-                          </span>
-                        )}
-                      </span>
-                      <div className="text-right">
-                        <span className="font-semibold text-blue-900">{price}</span>
-                        <span className="text-orange-400 text-xs ml-1">({per})</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Auth section (register + login tabs) */}
-            <div>
-              <BrokerAuthSection defaultMode={defaultMode as 'register' | 'login'} />
-            </div>
+          {/* Right — auth card */}
+          <div className="md:sticky md:top-24 self-start">
+            <BrokerAuthSection defaultMode={defaultMode as 'register' | 'login'} />
           </div>
         </div>
       </div>
       <Footer />
-      <TawkChat />
+      <WhatsAppButton />
     </div>
   )
 }

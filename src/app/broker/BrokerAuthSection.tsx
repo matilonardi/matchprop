@@ -12,15 +12,15 @@ export default function BrokerAuthSection({
   const [mode, setMode] = useState<'register' | 'login'>(defaultMode)
 
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
-      {/* Tabs */}
-      <div className="flex gap-1 bg-gray-100 rounded-xl p-1 mb-6">
+    <div className="bg-white rounded-2xl border border-hairline p-6">
+      {/* Tabs segmented */}
+      <div className="flex gap-1 bg-chip rounded-xl p-1 mb-6">
         <button
           onClick={() => setMode('register')}
           className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-all ${
             mode === 'register'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-white text-ink shadow-[0_1px_3px_rgba(16,23,18,0.08)]'
+              : 'text-ink-2 hover:text-ink'
           }`}
         >
           Crear cuenta
@@ -29,8 +29,8 @@ export default function BrokerAuthSection({
           onClick={() => setMode('login')}
           className={`flex-1 text-sm font-semibold py-2 rounded-lg transition-all ${
             mode === 'login'
-              ? 'bg-white text-gray-900 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700'
+              ? 'bg-white text-ink shadow-[0_1px_3px_rgba(16,23,18,0.08)]'
+              : 'text-ink-2 hover:text-ink'
           }`}
         >
           Iniciar sesión
@@ -39,14 +39,14 @@ export default function BrokerAuthSection({
 
       {mode === 'register' ? (
         <>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Crear tu cuenta</h2>
-          <p className="text-sm text-gray-500 mb-6">Gratis para empezar. Comprás créditos cuando los necesitás.</p>
+          <h2 className="text-xl font-bold text-ink mb-1">Crear tu cuenta</h2>
+          <p className="text-sm text-ink-2 mb-6">Gratis para empezar. Ver contactos es sin costo durante la beta.</p>
           <BrokerRegisterForm />
         </>
       ) : (
         <>
-          <h2 className="text-xl font-bold text-gray-900 mb-1">Bienvenido de vuelta</h2>
-          <p className="text-sm text-gray-500 mb-6">Ingresá con tu email y contraseña.</p>
+          <h2 className="text-xl font-bold text-ink mb-1">Bienvenido de vuelta</h2>
+          <p className="text-sm text-ink-2 mb-6">Ingresá con tu email y contraseña.</p>
           <BrokerLoginForm />
         </>
       )}

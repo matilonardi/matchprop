@@ -107,7 +107,7 @@ export default function PrivacidadPage() {
                 </ul>
                 <p className="mt-2">
                   Para ejercer estos derechos, escribinos a{' '}
-                  <a href="mailto:hola@matchprop.com.ar" className="text-blue-600 hover:underline">
+                  <a href="mailto:hola@matchprop.com.ar" className="text-brand hover:underline">
                     hola@matchprop.com.ar
                   </a>
                   . Responderemos en un plazo máximo de 5 días hábiles.
@@ -151,7 +151,7 @@ export default function PrivacidadPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">10. Contacto</h2>
                 <p>
                   Para cualquier consulta sobre el tratamiento de tus datos personales, contactanos en{' '}
-                  <a href="mailto:hola@matchprop.com.ar" className="text-blue-600 hover:underline">
+                  <a href="mailto:hola@matchprop.com.ar" className="text-brand hover:underline">
                     hola@matchprop.com.ar
                   </a>
                   .
@@ -161,7 +161,7 @@ export default function PrivacidadPage() {
             </div>
 
             <div className="mt-10 pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-3 text-sm">
-              <Link href="/terminos" className="text-blue-600 hover:underline">
+              <Link href="/terminos" className="text-brand hover:underline">
                 → Términos y Condiciones
               </Link>
               <Link href="/" className="text-gray-500 hover:text-gray-700">

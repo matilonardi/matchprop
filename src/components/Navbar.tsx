@@ -45,53 +45,46 @@ export default function Navbar() {
   const dashboardHref = userRole === 'broker' ? '/broker/dashboard' : '/comprador/dashboard'
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-100">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-hairline">
+      <div className="max-w-6xl mx-auto px-5 sm:px-8">
         <div className="flex items-center justify-between h-16">
-          <Link href="/">
+          <Link href="/" className="flex items-center">
             <PropiLogoFull size="md" />
           </Link>
 
           {/* Desktop */}
-          <div className="hidden md:flex items-center gap-6">
-            <Link href="/pedidos" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
+          <div className="hidden md:flex items-center gap-7">
+            <Link href="/pedidos" className="link-underline text-sm text-ink-2 hover:text-ink">
               Ver búsquedas
+            </Link>
+            <Link href="/broker" className="link-underline text-sm text-ink-2 hover:text-ink">
+              Para vendedores
             </Link>
 
             {user ? (
               // Logged in: route determined by DB profile lookup, not user_metadata
               <Link
                 href={dashboardHref}
-                className="flex items-center gap-1.5 text-sm font-semibold text-orange-500 hover:text-orange-600 transition-colors"
+                className="flex items-center gap-1.5 text-sm font-semibold text-brand hover:text-brand-dark transition-colors"
               >
                 <LayoutDashboard className="h-4 w-4" />
                 Mi dashboard
               </Link>
             ) : (
-              // Not logged in: show login + publish links
-              <>
-                <Link href="/broker?login=1" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
-                  Iniciar sesión
-                </Link>
-                <Link href="/publicar">
-                  <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
-                    Publicar búsqueda
-                  </Button>
-                </Link>
-              </>
-            )}
-
-            {user && (
-              <Link href="/publicar">
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600">
-                  Publicar búsqueda
-                </Button>
+              <Link href="/broker?login=1" className="text-sm text-ink-2 hover:text-ink transition-colors">
+                Iniciar sesión
               </Link>
             )}
+
+            <Link href="/publicar">
+              <Button size="lg" className="rounded-lg px-5">
+                Publicar búsqueda
+              </Button>
+            </Link>
           </div>
 
           {/* Mobile toggle */}
-          <button className="md:hidden p-2" onClick={() => setOpen(!open)}>
+          <button className="md:hidden p-2 text-ink" onClick={() => setOpen(!open)} aria-label="Menú">
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
@@ -99,26 +92,29 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {open && (
-        <div className="md:hidden border-t border-gray-100 bg-white px-4 py-4 flex flex-col gap-4">
-          <Link href="/pedidos" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
-            Ver búsquedas activas
+        <div className="md:hidden border-t border-hairline bg-white px-5 py-4 flex flex-col gap-4">
+          <Link href="/pedidos" className="text-sm text-ink-2" onClick={() => setOpen(false)}>
+            Ver búsquedas
+          </Link>
+          <Link href="/broker" className="text-sm text-ink-2" onClick={() => setOpen(false)}>
+            Para vendedores
           </Link>
           {user ? (
             <Link
               href={dashboardHref}
-              className="text-sm font-semibold text-orange-500"
+              className="text-sm font-semibold text-brand"
               onClick={() => setOpen(false)}
             >
               Mi dashboard →
             </Link>
           ) : (
-            <Link href="/broker?login=1" className="text-sm text-gray-700" onClick={() => setOpen(false)}>
+            <Link href="/broker?login=1" className="text-sm text-ink-2" onClick={() => setOpen(false)}>
               Iniciar sesión
             </Link>
           )}
           <Link href="/publicar" onClick={() => setOpen(false)}>
-            <Button className="w-full bg-orange-500 hover:bg-orange-600">
-              Publicar mi búsqueda
+            <Button className="w-full" size="lg">
+              Publicar búsqueda
             </Button>
           </Link>
         </div>

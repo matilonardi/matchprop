@@ -28,7 +28,7 @@ export default async function AdminLoginPage({
                 type="text"
                 required
                 autoComplete="username"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 placeholder="tu usuario"
               />
             </div>
@@ -43,7 +43,7 @@ export default async function AdminLoginPage({
                 type="password"
                 required
                 autoComplete="current-password"
-                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent"
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent"
                 placeholder="••••••••"
               />
             </div>
@@ -56,7 +56,7 @@ export default async function AdminLoginPage({
 
             <button
               type="submit"
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
+              className="w-full bg-brand hover:bg-brand-dark text-white font-semibold py-2.5 rounded-lg text-sm transition-colors"
             >
               Ingresar
             </button>

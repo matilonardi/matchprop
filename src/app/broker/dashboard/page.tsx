@@ -80,9 +80,9 @@ interface MarketStats {
 function heatColor(rank: number, total: number): string {
   const pct = 1 - rank / total
   if (pct > 0.75) return 'bg-red-500'
-  if (pct > 0.5)  return 'bg-orange-500'
-  if (pct > 0.25) return 'bg-orange-300'
-  return 'bg-blue-300'
+  if (pct > 0.5)  return 'bg-brand'
+  if (pct > 0.25) return 'bg-brand/70'
+  return 'bg-brand/40'
 }
 
 export default function BrokerDashboard() {
@@ -257,11 +257,11 @@ export default function BrokerDashboard() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         {loadError ? (
           <div className="max-w-md text-center px-6">
-            <div className="text-4xl mb-4">⚠️</div>
+            <div className="mb-4 flex justify-center"><AlertCircle className="h-10 w-10 text-ink-3" strokeWidth={1.5} /></div>
             <p className="text-gray-700 font-medium mb-2">No se pudo cargar el dashboard</p>
             <p className="text-sm text-gray-500 mb-6">{loadError}</p>
             <div className="flex gap-3 justify-center">
-              <button onClick={() => window.location.reload()} className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white text-sm font-medium rounded-lg">
+              <button onClick={() => window.location.reload()} className="px-4 py-2 bg-brand hover:bg-brand-dark text-white text-sm font-medium rounded-lg">
                 Reintentar
               </button>
               <a href="/broker?login=1" className="px-4 py-2 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50">
@@ -271,7 +271,7 @@ export default function BrokerDashboard() {
           </div>
         ) : (
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-orange-500 mx-auto mb-3" />
+            <Loader2 className="h-8 w-8 animate-spin text-brand mx-auto mb-3" />
             <p className="text-sm text-gray-500">Cargando tu dashboard...</p>
           </div>
         )}
@@ -290,7 +290,7 @@ export default function BrokerDashboard() {
     : null
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-surface">
       <Navbar />
       <div className="pt-20 pb-16">
         <div className="max-w-5xl mx-auto px-4">
@@ -299,7 +299,7 @@ export default function BrokerDashboard() {
           <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
-                Hola, {broker.name.split(' ')[0]} 👋
+                Hola, {broker.name.split(' ')[0]}
               </h1>
               <div className="flex items-center gap-1.5 text-gray-500 text-sm mt-1">
                 <MapPin className="h-3.5 w-3.5" />
@@ -307,10 +307,10 @@ export default function BrokerDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <div className="bg-blue-50 border border-blue-100 rounded-xl px-4 py-2 flex items-center gap-2">
-                <CreditCard className="h-4 w-4 text-orange-500" />
-                <span className="font-bold text-blue-900 text-xl">{broker.credits}</span>
-                <span className="text-orange-500 text-sm">créditos</span>
+              <div className="bg-tint border border-brand/20 rounded-xl px-4 py-2 flex items-center gap-2">
+                <CreditCard className="h-4 w-4 text-brand" />
+                <span className="font-bold text-brand-dark text-xl">{broker.credits}</span>
+                <span className="text-brand text-sm">créditos</span>
               </div>
               <button
                 onClick={handleLogout}
@@ -325,9 +325,9 @@ export default function BrokerDashboard() {
           {/* Stats */}
           <div className="grid grid-cols-3 gap-4 mb-3">
             {[
-              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-blue-500" />, color: 'text-orange-500', badge: null },
+              { label: 'Créditos disponibles', value: broker.credits, icon: <CreditCard className="h-5 w-5 text-brand" />, color: 'text-brand', badge: null },
               { label: 'Contactos desbloqueados', value: leads.length, icon: <Unlock className="h-5 w-5 text-green-500" />, color: 'text-green-600', badge: totalUnread > 0 ? totalUnread : null },
-              { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-purple-500" />, color: 'text-purple-600', badge: null },
+              { label: 'Zonas activas', value: broker.zones.length, icon: <MapPin className="h-5 w-5 text-brand-dark" />, color: 'text-brand-dark', badge: null },
             ].map(({ label, value, icon, color, badge }) => (
               <div key={label} className="bg-white rounded-xl border border-gray-100 p-5">
                 <div className="flex items-center gap-3 mb-2">
@@ -337,7 +337,7 @@ export default function BrokerDashboard() {
                 <div className="flex items-center gap-2">
                   <p className={`text-3xl font-bold ${color}`}>{value}</p>
                   {badge !== null && (
-                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-orange-600 bg-orange-50 border border-orange-200 rounded-full px-2 py-0.5">
+                    <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-dark bg-tint border border-brand/30 rounded-full px-2 py-0.5">
                       <MessageCircle className="h-3 w-3" />
                       {badge} nuevo{badge !== 1 ? 's' : ''}
                     </span>
@@ -351,10 +351,10 @@ export default function BrokerDashboard() {
           <div className="grid grid-cols-2 gap-4 mb-8">
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center gap-3 mb-2">
-                <ClipboardList className="h-5 w-5 text-indigo-500" />
+                <ClipboardList className="h-5 w-5 text-brand-dark" />
                 <span className="text-sm text-gray-500">Pedidos en plataforma</span>
               </div>
-              <p className="text-3xl font-bold text-indigo-600">{platformStats?.total ?? '—'}</p>
+              <p className="text-3xl font-bold text-brand-dark">{platformStats?.total ?? '—'}</p>
             </div>
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center gap-3 mb-2">
@@ -374,10 +374,10 @@ export default function BrokerDashboard() {
             <div className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-semibold text-gray-900 flex items-center gap-2">
-                  <Bell className="h-4 w-4 text-blue-500" />
+                  <Bell className="h-4 w-4 text-brand" />
                   Pedidos en tus zonas
                 </h2>
-                <Link href="/pedidos" className="text-sm text-orange-500 hover:underline">
+                <Link href="/pedidos" className="text-sm text-brand hover:underline">
                   Ver todos →
                 </Link>
               </div>
@@ -386,13 +386,13 @@ export default function BrokerDashboard() {
                   <Link
                     key={zone}
                     href={`/pedidos?zone=${encodeURIComponent(zone)}`}
-                    className="flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
+                    className="flex items-center justify-between p-3 bg-tint hover:bg-tint rounded-xl transition-colors group"
                   >
-                    <div className="flex items-center gap-2 text-sm font-medium text-blue-800">
-                      <MapPin className="h-3.5 w-3.5 text-blue-500" />
+                    <div className="flex items-center gap-2 text-sm font-medium text-brand-dark">
+                      <MapPin className="h-3.5 w-3.5 text-brand" />
                       {zone}
                     </div>
-                    <span className="text-xs text-orange-500 group-hover:translate-x-0.5 transition-transform">
+                    <span className="text-xs text-brand group-hover:translate-x-0.5 transition-transform">
                       Ver búsquedas →
                     </span>
                   </Link>
@@ -420,7 +420,7 @@ export default function BrokerDashboard() {
 
               {leads.length === 0 ? (
                 <div className="text-center py-6">
-                  <div className="text-3xl mb-2">🔓</div>
+                  <div className="mb-2 flex justify-center"><Unlock className="h-8 w-8 text-ink-3" strokeWidth={1.5} /></div>
                   <p className="text-sm text-gray-500 mb-3">Todavía no desbloqueaste ningún contacto.</p>
                   <Link href="/pedidos">
                     <Button size="sm" variant="outline" className="text-xs">
@@ -439,7 +439,7 @@ export default function BrokerDashboard() {
                         <div className="flex items-start justify-between gap-2">
                           <div>
                             <p className="text-sm font-semibold text-gray-900">{req.contact_name}</p>
-                            <a href={`tel:${req.contact_phone}`} className="text-sm text-orange-500 hover:underline font-medium">
+                            <a href={`tel:${req.contact_phone}`} className="text-sm text-brand hover:underline font-medium">
                               {req.contact_phone}
                             </a>
                             {req.contact_email && (
@@ -482,7 +482,7 @@ export default function BrokerDashboard() {
                             rel="noopener noreferrer"
                             className="inline-flex items-center gap-1 text-xs text-green-600 hover:underline font-medium"
                           >
-                            💬 WhatsApp
+                            WhatsApp
                           </a>
                           <Link
                             href={`/pedidos/${lead.request_id}`}
@@ -500,19 +500,19 @@ export default function BrokerDashboard() {
                             })}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1 text-xs text-indigo-600 hover:underline font-medium"
+                            className="inline-flex items-center gap-1 text-xs text-brand-dark hover:underline font-medium"
                           >
                             <Search className="h-3 w-3" />
                             ZonaProp
                           </a>
                           <Link
                             href={`/pedidos/${lead.request_id}#mensajes`}
-                            className="inline-flex items-center gap-1 text-xs text-blue-600 hover:underline font-medium"
+                            className="inline-flex items-center gap-1 text-xs text-brand hover:underline font-medium"
                           >
                             <MessageCircle className="h-3 w-3" />
                             {lead.total_messages > 0 ? 'Ver chat' : 'Iniciar chat'}
                             {lead.unread_count > 0 && (
-                              <span className="inline-flex items-center justify-center bg-orange-500 text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 leading-none">
+                              <span className="inline-flex items-center justify-center bg-brand text-white text-[10px] font-bold rounded-full min-w-[16px] h-4 px-1 leading-none">
                                 {lead.unread_count}
                               </span>
                             )}
@@ -520,7 +520,7 @@ export default function BrokerDashboard() {
                         </div>
 
                         {lead.unread_count > 0 ? (
-                          <p className="mt-1 text-[11px] text-orange-600 font-medium">
+                          <p className="mt-1 text-[11px] text-brand-dark font-medium">
                             ● {lead.unread_count === 1 ? 'Tenés 1 respuesta nueva' : `Tenés ${lead.unread_count} respuestas nuevas`}
                           </p>
                         ) : lead.total_messages > 0 ? (
@@ -549,7 +549,7 @@ export default function BrokerDashboard() {
                 )}
               </h2>
               <Link href="/publicar">
-                <Button size="sm" className="bg-orange-500 hover:bg-orange-600 text-xs h-8">
+                <Button size="sm" className="bg-brand hover:bg-brand-dark text-xs h-8">
                   <Plus className="h-3.5 w-3.5 mr-1" />
                   Nueva búsqueda
                 </Button>
@@ -573,7 +573,7 @@ export default function BrokerDashboard() {
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 mb-1 flex-wrap">
                           <span className="font-medium text-gray-900 text-sm">{p.contact_name}</span>
-                          <a href={`tel:${p.contact_phone}`} className="text-xs text-orange-500 hover:underline">
+                          <a href={`tel:${p.contact_phone}`} className="text-xs text-brand hover:underline">
                             {p.contact_phone}
                           </a>
                           {isActive ? (
@@ -595,7 +595,7 @@ export default function BrokerDashboard() {
                       <div className="shrink-0 flex items-center gap-2">
                         <Link
                           href={`/pedidos/${p.id}`}
-                          className="flex items-center gap-1 text-xs text-gray-400 hover:text-blue-600 border border-gray-200 hover:border-blue-200 rounded-lg px-2.5 py-1.5 transition-colors"
+                          className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand border border-gray-200 hover:border-brand/30 rounded-lg px-2.5 py-1.5 transition-colors"
                         >
                           <FileSearch className="h-3.5 w-3.5" />
                           Ver
@@ -604,7 +604,7 @@ export default function BrokerDashboard() {
                           <>
                             <button
                               onClick={() => openEditModal(p)}
-                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-indigo-600 border border-gray-200 hover:border-indigo-200 rounded-lg px-2.5 py-1.5 transition-colors"
+                              className="flex items-center gap-1 text-xs text-gray-400 hover:text-brand-dark border border-gray-200 hover:border-brand/30 rounded-lg px-2.5 py-1.5 transition-colors"
                             >
                               <Pencil className="h-3.5 w-3.5" />
                               Editar
@@ -630,13 +630,13 @@ export default function BrokerDashboard() {
           <div className="rounded-2xl border border-gray-100 overflow-hidden">
 
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 px-6 py-4 flex items-center justify-between">
+            <div className="bg-gradient-to-r from-brand to-brand-dark px-6 py-4 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <TrendingUp className="h-5 w-5 text-white" />
                 <h3 className="font-bold text-white text-lg">Inteligencia de mercado</h3>
               </div>
               {marketStats && (
-                <span className="text-xs text-blue-200 bg-white/10 px-3 py-1 rounded-full">
+                <span className="text-xs text-white/70 bg-white/10 px-3 py-1 rounded-full">
                   {marketStats.totalActive} búsquedas activas en Córdoba
                 </span>
               )}
@@ -647,35 +647,35 @@ export default function BrokerDashboard() {
               {/* Market summary stats */}
               {marketStats ? (
                 <div className="grid grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl p-4 border border-orange-100">
+                  <div className="bg-gradient-to-br from-tint to-tint rounded-xl p-4 border border-brand/20">
                     <div className="flex items-center gap-2 mb-1">
-                      <Zap className="h-4 w-4 text-orange-500" />
-                      <span className="text-xs font-medium text-orange-700">Nuevos esta semana</span>
+                      <Zap className="h-4 w-4 text-brand" />
+                      <span className="text-xs font-medium text-brand-dark">Nuevos esta semana</span>
                     </div>
-                    <p className="text-3xl font-bold text-orange-600">{marketStats.newThisWeek}</p>
-                    <p className="text-xs text-orange-500 mt-0.5">pedidos publicados</p>
+                    <p className="text-3xl font-bold text-brand-dark">{marketStats.newThisWeek}</p>
+                    <p className="text-xs text-brand mt-0.5">pedidos publicados</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl p-4 border border-blue-100">
+                  <div className="bg-gradient-to-br from-tint to-tint rounded-xl p-4 border border-brand/20">
                     <div className="flex items-center gap-2 mb-1">
-                      <BarChart2 className="h-4 w-4 text-blue-500" />
-                      <span className="text-xs font-medium text-blue-700">Ticket promedio</span>
+                      <BarChart2 className="h-4 w-4 text-brand" />
+                      <span className="text-xs font-medium text-brand-dark">Ticket promedio</span>
                     </div>
-                    <p className="text-3xl font-bold text-blue-700">
+                    <p className="text-3xl font-bold text-brand-dark">
                       {marketStats.avgBudget > 0 ? `${Math.round(marketStats.avgBudget / 1000)}k` : '—'}
                     </p>
-                    <p className="text-xs text-blue-500 mt-0.5">USD en el mercado</p>
+                    <p className="text-xs text-brand mt-0.5">USD en el mercado</p>
                   </div>
 
-                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-100">
+                  <div className="bg-gradient-to-br from-brand to-brand rounded-xl p-4 border border-brand/30">
                     <div className="flex items-center gap-2 mb-1">
-                      <Target className="h-4 w-4 text-purple-500" />
-                      <span className="text-xs font-medium text-purple-700">Más buscado</span>
+                      <Target className="h-4 w-4 text-brand-dark" />
+                      <span className="text-xs font-medium text-brand-dark">Más buscado</span>
                     </div>
-                    <p className="text-3xl font-bold text-purple-700 capitalize">
+                    <p className="text-3xl font-bold text-brand-dark capitalize">
                       {topType ? (PROPERTY_TYPE_LABELS[topType[0]] || topType[0]) : '—'}
                     </p>
-                    <p className="text-xs text-purple-500 mt-0.5">
+                    <p className="text-xs text-brand-dark mt-0.5">
                       {topType ? `${topType[1]} búsquedas activas` : ''}
                     </p>
                   </div>
@@ -693,7 +693,7 @@ export default function BrokerDashboard() {
 
                 {/* Opportunities FOMO panel */}
                 <div className="rounded-xl border border-gray-100 overflow-hidden">
-                  <div className="bg-gradient-to-r from-orange-500 to-red-500 px-4 py-3 flex items-center gap-2">
+                  <div className="bg-gradient-to-r from-brand to-brand-dark px-4 py-3 flex items-center gap-2">
                     <AlertCircle className="h-4 w-4 text-white" />
                     <span className="font-semibold text-white text-sm">Oportunidades en tus zonas</span>
                   </div>
@@ -704,16 +704,16 @@ export default function BrokerDashboard() {
                     </div>
                   ) : marketStats.totalUnlocked === 0 ? (
                     <div className="p-6 text-center">
-                      <div className="text-3xl mb-2">🎯</div>
+                      <div className="mb-2 flex justify-center"><Target className="h-8 w-8 text-ink-3" strokeWidth={1.5} /></div>
                       <p className="text-sm font-medium text-gray-700">¡Tenés todo al día!</p>
                       <p className="text-xs text-gray-400 mt-1">Desbloqueaste todos los pedidos en tus zonas.</p>
                     </div>
                   ) : (
                     <div className="p-4">
                       {/* Big FOMO number */}
-                      <div className="bg-orange-50 border border-orange-200 rounded-xl p-4 mb-4 text-center">
-                        <p className="text-4xl font-black text-orange-600">{marketStats.totalUnlocked}</p>
-                        <p className="text-sm text-orange-700 font-medium mt-0.5">
+                      <div className="bg-tint border border-brand/30 rounded-xl p-4 mb-4 text-center">
+                        <p className="text-4xl font-black text-brand-dark">{marketStats.totalUnlocked}</p>
+                        <p className="text-sm text-brand-dark font-medium mt-0.5">
                           {marketStats.totalUnlocked === 1
                             ? 'pedido sin desbloquear en tus zonas'
                             : 'pedidos sin desbloquear en tus zonas'}
@@ -726,24 +726,24 @@ export default function BrokerDashboard() {
                           <Link
                             key={zone}
                             href={`/pedidos?zone=${encodeURIComponent(zone)}`}
-                            className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-orange-50 border border-gray-100 hover:border-orange-200 transition-colors group"
+                            className="flex items-center justify-between p-2.5 rounded-lg bg-gray-50 hover:bg-tint border border-gray-100 hover:border-brand/30 transition-colors group"
                           >
                             <div className="flex items-center gap-2">
-                              <MapPin className="h-3.5 w-3.5 text-orange-400" />
+                              <MapPin className="h-3.5 w-3.5 text-brand" />
                               <span className="text-sm font-medium text-gray-700">{zone}</span>
                             </div>
                             <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-orange-600 bg-orange-100 rounded-full px-2 py-0.5">
+                              <span className="text-xs font-bold text-brand-dark bg-tint rounded-full px-2 py-0.5">
                                 {count} {count === 1 ? 'pedido' : 'pedidos'}
                               </span>
-                              <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-orange-500 transition-colors" />
+                              <ChevronRight className="h-3.5 w-3.5 text-gray-400 group-hover:text-brand transition-colors" />
                             </div>
                           </Link>
                         ))}
                       </div>
 
                       <Link href="/pedidos">
-                        <Button className="w-full mt-4 bg-orange-500 hover:bg-orange-600 text-sm">
+                        <Button className="w-full mt-4 bg-brand hover:bg-brand-dark text-sm">
                           Ver todas las oportunidades →
                         </Button>
                       </Link>
@@ -754,7 +754,7 @@ export default function BrokerDashboard() {
                 {/* Zone heatmap */}
                 <div className="rounded-xl border border-gray-100 overflow-hidden">
                   <div className="bg-gray-50 border-b border-gray-100 px-4 py-3 flex items-center gap-2">
-                    <Flame className="h-4 w-4 text-orange-500" />
+                    <Flame className="h-4 w-4 text-brand" />
                     <span className="font-semibold text-gray-800 text-sm">Zonas con más demanda</span>
                   </div>
 
@@ -781,7 +781,7 @@ export default function BrokerDashboard() {
                             {/* Bar + label */}
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center justify-between mb-0.5">
-                                <span className="text-xs font-medium text-gray-700 truncate group-hover:text-blue-600 transition-colors">
+                                <span className="text-xs font-medium text-gray-700 truncate group-hover:text-brand transition-colors">
                                   {z.zone}
                                 </span>
                                 <div className="flex items-center gap-2 ml-2 shrink-0">
@@ -828,9 +828,9 @@ export default function BrokerDashboard() {
                           <Link
                             key={type}
                             href={`/pedidos?type=${type}`}
-                            className="flex items-center gap-2 bg-gray-50 hover:bg-blue-50 border border-gray-200 hover:border-blue-200 rounded-xl px-3 py-2 transition-colors group"
+                            className="flex items-center gap-2 bg-gray-50 hover:bg-tint border border-gray-200 hover:border-brand/30 rounded-xl px-3 py-2 transition-colors group"
                           >
-                            <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700">
+                            <span className="text-sm font-medium text-gray-700 group-hover:text-brand-dark">
                               {PROPERTY_TYPE_LABELS[type] || type}
                             </span>
                             <span className="text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-lg px-1.5 py-0.5">
@@ -1036,7 +1036,7 @@ export default function BrokerDashboard() {
           { value: 'hubo_visita',      label: 'Hubo visita' },
           { value: 'hubo_negociacion', label: 'Hubo negociación' },
           { value: 'hubo_reserva',     label: 'Hubo reserva' },
-          { value: 'hubo_venta',       label: 'Hubo venta 🎉' },
+          { value: 'hubo_venta',       label: 'Hubo venta' },
         ]
 
         async function submitSurvey() {
@@ -1058,9 +1058,9 @@ export default function BrokerDashboard() {
         return (
           <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
             <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
-              <div className="bg-blue-600 px-6 py-4 rounded-t-2xl">
-                <p className="text-white font-bold text-lg">📋 Encuesta de seguimiento</p>
-                <p className="text-blue-100 text-sm mt-0.5">
+              <div className="bg-brand px-6 py-4 rounded-t-2xl">
+                <p className="text-white font-bold text-lg">Encuesta de seguimiento</p>
+                <p className="text-white/70 text-sm mt-0.5">
                   Necesitamos saber cómo te fue para mejorar la plataforma
                 </p>
               </div>
@@ -1081,7 +1081,7 @@ export default function BrokerDashboard() {
                       key={opt.value}
                       className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
                         surveyOutcome === opt.value
-                          ? 'border-blue-500 bg-blue-50'
+                          ? 'border-brand bg-tint'
                           : 'border-gray-200 hover:border-gray-300'
                       }`}
                     >
@@ -1091,7 +1091,7 @@ export default function BrokerDashboard() {
                         value={opt.value}
                         checked={surveyOutcome === opt.value}
                         onChange={() => setSurveyOutcome(opt.value)}
-                        className="accent-blue-600"
+                        className="accent-brand"
                       />
                       <span className="text-sm font-medium text-gray-800">{opt.label}</span>
                     </label>
@@ -1107,7 +1107,7 @@ export default function BrokerDashboard() {
                 <Button
                   onClick={submitSurvey}
                   disabled={!surveyOutcome || surveySubmitting}
-                  className="w-full bg-blue-600 hover:bg-blue-700"
+                  className="w-full bg-brand hover:bg-brand-dark"
                 >
                   {surveySubmitting
                     ? <><Loader2 className="h-4 w-4 animate-spin mr-2" />Guardando...</>

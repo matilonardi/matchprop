@@ -6,7 +6,8 @@ import { usePostHog } from '@/components/PostHogProvider'
 import {
   MapPin, Bed, Bath, DollarSign, Clock, Eye, Lock, Unlock,
   CheckCircle2, ArrowLeft, Share2, Loader2, XCircle, Calendar,
-  MessageCircle, Send, Pencil, Flag
+  MessageCircle, Send, Pencil, Flag,
+  Ruler, Trees, MoveHorizontal, MoveVertical, Car
 } from 'lucide-react'
 import { CAR_BODY_STYLE_LABELS, SEGURIDAD_TIPOS } from '@/lib/constants'
 import { Button } from '@/components/ui/button'
@@ -32,10 +33,10 @@ function timeAgo(dateStr: string): string {
 
 function urgencyLabel(urgency?: string): string {
   const map: Record<string, string> = {
-    esta_semana: '🔥 Esta semana',
-    este_mes: '📅 Este mes',
-    en_3_meses: '📆 En 3 meses',
-    flexible: '⏳ Flexible',
+    esta_semana: 'Esta semana',
+    este_mes: 'Este mes',
+    en_3_meses: 'En 3 meses',
+    flexible: 'Flexible',
   }
   return urgency ? (map[urgency] || urgency) : ''
 }
@@ -377,12 +378,12 @@ export default function RequestDetail({
                 </h1>
                 <Badge className="bg-green-100 text-green-700 border-0">Activa</Badge>
                 {request.publisher_type === 'inmobiliaria' ? (
-                  <span className="inline-flex items-center gap-1 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100 px-2 py-0.5 rounded-full">
-                    🏢 Inmobiliaria{request.agency_name ? ` · ${request.agency_name}` : ''}
+                  <span className="inline-flex items-center gap-1 text-xs font-medium bg-tint text-brand-dark border border-brand/20 px-2 py-0.5 rounded-full">
+                    Inmobiliaria{request.agency_name ? ` · ${request.agency_name}` : ''}
                   </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 text-xs font-medium bg-gray-100 text-gray-600 border border-gray-200 px-2 py-0.5 rounded-full">
-                    🙋 Particular
+                    Particular
                   </span>
                 )}
               </div>
@@ -393,7 +394,7 @@ export default function RequestDetail({
                 </p>
                 <div className="flex flex-wrap gap-1.5">
                   {request.zones.map((zone) => (
-                    <span key={zone} className="text-xs bg-orange-50 text-orange-700 border border-orange-100 px-2 py-0.5 rounded-full">
+                    <span key={zone} className="text-xs bg-tint text-brand-dark border border-brand/20 px-2 py-0.5 rounded-full">
                       {zone}
                     </span>
                   ))}
@@ -446,7 +447,7 @@ export default function RequestDetail({
               <div className="flex flex-wrap gap-4">
                 {(request.car_year_min || request.car_year_max) && (
                   <div className="flex items-center gap-2 text-gray-700">
-                    <Calendar className="h-5 w-5 text-blue-500" />
+                    <Calendar className="h-5 w-5 text-brand" />
                     <span>
                       {request.car_year_min && request.car_year_max
                         ? `${request.car_year_min} – ${request.car_year_max}`
@@ -459,9 +460,9 @@ export default function RequestDetail({
                 {request.car_condition && (
                   <div className="flex items-center gap-2 text-gray-700">
                     <span className="text-sm">
-                      {request.car_condition === 'nuevo' ? '✨ 0km / Nuevo'
-                        : request.car_condition === 'usado' ? '🔑 Usado'
-                        : '🔄 Nuevo o usado'}
+                      {request.car_condition === 'nuevo' ? '0km / Nuevo'
+                        : request.car_condition === 'usado' ? 'Usado'
+                        : 'Nuevo o usado'}
                     </span>
                   </div>
                 )}
@@ -478,7 +479,7 @@ export default function RequestDetail({
                   <p className="text-sm font-medium text-gray-700 mb-2">Marcas preferidas:</p>
                   <div className="flex flex-wrap gap-2">
                     {request.car_brands!.map((b) => (
-                      <span key={b} className="text-sm bg-blue-50 text-blue-700 border border-blue-100 px-3 py-1 rounded-full">
+                      <span key={b} className="text-sm bg-tint text-brand-dark border border-brand/20 px-3 py-1 rounded-full">
                         {b}
                       </span>
                     ))}
@@ -491,12 +492,12 @@ export default function RequestDetail({
                 <div className="flex flex-wrap gap-2">
                   {request.car_fuel_types?.map((f) => (
                     <span key={f} className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                      ⛽ {f}
+                      {f}
                     </span>
                   ))}
                   {request.car_transmission && request.car_transmission !== 'cualquiera' && (
                     <span className="text-sm bg-gray-100 text-gray-700 px-3 py-1 rounded-full">
-                      ⚙️ {request.car_transmission === 'manual' ? 'Caja manual' : 'Caja automática'}
+                      {request.car_transmission === 'manual' ? 'Caja manual' : 'Caja automática'}
                     </span>
                   )}
                 </div>
@@ -509,7 +510,7 @@ export default function RequestDetail({
               <div className="flex gap-4">
                 {request.bedrooms_min && (
                   <div className="flex items-center gap-2 text-gray-700">
-                    <Bed className="h-5 w-5 text-blue-500" />
+                    <Bed className="h-5 w-5 text-brand" />
                     <span>
                       {request.bedrooms_min}
                       {request.bedrooms_max ? `–${request.bedrooms_max}` : '+'} dormitorios
@@ -518,7 +519,7 @@ export default function RequestDetail({
                 )}
                 {request.bathrooms_min && (
                   <div className="flex items-center gap-2 text-gray-700">
-                    <Bath className="h-5 w-5 text-blue-500" />
+                    <Bath className="h-5 w-5 text-brand" />
                     <span>{request.bathrooms_min}+ baños</span>
                   </div>
                 )}
@@ -533,7 +534,7 @@ export default function RequestDetail({
                 <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-gray-700">
                   {(request.area_cubierta_min || request.area_cubierta_max) && (
                     <span className="flex items-center gap-1.5">
-                      <span className="text-blue-500 font-medium">📐</span>
+                      <Ruler className="h-4 w-4 text-brand" strokeWidth={1.5} />
                       {request.area_cubierta_min && request.area_cubierta_max
                         ? `${request.area_cubierta_min}–${request.area_cubierta_max} m² cub.`
                         : request.area_cubierta_min
@@ -543,7 +544,7 @@ export default function RequestDetail({
                   )}
                   {(request.area_terreno_min || request.area_terreno_max) && (
                     <span className="flex items-center gap-1.5">
-                      <span className="text-green-500 font-medium">🌿</span>
+                      <Trees className="h-4 w-4 text-brand" strokeWidth={1.5} />
                       {request.area_terreno_min && request.area_terreno_max
                         ? `${request.area_terreno_min}–${request.area_terreno_max} m² terreno`
                         : request.area_terreno_min
@@ -553,7 +554,7 @@ export default function RequestDetail({
                   )}
                   {(request.terreno_frente_min || request.terreno_frente_max) && (
                     <span className="flex items-center gap-1.5">
-                      <span className="font-medium text-gray-500">↔</span>
+                      <MoveHorizontal className="h-4 w-4 text-ink-3" strokeWidth={1.5} />
                       Frente:{' '}
                       {request.terreno_frente_min && request.terreno_frente_max
                         ? `${request.terreno_frente_min}–${request.terreno_frente_max} m`
@@ -564,7 +565,7 @@ export default function RequestDetail({
                   )}
                   {(request.terreno_fondo_min || request.terreno_fondo_max) && (
                     <span className="flex items-center gap-1.5">
-                      <span className="font-medium text-gray-500">↕</span>
+                      <MoveVertical className="h-4 w-4 text-ink-3" strokeWidth={1.5} />
                       Fondo:{' '}
                       {request.terreno_fondo_min && request.terreno_fondo_max
                         ? `${request.terreno_fondo_min}–${request.terreno_fondo_max} m`
@@ -575,7 +576,7 @@ export default function RequestDetail({
                   )}
                   {(request.cocheras_min ?? 0) > 0 && (
                     <span className="flex items-center gap-1.5">
-                      <span>🚗</span>
+                      <Car className="h-4 w-4 text-ink-3" strokeWidth={1.5} />
                       {request.cocheras_min}+ cochera{(request.cocheras_min ?? 0) > 1 ? 's' : ''}
                     </span>
                   )}
@@ -590,8 +591,8 @@ export default function RequestDetail({
                     {(request.seguridad_tipos ?? []).map((s) => {
                       const label = SEGURIDAD_TIPOS.find(x => x.id === s)?.label || s
                       return (
-                        <span key={s} className="text-sm bg-purple-50 text-purple-700 border border-purple-100 px-3 py-1 rounded-full">
-                          🛡 {label}
+                        <span key={s} className="text-sm bg-tint text-brand-dark border border-brand/30 px-3 py-1 rounded-full">
+                          {label}
                         </span>
                       )
                     })}
@@ -606,17 +607,17 @@ export default function RequestDetail({
                   <div className="flex flex-wrap gap-2">
                     {(request.requirements_excluyentes || []).map((r) => (
                       <span key={`ex-${r}`} className="text-sm bg-red-50 text-red-700 border border-red-200 px-3 py-1 rounded-full font-medium">
-                        ⛔ {r.replace(/_/g, ' ')}
+                        {r.replace(/_/g, ' ')}
                       </span>
                     ))}
                     {request.requirements.map((r) => (
-                      <span key={r} className="text-sm bg-blue-50 text-blue-700 px-3 py-1 rounded-full">
-                        ✓ {r.replace(/_/g, ' ')}
+                      <span key={r} className="text-sm bg-tint text-brand-dark px-3 py-1 rounded-full">
+                        {r.replace(/_/g, ' ')}
                       </span>
                     ))}
                   </div>
                   {(request.requirements_excluyentes?.length ?? 0) > 0 && (
-                    <p className="text-xs text-red-600 mt-1.5">⛔ = Excluyente (no negocia sin esto)</p>
+                    <p className="text-xs text-red-600 mt-1.5">Excluyente = no negocia sin esto</p>
                   )}
                 </div>
               )}
@@ -628,7 +629,7 @@ export default function RequestDetail({
                   <div className="space-y-1.5">
                     {request.priorities.map((p) => (
                       <div key={p} className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 px-3 py-2 rounded-lg">
-                        <span>⚑</span>
+                        <Flag className="h-4 w-4" strokeWidth={1.5} />
                         <span>{{
                           zona_exacta: 'La zona es clave, no se mueve de ahí',
                           precio_fijo: 'El presupuesto es fijo, no se excede',
@@ -648,16 +649,16 @@ export default function RequestDetail({
           {/* Urgency — shown for both types */}
           {request.urgency && (
             <div className="flex items-center gap-2 text-gray-700">
-              <Clock className="h-4 w-4 text-blue-500" />
+              <Clock className="h-4 w-4 text-brand" />
               <span className="text-sm">{urgencyLabel(request.urgency)}</span>
             </div>
           )}
 
           {/* Description */}
           {request.description && (
-            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
-              <p className="text-sm font-medium text-blue-900 mb-1">Qué busca exactamente:</p>
-              <p className="text-sm text-blue-800 leading-relaxed">{request.description}</p>
+            <div className="bg-tint border border-brand/20 rounded-xl p-4">
+              <p className="text-sm font-medium text-brand-dark mb-1">Qué busca exactamente:</p>
+              <p className="text-sm text-brand-dark leading-relaxed">{request.description}</p>
             </div>
           )}
 
@@ -711,7 +712,7 @@ export default function RequestDetail({
                         : 'border-gray-200 hover:border-green-400 hover:bg-green-50'
                     }`}
                   >
-                    <span className="text-2xl">🎉</span>
+                    <CheckCircle2 className="h-6 w-6 text-brand shrink-0" strokeWidth={1.5} />
                     <div>
                       <p className="text-sm font-semibold text-gray-800">¡Sí, lo conseguí!</p>
                       <p className="text-xs text-gray-500">Encontré lo que buscaba y lo estoy comprando</p>
@@ -727,7 +728,7 @@ export default function RequestDetail({
                         : 'border-gray-200 hover:border-gray-400 hover:bg-gray-50'
                     }`}
                   >
-                    <span className="text-2xl">🔕</span>
+                    <XCircle className="h-6 w-6 text-ink-3 shrink-0" strokeWidth={1.5} />
                     <div>
                       <p className="text-sm font-semibold text-gray-800">No, solo quiero cerrarla</p>
                       <p className="text-xs text-gray-500">Cambié de planes o ya no estoy buscando</p>
@@ -750,8 +751,8 @@ export default function RequestDetail({
           <div className="px-6 pb-4 pt-0">
             <div className={`rounded-xl p-4 text-center text-sm ${closeReason === 'found' ? 'bg-green-50 text-green-800' : 'bg-gray-100 text-gray-600'}`}>
               {closeReason === 'found'
-                ? '🎉 ¡Felicitaciones! Búsqueda cerrada. Esperamos que hayas encontrado tu lugar ideal.'
-                : '✅ Búsqueda cerrada. Ya no aparece en el feed.'}
+                ? '¡Felicitaciones! Búsqueda cerrada. Esperamos que hayas encontrado tu lugar ideal.'
+                : 'Búsqueda cerrada. Ya no aparece en el feed.'}
             </div>
           </div>
         )}
@@ -772,11 +773,11 @@ export default function RequestDetail({
           return (
             <div className="px-6 pb-6" id="mensajes">
               <div className="flex items-center gap-2 mb-3">
-                <MessageCircle className="h-4 w-4 text-orange-500" />
+                <MessageCircle className="h-4 w-4 text-brand" />
                 <span className="text-sm font-medium text-gray-700">
                   Mensajes de brokers
                   {conversations.length > 0 && (
-                    <span className="ml-1.5 bg-orange-500 text-white text-xs px-1.5 py-0.5 rounded-full">
+                    <span className="ml-1.5 bg-brand text-white text-xs px-1.5 py-0.5 rounded-full">
                       {conversations.length}
                     </span>
                   )}
@@ -797,7 +798,7 @@ export default function RequestDetail({
                     <div key={brokerId} className="border border-gray-200 rounded-xl overflow-hidden">
                       {/* Broker header */}
                       <div className="px-4 py-2.5 bg-gray-50 border-b border-gray-100 flex items-center gap-2.5">
-                        <div className="w-7 h-7 rounded-full bg-orange-100 flex items-center justify-center text-xs font-bold text-orange-600 flex-shrink-0">
+                        <div className="w-7 h-7 rounded-full bg-tint flex items-center justify-center text-xs font-bold text-brand-dark flex-shrink-0">
                           {brokerName.charAt(0).toUpperCase()}
                         </div>
                         <span className="text-sm font-medium text-gray-800">{brokerName}</span>
@@ -811,13 +812,13 @@ export default function RequestDetail({
                             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                               <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
                                 isMine
-                                  ? 'bg-orange-500 text-white rounded-br-sm'
+                                  ? 'bg-brand text-white rounded-br-sm'
                                   : 'bg-gray-100 text-gray-800 rounded-bl-sm'
                               }`}>
                                 <p>{msg.content}</p>
-                                <p className={`text-xs mt-1 flex items-center gap-1 ${isMine ? 'text-orange-200 justify-end' : 'text-gray-400'}`}>
+                                <p className={`text-xs mt-1 flex items-center gap-1 ${isMine ? 'text-white/70 justify-end' : 'text-gray-400'}`}>
                                   {timeAgo(msg.created_at)}
-                                  {isMine && <span title="Enviado">✓</span>}
+                                  {isMine && <CheckCircle2 className="inline h-3 w-3" strokeWidth={2} />}
                                 </p>
                               </div>
                             </div>
@@ -836,7 +837,7 @@ export default function RequestDetail({
                             onChange={(e) => setReplyTexts(prev => ({ ...prev, [brokerId]: e.target.value }))}
                             placeholder={`Respondé a ${brokerName}...`}
                             rows={2}
-                            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none bg-white"
+                            className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand resize-none bg-white"
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault()
@@ -847,7 +848,7 @@ export default function RequestDetail({
                           <button
                             onClick={() => void sendMessageToBroker(brokerId)}
                             disabled={sendingMsg || !replyTexts[brokerId]?.trim()}
-                            className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
+                            className="bg-brand hover:bg-brand-dark text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
                           >
                             {sendingMsg && replyingToBrokerId === brokerId
                               ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -867,11 +868,11 @@ export default function RequestDetail({
         {/* Owner actions (Edit button) — shown when the buyer is logged in as the owner */}
         {(isOwner || closeToken) && !closed && (
           <div className="px-6 pb-4 pt-0">
-            <div className="border border-dashed border-blue-200 rounded-xl p-4 bg-blue-50/40">
-              <p className="text-xs text-blue-600 mb-3 font-medium">Esta es tu búsqueda</p>
+            <div className="border border-dashed border-brand/30 rounded-xl p-4 bg-tint/40">
+              <p className="text-xs text-brand mb-3 font-medium">Esta es tu búsqueda</p>
               <Link
                 href={`/pedidos/${request.id}/editar${closeToken ? `?close_token=${closeToken}` : ''}`}
-                className="inline-flex items-center gap-2 text-sm font-medium text-blue-700 hover:text-blue-800 bg-white border border-blue-200 hover:border-blue-300 px-4 py-2 rounded-lg transition-colors"
+                className="inline-flex items-center gap-2 text-sm font-medium text-brand-dark hover:text-brand-dark bg-white border border-brand/30 hover:border-brand/40 px-4 py-2 rounded-lg transition-colors"
               >
                 <Pencil className="h-4 w-4" />
                 Editar mi búsqueda
@@ -894,14 +895,14 @@ export default function RequestDetail({
                 )}
                 <a
                   href={`tel:${contact.contact_phone}`}
-                  className="text-orange-500 font-medium hover:underline block"
+                  className="text-brand font-medium hover:underline block"
                 >
                   {contact.contact_phone}
                 </a>
                 {contact.contact_email && (
                   <a
                     href={`mailto:${contact.contact_email}`}
-                    className="text-orange-500 text-sm hover:underline block"
+                    className="text-brand text-sm hover:underline block"
                   >
                     {contact.contact_email}
                   </a>
@@ -930,7 +931,7 @@ export default function RequestDetail({
                   className="w-full flex items-center justify-between px-4 py-3 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
                 >
                   <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
-                    <MessageCircle className="h-4 w-4 text-orange-500" />
+                    <MessageCircle className="h-4 w-4 text-brand" />
                     Mensajes por Demandi
                     {messages.length > 0 && (
                       <span className="text-gray-400 text-xs">({messages.length})</span>
@@ -954,13 +955,13 @@ export default function RequestDetail({
                             <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
                               <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed transition-opacity ${
                                 isMine
-                                  ? 'bg-orange-500 text-white rounded-br-sm'
+                                  ? 'bg-brand text-white rounded-br-sm'
                                   : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
                               } ${isOptimistic ? 'opacity-70' : 'opacity-100'}`}>
                                 <p>{msg.content}</p>
-                                <p className={`text-xs mt-1 flex items-center gap-1 ${isMine ? 'text-orange-200 justify-end' : 'text-gray-400'}`}>
+                                <p className={`text-xs mt-1 flex items-center gap-1 ${isMine ? 'text-white/70 justify-end' : 'text-gray-400'}`}>
                                   {isOptimistic ? 'Enviando…' : timeAgo(msg.created_at)}
-                                  {isMine && !isOptimistic && <span title="Enviado">✓</span>}
+                                  {isMine && !isOptimistic && <CheckCircle2 className="inline h-3 w-3" strokeWidth={2} />}
                                 </p>
                               </div>
                             </div>
@@ -979,7 +980,7 @@ export default function RequestDetail({
                           onChange={(e) => setMsgText(e.target.value)}
                           placeholder="Escribí tu mensaje..."
                           rows={2}
-                          className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-300 focus:border-orange-400 resize-none"
+                          className="flex-1 text-sm border border-gray-200 rounded-xl px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand/40 focus:border-brand resize-none"
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' && !e.shiftKey) {
                               e.preventDefault()
@@ -990,7 +991,7 @@ export default function RequestDetail({
                         <button
                           onClick={() => void sendMessage()}
                           disabled={sendingMsg || !msgText.trim()}
-                          className="bg-orange-500 hover:bg-orange-600 text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
+                          className="bg-brand hover:bg-brand-dark text-white rounded-xl px-3 disabled:opacity-50 transition-colors flex items-center"
                         >
                           {sendingMsg
                             ? <Loader2 className="h-4 w-4 animate-spin" />
@@ -1023,7 +1024,7 @@ export default function RequestDetail({
               <Button
                 onClick={handleUnlock}
                 disabled={unlocking}
-                className="bg-orange-500 hover:bg-orange-600"
+                className="bg-brand hover:bg-brand-dark"
               >
                 {unlocking ? (
                   <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Desbloqueando...</>
@@ -1035,8 +1036,8 @@ export default function RequestDetail({
           ) : (
             /* Not logged in: invite to register */
             <div className="text-center py-2">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-50 mb-3">
-                <Lock className="h-6 w-6 text-blue-500" />
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-tint mb-3">
+                <Lock className="h-6 w-6 text-brand" />
               </div>
               <p className="font-semibold text-gray-900 mb-1">
                 ¿Querés contactar a este comprador?
@@ -1046,7 +1047,7 @@ export default function RequestDetail({
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Link href="/broker">
-                  <Button className="w-full sm:w-auto bg-orange-500 hover:bg-orange-600 px-6">
+                  <Button className="w-full sm:w-auto bg-brand hover:bg-brand-dark px-6">
                     Crear cuenta gratis
                   </Button>
                 </Link>

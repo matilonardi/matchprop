@@ -1,336 +1,323 @@
 import Link from 'next/link'
-import { ArrowRight, Search, Bell, Users, TrendingUp, CheckCircle2, Star, MapPin, Lock } from 'lucide-react'
+import { ArrowRight, Home, Car, Building2, Pencil, Bell, Phone, Check, Lock } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import TawkChat from '@/components/TawkChat'
-import AnimateIn from '@/components/AnimateIn'
+import WhatsAppButton from '@/components/WhatsAppButton'
+import HeroTicker from '@/components/HeroTicker'
+import { createServerClient } from '@/lib/supabase-server'
 
-export default function HomePage() {
+export const revalidate = 60
+
+// ── Tarjeta de búsqueda de ejemplo (visual, no interactiva) ──
+function SampleCard({
+  icon,
+  price,
+  currency = 'USD',
+  meta,
+  tags,
+  views,
+  ago,
+  floatClass = '',
+}: {
+  icon: React.ReactNode
+  price: string
+  currency?: string
+  meta: string
+  tags: string[]
+  views: number
+  ago: string
+  floatClass?: string
+}) {
+  return (
+    <div className={`bg-white border border-hairline rounded-[14px] p-5 ${floatClass}`}>
+      <div className="flex items-center justify-between mb-4">
+        <span className="inline-flex items-center gap-2 text-[13px] font-medium text-ink-2">
+          <span className="relative flex h-[7px] w-[7px]" aria-hidden="true">
+            <span className="absolute inline-flex h-full w-full rounded-full bg-brand animate-radar" />
+            <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-brand" />
+          </span>
+          Búsqueda activa
+        </span>
+        <span className="text-[13px] text-ink-3">{views} vistas</span>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-tint text-brand">
+          {icon}
+        </span>
+        <div>
+          <p className="text-xl font-bold text-ink tabular leading-tight">
+            {currency && <span className="text-ink-3 text-sm font-semibold mr-1">{currency}</span>}
+            {price}
+          </p>
+          <p className="text-sm text-ink-2">{meta}</p>
+        </div>
+      </div>
+      <div className="mt-4 flex flex-wrap gap-1.5">
+        {tags.map((t) => (
+          <span key={t} className="rounded-md bg-chip px-2 py-1 text-xs text-ink-2">{t}</span>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+export default async function HomePage() {
+  const supabase = createServerClient()
+  const { count } = await supabase
+    .from('buyer_requests')
+    .select('*', { count: 'exact', head: true })
+    .eq('status', 'active')
+  const totalBusquedas = count ?? 0
+
   return (
     <div className="min-h-screen bg-white">
       <Navbar />
 
+      {/* Strip utilitario */}
+      <div className="pt-16">
+        <div className="border-b border-hairline">
+          <div className="max-w-6xl mx-auto px-5 sm:px-11 py-2.5 flex items-center justify-between text-[13px] text-ink-3">
+            <span>Córdoba, Argentina · Marketplace de demanda</span>
+            <span className="hidden sm:inline">Beta abierta · 2026</span>
+          </div>
+        </div>
+      </div>
+
       {/* ── Hero ── */}
-      <section className="relative min-h-[620px] flex items-center pt-16 overflow-hidden">
-        <div className="absolute inset-0 hero-bg-animated" />
-        <div
-          className="absolute inset-0 opacity-[0.07]"
-          style={{
-            backgroundImage: 'radial-gradient(circle, #fff 1px, transparent 1px)',
-            backgroundSize: '32px 32px',
-          }}
-        />
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl animate-float-slow delay-1000" />
-
-        <div className="relative w-full max-w-5xl mx-auto px-4 py-20 text-center">
-          <div className="animate-hero-fade-up inline-flex items-center gap-2 bg-yellow-400/20 border border-yellow-400/30 text-yellow-200 text-sm font-medium px-4 py-1.5 rounded-full mb-7">
-            <Star className="h-3.5 w-3.5 fill-current" />
-            El marketplace al revés
-          </div>
-
-          <h1 className="animate-hero-fade-up delay-200 text-5xl md:text-7xl font-bold text-white leading-[1.08] mb-6 tracking-tight">
-            Publicá lo que buscás comprar
-            <br />
-            <span className="text-orange-400">y que te encuentren a vos</span>
-          </h1>
-
-          <p className="animate-hero-fade-up delay-400 text-xl text-orange-100/70 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Dejá de buscar entre miles de publicaciones. Contanos qué propiedad o auto querés
-            y los vendedores de Córdoba vienen a ofrecerte lo que tienen.
-          </p>
-
-          <div className="animate-hero-fade-up delay-500 flex flex-col sm:flex-row gap-3 max-w-xl mx-auto">
-            <Link
-              href="/publicar"
-              className="flex-1 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 shadow-2xl transition-all hover:-translate-y-0.5 hover:shadow-orange-500/20 animate-pulse-glow"
-            >
-              📋 Publicar mi búsqueda — gratis
-              <ArrowRight className="h-4 w-4 text-orange-500" />
-            </Link>
-            <Link
-              href="/pedidos"
-              className="sm:w-auto bg-white/10 hover:bg-white/20 border border-white/20 text-white font-medium px-6 py-4 rounded-2xl text-base flex items-center justify-center gap-2 transition-all"
-            >
-              Ver búsquedas →
-            </Link>
-          </div>
-
-          <p className="animate-hero-fade-up delay-600 mt-5 text-sm text-white/40">Gratis para compradores · Sin registro requerido</p>
-
-          <div className="mt-14 grid grid-cols-3 gap-3 max-w-2xl mx-auto opacity-60">
-            {[
-              { type: 'Casa', zone: 'Mendiolaza', price: 'USD 230k', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: '' },
-              { type: 'Departamento', zone: 'Nueva Córdoba', price: 'USD 70k', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢', delay: 'delay-500' },
-              { type: 'Casa / Duplex', zone: 'Villa Belgrano', price: 'USD 620k', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️', delay: 'delay-1000' },
-            ].map(({ type, zone, price, gradient, emoji, delay }) => (
-              <div key={type} className={`animate-float ${delay} bg-white/10 backdrop-blur-sm rounded-xl overflow-hidden border border-white/10`}>
-                <div className={`h-16 bg-gradient-to-br ${gradient} flex items-center justify-center text-2xl`}>
-                  {emoji}
-                </div>
-                <div className="p-2.5">
-                  <p className="text-white text-xs font-bold">{price}</p>
-                  <p className="text-orange-200/70 text-xs">{type} · {zone}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Stats bar ── */}
-      <section className="py-10 border-b border-gray-100 bg-white overflow-hidden">
-        <div className="max-w-5xl mx-auto px-4">
-          <div className="grid grid-cols-3 gap-8 text-center">
-            {[
-              { n: '100%', label: 'Gratis para compradores', delay: 0 },
-              { n: 'Leads', label: 'de altísima calidad para brokers', delay: 120 },
-              { n: 'Córdoba', label: 'foco inicial · expansión planificada', delay: 240 },
-            ].map(({ n, label, delay }) => (
-              <AnimateIn key={label} variant="scale-up" delay={delay}>
-                <div className="text-2xl md:text-3xl font-bold text-orange-500 mb-1">{n}</div>
-                <div className="text-sm text-gray-500">{label}</div>
-              </AnimateIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
-      <section className="py-20 px-4 bg-white overflow-hidden">
-        <div className="max-w-5xl mx-auto">
-          <AnimateIn variant="fade-up" className="text-center mb-14">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-3">¿Cómo funciona?</h2>
-            <p className="text-gray-500 text-lg">Tres pasos y la oferta viene a buscarte</p>
-          </AnimateIn>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {[
-              {
-                icon: <Search className="h-6 w-6 text-orange-500" />,
-                step: '01',
-                title: 'Publicás tu búsqueda',
-                desc: 'Contás qué propiedad o auto querés, en qué zona y con qué presupuesto. Tarda menos de 3 minutos.',
-                delay: 0,
-              },
-              {
-                icon: <Bell className="h-6 w-6 text-blue-500" />,
-                step: '02',
-                title: 'Los vendedores te ven',
-                desc: 'Inmobiliarias, concesionarias y particulares reciben alertas automáticas. Solo ven tu búsqueda, no tu contacto.',
-                delay: 150,
-              },
-              {
-                icon: <Users className="h-6 w-6 text-yellow-500" />,
-                step: '03',
-                title: 'Te contactan con opciones reales',
-                desc: 'Cuando alguien tiene algo que te puede interesar, desbloquea tu contacto y te llama. Sin spam.',
-                delay: 300,
-              },
-            ].map(({ icon, step, title, desc, delay }) => (
-              <AnimateIn key={step} variant="fade-up" delay={delay}
-                className="group p-6 rounded-2xl border border-transparent hover:border-orange-100 hover:bg-orange-50/40 transition-all duration-300 cursor-default"
-              >
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 bg-orange-50 group-hover:bg-orange-100 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors duration-300">
-                    {icon}
-                  </div>
-                  <span className="text-4xl font-bold text-gray-100 group-hover:text-orange-100 transition-colors duration-300">{step}</span>
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
-                <p className="text-gray-500 text-sm leading-relaxed">{desc}</p>
-              </AnimateIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── For buyers ── */}
-      <section className="py-20 px-4 bg-gray-50 overflow-hidden">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-
-            <AnimateIn variant="fade-left">
-              <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para compradores</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-5">Tu búsqueda trabaja sola mientras vos hacés otra cosa</h2>
-              <ul className="space-y-4">
-                {[
-                  { text: 'Completamente gratis, siempre', delay: 80 },
-                  { text: 'Sin registro obligatorio', delay: 160 },
-                  { text: 'Tu contacto solo lo ve quien paga — cero spam', delay: 240 },
-                  { text: 'Sabés cuántas personas vieron tu pedido', delay: 320 },
-                  { text: 'Podés cerrar tu búsqueda cuando quieras', delay: 400 },
-                ].map(({ text, delay }) => (
-                  <AnimateIn key={text} variant="fade-left" delay={delay} as="li" className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{text}</span>
-                  </AnimateIn>
-                ))}
-              </ul>
-              <AnimateIn variant="fade-up" delay={500} className="mt-8 inline-block">
-                <Link href="/publicar">
-                  <Button className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200">
-                    Publicar mi búsqueda gratis
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </AnimateIn>
-            </AnimateIn>
-
-            {/* Two mock cards */}
-            <AnimateIn variant="fade-right" delay={200} className="flex flex-col gap-4 max-w-sm mx-auto w-full">
-
-              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="relative h-36 bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
-                  <span className="text-5xl opacity-75">🏡</span>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  <div className="absolute top-2.5 right-2.5">
-                    <span className="bg-white/95 text-green-600 text-xs font-semibold px-2 py-0.5 rounded-full">✓ Activa</span>
-                  </div>
-                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
-                    <span className="text-white/90 text-xs">14 vistas</span>
-                    <span className="text-white/70 text-xs">hace 2h</span>
-                  </div>
-                </div>
-                <div className="p-4 space-y-1.5">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xl font-bold text-gray-900">USD 230.000</span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Efectivo</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-800">Casa · Mendiolaza</p>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {['cochera', 'gas natural', 'seguridad'].map((r) => (
-                      <span key={r} className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full">{r}</span>
-                    ))}
-                  </div>
-                  <div className="pt-1">
-                    <div className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-400">
-                      <Lock className="h-3 w-3" /> Contacto oculto · ejemplo
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl overflow-hidden shadow-md border border-gray-100 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className="relative h-36 bg-gradient-to-br from-slate-500 to-zinc-600 flex items-center justify-center">
-                  <span className="text-5xl opacity-75">🚙</span>
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                  <div className="absolute top-2.5 right-2.5">
-                    <span className="bg-white/95 text-green-600 text-xs font-semibold px-2 py-0.5 rounded-full">✓ Activa</span>
-                  </div>
-                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between">
-                    <span className="text-white/90 text-xs">8 vistas</span>
-                    <span className="text-white/70 text-xs">hace 1h</span>
-                  </div>
-                </div>
-                <div className="p-4 space-y-1.5">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-xl font-bold text-gray-900">USD 25.000</span>
-                    <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">Efectivo</span>
-                  </div>
-                  <p className="text-sm font-semibold text-gray-800">SUV · Nueva Córdoba</p>
-                  <div className="flex gap-1.5 flex-wrap">
-                    {['Toyota / Ford', '2020+', '🔑 Usado'].map((r) => (
-                      <span key={r} className="text-xs bg-orange-50 text-orange-600 border border-orange-100 px-2 py-0.5 rounded-full">{r}</span>
-                    ))}
-                  </div>
-                  <div className="pt-1">
-                    <div className="w-full flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-400">
-                      <Lock className="h-3 w-3" /> Contacto oculto · ejemplo
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-            </AnimateIn>
-          </div>
-        </div>
-      </section>
-
-      {/* ── For brokers ── */}
-      <section className="py-20 px-4 bg-white overflow-hidden">
-        <div className="max-w-5xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
-
-            <div className="order-2 md:order-1 space-y-3">
-              {[
-                { label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h', gradient: 'from-emerald-400 to-teal-500', emoji: '🏡', delay: 0 },
-                { label: 'Casa · Villa Belgrano · USD 620k', badge: 'Nuevo', time: 'hace 3h', gradient: 'from-violet-400 to-purple-500', emoji: '🏘️', delay: 150 },
-                { label: 'Depto · Nueva Córdoba · USD 70k', badge: '', time: 'hace 6h', gradient: 'from-blue-400 to-indigo-500', emoji: '🏢', delay: 300 },
-              ].map(({ label, badge, time, gradient, emoji, delay }) => (
-                <AnimateIn key={label} variant="fade-left" delay={delay}
-                  className="flex items-center gap-4 bg-gray-50 hover:bg-orange-50 rounded-2xl p-3 border border-gray-100 hover:border-orange-100 hover:shadow-sm transition-all duration-300 cursor-default group"
-                >
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                    {emoji}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-gray-900 truncate">{label}</span>
-                      {badge && (
-                        <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-medium shrink-0">{badge}</span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-400">{time}</p>
-                  </div>
-                  <Button size="sm" variant="outline" className="text-xs h-7 shrink-0 group-hover:border-orange-300 group-hover:text-orange-600 transition-colors duration-300">1 crédito</Button>
-                </AnimateIn>
-              ))}
+      <section className="border-b border-hairline">
+        <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-[72px] grid lg:grid-cols-[1.05fr_.95fr] gap-14 items-center">
+          <div>
+            <div className="flex items-center gap-3 mb-6">
+              <span className="h-px w-6 bg-brand" />
+              <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">
+                El marketplace al revés
+              </span>
             </div>
+            <h1 className="text-4xl md:text-[58px] font-extrabold text-ink leading-[1.03] tracking-[-0.02em]">
+              Publicá lo que buscás. Que te encuentren a vos.
+            </h1>
+            <p className="mt-6 text-lg md:text-[19px] text-ink-2 max-w-[460px] leading-relaxed">
+              Dejá de scrollear miles de avisos. Contanos qué propiedad o auto querés y los
+              vendedores de Córdoba vienen con la oferta.
+            </p>
+            <div className="mt-6">
+              <HeroTicker />
+            </div>
+            <div className="mt-8 flex flex-wrap items-center gap-6">
+              <Link href="/publicar">
+                <Button size="lg" className="rounded-lg px-5 text-[15px]">
+                  Publicar mi búsqueda
+                </Button>
+              </Link>
+              <Link href="/pedidos" className="link-underline text-[15px] font-medium text-ink hover:text-brand">
+                Ver búsquedas →
+              </Link>
+            </div>
+            <p className="mt-6 text-sm text-ink-3">
+              Gratis para compradores · Sin registro · Sin spam
+            </p>
+          </div>
 
-            <AnimateIn variant="fade-right" className="order-1 md:order-2">
-              <div className="text-sm font-semibold text-orange-500 uppercase tracking-wide mb-3">Para vendedores</div>
-              <h2 className="text-3xl font-bold text-gray-900 mb-5">Compradores que ya saben lo que quieren</h2>
-              <ul className="space-y-4">
-                {[
-                  { text: 'Ves el pedido completo antes de pagar', delay: 80 },
-                  { text: 'Solo pagás cuando hay match real con lo que tenés', delay: 160 },
-                  { text: 'Alertas automáticas por zona — propiedades y autos', delay: 240 },
-                  { text: 'Sin suscripción forzada — comprás créditos cuando los necesitás', delay: 320 },
-                  { text: 'Dashboard con todos tus contactos desbloqueados', delay: 400 },
-                ].map(({ text, delay }) => (
-                  <AnimateIn key={text} variant="fade-right" delay={delay} as="li" className="flex items-center gap-3">
-                    <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                    <span className="text-gray-700">{text}</span>
-                  </AnimateIn>
-                ))}
-              </ul>
-              <AnimateIn variant="fade-up" delay={500} className="mt-8 inline-block">
-                <Link href="/broker">
-                  <Button className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200">
-                    Crear mi cuenta gratis
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </Link>
-              </AnimateIn>
-            </AnimateIn>
+          {/* Visual: tarjetas float */}
+          <div className="relative hidden lg:block">
+            <div className="space-y-4">
+              <SampleCard
+                icon={<Home className="h-5 w-5" strokeWidth={1.5} />}
+                price="230.000"
+                meta="Casa · Mendiolaza"
+                tags={['Cochera', 'Gas natural', 'Seguridad']}
+                views={14}
+                ago="hace 2h"
+                floatClass="animate-float-a"
+              />
+              <SampleCard
+                icon={<Car className="h-5 w-5" strokeWidth={1.5} />}
+                price="25.000"
+                meta="SUV · Nueva Córdoba"
+                tags={['Toyota / Ford', '2020+']}
+                views={8}
+                ago="hace 1h"
+                floatClass="animate-float-b ml-8"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Stats strip ── */}
+      <section className="border-b border-hairline">
+        <div className="max-w-6xl mx-auto px-5 sm:px-11">
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-hairline">
+            {[
+              { n: totalBusquedas > 0 ? totalBusquedas.toLocaleString('es-AR') : '100%', label: totalBusquedas > 0 ? 'Búsquedas activas ahora' : 'Gratis para compradores' },
+              { n: 'Alta intención', label: 'Leads que ya saben qué quieren' },
+              { n: 'Córdoba', label: 'Foco inicial · expansión planificada' },
+            ].map(({ n, label }, idx) => (
+              <div key={label} className={`py-8 ${idx === 0 ? 'sm:pr-8' : 'sm:px-8'}`}>
+                <div className="text-[34px] font-extrabold text-ink tabular leading-none">{n}</div>
+                <div className="mt-2 text-sm text-ink-2">{label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Cómo funciona ── */}
+      <section className="border-b border-hairline">
+        <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20">
+          <h2 className="text-3xl md:text-[38px] font-extrabold text-ink tracking-[-0.02em]">Cómo funciona</h2>
+          <p className="mt-3 text-ink-2 text-lg">Tres pasos y la oferta viene a buscarte.</p>
+
+          <div className="mt-12 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-hairline">
+            {[
+              { step: '01', icon: <Pencil className="h-6 w-6" strokeWidth={1.5} />, title: 'Publicás qué buscás', desc: 'Zona, presupuesto y tipo de propiedad o auto. Menos de 3 minutos, sin crear cuenta.' },
+              { step: '02', icon: <Bell className="h-6 w-6" strokeWidth={1.5} />, title: 'Los vendedores te ven', desc: 'Inmobiliarias y particulares reciben alertas por zona. Ven tu búsqueda —nunca tu contacto sin permiso.' },
+              { step: '03', icon: <Phone className="h-6 w-6" strokeWidth={1.5} />, title: 'Te contactan con opciones reales', desc: 'Cuando alguien tiene algo para vos, ve tu contacto y te escribe. Cero spam.' },
+            ].map(({ step, icon, title, desc }, idx) => (
+              <div key={step} className={`py-8 ${idx === 0 ? 'md:pr-10' : 'md:px-10'}`}>
+                <div className="font-grotesk text-sm font-bold text-brand">{step}</div>
+                <div className="mt-4 text-ink">{icon}</div>
+                <h3 className="mt-4 text-xl font-bold text-ink">{title}</h3>
+                <p className="mt-2 text-[15px] text-ink-2 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── Para compradores ── */}
+      <section className="border-b border-hairline">
+        <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20 grid md:grid-cols-[.9fr_1.1fr] gap-14 items-center">
+          <div>
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">Para compradores</div>
+            <h2 className="mt-4 text-3xl md:text-[34px] font-extrabold text-ink tracking-[-0.02em]">
+              Tu búsqueda trabaja sola mientras hacés otra cosa
+            </h2>
+            <ul className="mt-8 space-y-4">
+              {[
+                'Completamente gratis, siempre',
+                'Sin registro obligatorio',
+                'Tu contacto solo lo ve quien tiene algo real para ofrecerte',
+                'Sabés cuántas personas vieron tu pedido',
+                'Cerrás tu búsqueda cuando quieras',
+              ].map((text) => (
+                <li key={text} className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-brand shrink-0 mt-0.5" strokeWidth={2} />
+                  <span className="text-ink-2">{text}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/publicar" className="mt-8 inline-block">
+              <Button size="lg" className="rounded-lg px-5">
+                Publicar mi búsqueda
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </Link>
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SampleCard
+              icon={<Home className="h-5 w-5" strokeWidth={1.5} />}
+              price="230.000" meta="Casa · Mendiolaza"
+              tags={['Cochera', 'Gas natural']} views={14} ago="hace 2h"
+            />
+            <SampleCard
+              icon={<Building2 className="h-5 w-5" strokeWidth={1.5} />}
+              price="70.000" meta="Depto · Nueva Córdoba"
+              tags={['1 dormitorio', 'Balcón']} views={22} ago="hace 4h"
+            />
+            <SampleCard
+              icon={<Car className="h-5 w-5" strokeWidth={1.5} />}
+              price="25.000" meta="SUV · Nueva Córdoba"
+              tags={['Toyota / Ford', '2020+']} views={8} ago="hace 1h"
+            />
+            <SampleCard
+              icon={<Home className="h-5 w-5" strokeWidth={1.5} />}
+              price="620.000" meta="Casa · Villa Belgrano"
+              tags={['3+ dorm.', 'Pileta']} views={31} ago="hace 3h"
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* ── Para vendedores ── */}
+      <section className="bg-surface border-b border-hairline">
+        <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20 grid md:grid-cols-[1.1fr_.9fr] gap-14 items-center">
+          <div className="space-y-3 order-2 md:order-1">
+            {[
+              { icon: <Home className="h-5 w-5" strokeWidth={1.5} />, label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h' },
+              { icon: <Home className="h-5 w-5" strokeWidth={1.5} />, label: 'Casa · Villa Belgrano · USD 620k', badge: '', time: 'hace 3h' },
+              { icon: <Building2 className="h-5 w-5" strokeWidth={1.5} />, label: 'Depto · Nueva Córdoba · USD 70k', badge: '', time: 'hace 6h' },
+            ].map(({ icon, label, badge, time }) => (
+              <div key={label} className="flex items-center gap-4 bg-white border border-hairline rounded-[14px] p-4">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[10px] bg-tint text-brand">{icon}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-ink truncate">{label}</span>
+                    {badge && <span className="text-[11px] font-semibold text-brand bg-tint px-2 py-0.5 rounded-full shrink-0">{badge}</span>}
+                  </div>
+                  <p className="text-xs text-ink-3 mt-0.5">{time}</p>
+                </div>
+                <Button size="sm" variant="outline" className="shrink-0 text-xs">Ver contacto</Button>
+              </div>
+            ))}
+          </div>
+
+          <div className="order-1 md:order-2">
+            <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">Para vendedores</div>
+            <h2 className="mt-4 text-3xl md:text-[34px] font-extrabold text-ink tracking-[-0.02em]">
+              Compradores que ya saben lo que quieren
+            </h2>
+            <ul className="mt-8 space-y-4">
+              {[
+                'Ves el pedido completo antes de contactar',
+                'Alertas automáticas por zona — propiedades y autos',
+                'Contactás directo al comprador, sin intermediarios',
+                'Gratis mientras dure la beta',
+              ].map((text) => (
+                <li key={text} className="flex items-start gap-3">
+                  <Check className="h-5 w-5 text-brand shrink-0 mt-0.5" strokeWidth={2} />
+                  <span className="text-ink-2">{text}</span>
+                </li>
+              ))}
+            </ul>
+            <Link href="/broker" className="mt-8 inline-block">
+              <Button size="lg" className="rounded-lg px-5">
+                Crear mi cuenta gratis
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* ── CTA final ── */}
-      <section className="py-20 px-4 bg-gradient-to-br from-slate-950 via-blue-950 to-orange-950 overflow-hidden">
-        <div className="max-w-4xl mx-auto text-center text-white">
-          <AnimateIn variant="scale-up">
-            <TrendingUp className="h-10 w-10 mx-auto mb-4 opacity-70 animate-float" />
-            <h2 className="text-3xl font-bold mb-4">Empezá gratis hoy</h2>
-            <p className="text-orange-100/70 text-lg mb-10 max-w-xl mx-auto">
-              Registrate, explorá las búsquedas activas y contactá compradores reales en Córdoba.
-            </p>
-          </AnimateIn>
-          <AnimateIn variant="fade-up" delay={200}>
+      <section className="border-b border-hairline">
+        <div className="max-w-6xl mx-auto px-5 sm:px-11 py-20 md:py-24 text-center">
+          <h2 className="text-4xl md:text-[44px] font-extrabold text-ink tracking-[-0.02em]">Empezá gratis hoy</h2>
+          <p className="mt-4 text-lg text-ink-2 max-w-xl mx-auto">
+            Publicá lo que buscás o explorá las búsquedas activas de compradores reales en Córdoba.
+          </p>
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+            <Link href="/publicar">
+              <Button size="lg" className="rounded-lg px-6">Publicar mi búsqueda</Button>
+            </Link>
             <Link href="/broker">
-              <Button size="lg" className="bg-orange-500 hover:bg-orange-600 hover:scale-105 transition-transform duration-200 text-white font-bold px-10 rounded-2xl">
-                Empezar ahora
+              <Button size="lg" variant="outline" className="rounded-lg px-6 border-ink text-ink hover:bg-ink hover:text-white">
+                Soy vendedor
               </Button>
             </Link>
-          </AnimateIn>
+          </div>
+          <p className="mt-6 inline-flex items-center gap-2 text-sm text-ink-3">
+            <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />
+            Tu contacto nunca se muestra públicamente
+          </p>
         </div>
       </section>
 
       <Footer />
-      <TawkChat />
+      <WhatsAppButton />
     </div>
   )
 }

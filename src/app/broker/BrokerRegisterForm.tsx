@@ -12,9 +12,9 @@ import { supabase } from '@/lib/supabase'
 
 type Specialty = 'propiedades' | 'vehiculos' | 'ambos'
 
-const SPECIALTIES: { value: Specialty; label: string; sublabel: string; icon: string }[] = [
-  { value: 'propiedades', label: 'Propiedades', sublabel: 'Casas, deptos, terrenos', icon: '🏠' },
-  { value: 'ambos',       label: 'Ambos',       sublabel: 'Todo tipo de activos',   icon: '✨' },
+const SPECIALTIES: { value: Specialty; label: string; sublabel: string }[] = [
+  { value: 'propiedades', label: 'Propiedades', sublabel: 'Casas, deptos, terrenos' },
+  { value: 'ambos',       label: 'Ambos',       sublabel: 'Todo tipo de activos' },
 ]
 
 export default function BrokerRegisterForm() {
@@ -145,22 +145,21 @@ export default function BrokerRegisterForm() {
       <div>
         <Label className="text-sm mb-2 block">¿En qué te especializás? *</Label>
         <div className="grid grid-cols-2 gap-2">
-          {SPECIALTIES.map(({ value, label, sublabel, icon }) => (
+          {SPECIALTIES.map(({ value, label, sublabel }) => (
             <button
               key={value}
               type="button"
               onClick={() => setSpecialty(value)}
-              className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-center transition-all duration-150 ${
+              className={`flex flex-col items-start gap-1 px-3 py-3 rounded-xl border-2 text-left transition-all duration-150 ${
                 specialty === value
-                  ? 'border-orange-400 bg-orange-50 shadow-sm'
-                  : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                  ? 'border-brand bg-tint'
+                  : 'border-field bg-white hover:border-ink-3'
               }`}
             >
-              <span className="text-2xl leading-none">{icon}</span>
-              <span className={`text-sm font-semibold leading-tight ${specialty === value ? 'text-orange-700' : 'text-gray-800'}`}>
+              <span className={`text-sm font-semibold leading-tight ${specialty === value ? 'text-brand' : 'text-ink'}`}>
                 {label}
               </span>
-              <span className="text-[10px] leading-tight text-gray-400">{sublabel}</span>
+              <span className="text-[11px] leading-tight text-ink-3">{sublabel}</span>
             </button>
           ))}
         </div>
@@ -197,7 +196,7 @@ export default function BrokerRegisterForm() {
                 <label
                   key={zone}
                   className={`flex items-center gap-2.5 p-2 rounded-lg cursor-pointer text-sm transition-colors ${
-                    selectedZones.includes(zone) ? 'bg-orange-50' : 'hover:bg-gray-50'
+                    selectedZones.includes(zone) ? 'bg-tint' : 'hover:bg-chip'
                   }`}
                 >
                   <Checkbox
@@ -216,21 +215,21 @@ export default function BrokerRegisterForm() {
         <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
       )}
 
-      {/* Free credits banner */}
-      <div className="flex items-center gap-3 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3">
-        <div className="shrink-0 bg-orange-100 rounded-full p-1.5">
-          <Gift className="h-4 w-4 text-orange-600" />
+      {/* Free beta banner */}
+      <div className="flex items-center gap-3 bg-tint border border-brand/20 rounded-xl px-4 py-3">
+        <div className="shrink-0 bg-white rounded-full p-1.5 text-brand">
+          <Gift className="h-4 w-4" strokeWidth={1.5} />
         </div>
         <div>
-          <p className="text-sm font-semibold text-orange-800">2 créditos gratis al registrarte</p>
-          <p className="text-xs text-orange-600">Desbloqueá 2 contactos de compradores sin pagar nada.</p>
+          <p className="text-sm font-semibold text-brand-dark">Ver contactos gratis en la beta</p>
+          <p className="text-xs text-ink-2">Contactá a los compradores sin costo mientras dure la etapa inicial.</p>
         </div>
       </div>
 
       <Button
         type="submit"
         disabled={loading}
-        className="w-full bg-orange-500 hover:bg-orange-600"
+        className="w-full"
       >
         {loading ? (
           <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Creando cuenta...</>
@@ -247,11 +246,11 @@ export default function BrokerRegisterForm() {
         />
         <span className="text-xs text-gray-500 leading-relaxed">
           Leí y acepto los{' '}
-          <a href="/terminos" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+          <a href="/terminos" target="_blank" className="text-brand underline hover:text-brand-dark">
             términos y condiciones
           </a>{' '}
           y la{' '}
-          <a href="/privacidad" target="_blank" className="text-blue-600 underline hover:text-blue-700">
+          <a href="/privacidad" target="_blank" className="text-brand underline hover:text-brand-dark">
             política de privacidad
           </a>
           . Recibirás alertas de nuevos pedidos en tus zonas.

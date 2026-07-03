@@ -1,6 +1,6 @@
 import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
-import TawkChat from '@/components/TawkChat'
+import WhatsAppButton from '@/components/WhatsAppButton'
 import PedidosFeed from './PedidosFeed'
 
 export default async function PedidosPage({
@@ -11,24 +11,10 @@ export default async function PedidosPage({
   const params = await searchParams
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white">
       <Navbar />
       <div className="pt-16">
-
-        {/* Page header */}
-        <div className="bg-white border-b border-gray-100">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">Pedidos activos en Córdoba</h1>
-              <p className="text-gray-500 mt-1 text-sm">
-                Compradores buscando propiedades ahora mismo · Desbloqueá su contacto con 1 crédito
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Feed — initial filters come from URL params */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-6xl mx-auto px-5 sm:px-8 py-10">
           <PedidosFeed
             initialZone={params.zone || ''}
             initialType={params.type || ''}
@@ -37,10 +23,9 @@ export default async function PedidosPage({
             initialSince={params.since || ''}
           />
         </div>
-
       </div>
       <Footer />
-      <TawkChat />
+      <WhatsAppButton />
     </div>
   )
 }

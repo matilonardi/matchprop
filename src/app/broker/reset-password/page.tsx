@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Loader2, KeyRound, CheckCircle2, AlertCircle, Eye, EyeOff } from 'lucide-react'
+import { PropiLogoFull } from '@/components/PropiLogo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -54,12 +55,10 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+    <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="w-full max-w-sm bg-white rounded-2xl border border-hairline p-8">
         {/* Logo */}
-        <p className="text-xl font-bold mb-6">
-          <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
-        </p>
+        <div className="mb-6"><PropiLogoFull size="md" /></div>
 
         {done ? (
           <div className="text-center space-y-3">
@@ -86,7 +85,7 @@ export default function ResetPasswordPage() {
             </div>
             <p className="text-xs text-gray-400">
               Si el link expiró,{' '}
-              <a href="/broker" className="text-blue-600 hover:underline">
+              <a href="/broker" className="text-brand hover:underline">
                 pedí uno nuevo
               </a>
               .
@@ -138,7 +137,7 @@ export default function ResetPasswordPage() {
               <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
             )}
 
-            <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
+            <Button type="submit" disabled={loading} className="w-full bg-brand hover:bg-brand-dark">
               {loading ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Guardando…</>
               ) : (

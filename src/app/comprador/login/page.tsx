@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Loader2, Eye, EyeOff, LogIn } from 'lucide-react'
+import { PropiLogoFull } from '@/components/PropiLogo'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -36,14 +37,14 @@ export default function BuyerLoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-orange-50 flex items-center justify-center p-4">
+    <main className="min-h-screen bg-gradient-to-br from-gray-50 to-brand flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <Link href="/" className="text-2xl font-black">
-            <span className="text-gray-900">prop</span><span className="text-orange-500">i</span>
+          <Link href="/" className="inline-flex">
+            <PropiLogoFull size="lg" />
           </Link>
-          <h1 className="text-xl font-bold text-gray-900 mt-4">Ingresá a tu cuenta</h1>
-          <p className="text-gray-500 text-sm mt-1">Compradores · Gestioná tus búsquedas</p>
+          <h1 className="text-xl font-bold text-ink mt-4">Ingresá a tu cuenta</h1>
+          <p className="text-ink-2 text-sm mt-1">Compradores · Gestioná tus búsquedas</p>
         </div>
 
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-8">
@@ -87,7 +88,7 @@ export default function BuyerLoginPage() {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full bg-orange-500 hover:bg-orange-600"
+              className="w-full bg-brand hover:bg-brand-dark"
             >
               {loading ? (
                 <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Ingresando...</>
@@ -99,7 +100,7 @@ export default function BuyerLoginPage() {
 
           <div className="mt-6 text-center text-sm text-gray-500">
             ¿No tenés cuenta?{' '}
-            <Link href="/publicar" className="text-orange-500 font-medium hover:underline">
+            <Link href="/publicar" className="text-brand font-medium hover:underline">
               Publicá tu búsqueda gratis
             </Link>
           </div>

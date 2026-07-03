@@ -16,9 +16,9 @@ export default function BrokerLoginForm() {
 
   // "Complete profile" state — shown when auth succeeds but no broker_profile exists
   type Specialty = 'propiedades' | 'vehiculos' | 'ambos'
-  const SPECIALTIES: { value: Specialty; label: string; sublabel: string; icon: string }[] = [
-    { value: 'propiedades', label: 'Propiedades', sublabel: 'Casas, deptos, terrenos', icon: '🏠' },
-    { value: 'ambos',       label: 'Ambos',       sublabel: 'Todo tipo de activos',   icon: '✨' },
+  const SPECIALTIES: { value: Specialty; label: string; sublabel: string }[] = [
+    { value: 'propiedades', label: 'Propiedades', sublabel: 'Casas, deptos, terrenos' },
+    { value: 'ambos',       label: 'Ambos',       sublabel: 'Todo tipo de activos' },
   ]
 
   const [showPassword, setShowPassword] = useState(false)
@@ -131,9 +131,9 @@ export default function BrokerLoginForm() {
   if (needsProfile) {
     return (
       <form onSubmit={handleCompleteProfile} className="space-y-4">
-        <div className="bg-blue-50 border border-blue-100 rounded-xl p-4 text-sm text-blue-800">
+        <div className="bg-tint border border-brand/20 rounded-xl p-4 text-sm text-brand-dark">
           <p className="font-semibold mb-1">Completá tu perfil de broker</p>
-          <p className="text-blue-600">Tu cuenta existe pero le faltan algunos datos. Completá los campos para continuar.</p>
+          <p>Tu cuenta existe pero le faltan algunos datos. Completá los campos para continuar.</p>
         </div>
 
         <div>
@@ -167,22 +167,21 @@ export default function BrokerLoginForm() {
         <div>
           <Label className="text-sm mb-2 block">¿En qué te especializás? *</Label>
           <div className="grid grid-cols-2 gap-2">
-            {SPECIALTIES.map(({ value, label, sublabel, icon }) => (
+            {SPECIALTIES.map(({ value, label, sublabel }) => (
               <button
                 key={value}
                 type="button"
                 onClick={() => setProfileSpecialty(value)}
-                className={`flex flex-col items-center gap-1 px-2 py-3 rounded-xl border-2 text-center transition-all duration-150 ${
+                className={`flex flex-col items-start gap-1 px-3 py-3 rounded-xl border-2 text-left transition-all duration-150 ${
                   profileSpecialty === value
-                    ? 'border-orange-400 bg-orange-50 shadow-sm'
-                    : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                    ? 'border-brand bg-tint'
+                    : 'border-field bg-white hover:border-ink-3'
                 }`}
               >
-                <span className="text-2xl leading-none">{icon}</span>
-                <span className={`text-sm font-semibold leading-tight ${profileSpecialty === value ? 'text-orange-700' : 'text-gray-800'}`}>
+                <span className={`text-sm font-semibold leading-tight ${profileSpecialty === value ? 'text-brand' : 'text-ink'}`}>
                   {label}
                 </span>
-                <span className="text-[10px] leading-tight text-gray-400">{sublabel}</span>
+                <span className="text-[11px] leading-tight text-ink-3">{sublabel}</span>
               </button>
             ))}
           </div>
@@ -204,12 +203,12 @@ export default function BrokerLoginForm() {
             {zonesOpen && (
               <div className="absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-xl shadow-xl max-h-52 overflow-y-auto">
                 {ZONAS_CORDOBA.map((zone) => (
-                  <label key={zone} className="flex items-center gap-2 px-3 py-2 hover:bg-orange-50 cursor-pointer text-sm">
+                  <label key={zone} className="flex items-center gap-2 px-3 py-2 hover:bg-tint cursor-pointer text-sm">
                     <input
                       type="checkbox"
                       checked={profileZones.includes(zone)}
                       onChange={() => toggleZone(zone)}
-                      className="accent-orange-500"
+                      className="accent-brand"
                     />
                     {zone}
                   </label>
@@ -223,7 +222,7 @@ export default function BrokerLoginForm() {
           <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
         )}
 
-        <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? (
             <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Guardando...</>
           ) : (
@@ -297,7 +296,7 @@ export default function BrokerLoginForm() {
           <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
         )}
 
-        <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
+        <Button type="submit" disabled={loading} className="w-full">
           {loading ? (
             <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Enviando...</>
           ) : (
@@ -329,7 +328,7 @@ export default function BrokerLoginForm() {
           <button
             type="button"
             onClick={() => { setForgotPassword(true); setError(''); setResetEmail(email) }}
-            className="text-xs text-blue-600 hover:text-blue-700 hover:underline transition-colors"
+            className="text-xs text-brand hover:text-brand-dark hover:underline transition-colors"
           >
             ¿Olvidaste tu contraseña?
           </button>
@@ -359,7 +358,7 @@ export default function BrokerLoginForm() {
         <div className="text-sm text-red-600 bg-red-50 rounded-lg p-3">{error}</div>
       )}
 
-      <Button type="submit" disabled={loading} className="w-full bg-orange-500 hover:bg-orange-600">
+      <Button type="submit" disabled={loading} className="w-full">
         {loading ? (
           <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Iniciando sesión...</>
         ) : (

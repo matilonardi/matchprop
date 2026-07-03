@@ -239,9 +239,16 @@ client.on('ready', async () => {
 
     console.log(`📂 ${group.name}`)
 
-    // 500 mensajes para cubrir hasta 15+ horas sin conexión en grupos activos
-    const messages = await group.fetchMessages({ limit: 500 })
+    // Limit dinámico según tiempo transcurrido desde la última corrida
+    const hoursSince = (Date.now() - since) / 3_600_000
+    const fetchLimit = hoursSince > 72 ? 5000 : hoursSince > 24 ? 2000 : hoursSince > 6 ? 1000 : 500
+    const messages = await group.fetchMessages({ limit: fetchLimit })
     const nuevos = messages.filter(m => m.timestamp * 1000 > since && !m.fromMe)
+
+    // Advertir si probablemente se cortó la historia por el límite
+    if (messages.length >= fetchLimit && messages.length > 0 && messages[0].timestamp * 1000 > since) {
+      console.log(`   ⚠️  ATENCIÓN: el grupo tiene más de ${fetchLimit} msgs desde la última corrida — pueden faltar mensajes. Corré el bot nuevamente con HOURS_BACK más alto si es necesario.`)
+    }
 
     console.log(`   ${nuevos.length} mensajes nuevos desde la última vez`)
 
@@ -338,18 +345,21 @@ client.on('ready', async () => {
       try {
         const id = await createPedido({
           request_type:   'property',
+          operation_type: parsed.operation_type  || 'compra',
           property_types: parsed.property_types  || [],
           zones:          parsed.zones           || [],
           bedrooms_min:   parsed.bedrooms_min    || null,
           bedrooms_max:   parsed.bedrooms_max    || null,
           bathrooms_min:  parsed.bathrooms_min   || null,
           budget_usd:     parsed.budget_usd      || 0,
+          budget_ars:     parsed.budget_ars      || null,
           financing:      parsed.financing       || 'efectivo',
           description:    parsed.description     || null,
           contact_name:   name,
           contact_phone:  finalPhone,
           publisher_type: 'inmobiliaria',
           source:         'whatsapp',
+          source_message_id: msg.id?._serialized || null,
         })
         process.stdout.write(`→ ✅ creado (${id})\n`)
         totalCreados++

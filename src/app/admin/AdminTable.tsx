@@ -118,12 +118,12 @@ export default function AdminTable({ requests: initialRequests, adminSecret }: A
                 {/* Type badge */}
                 <td className="px-4 py-3">
                   {r.request_type === 'car' ? (
-                    <Badge className="bg-blue-100 text-blue-700 border-0 gap-1 text-xs">
+                    <Badge className="bg-tint text-brand-dark border-0 gap-1 text-xs">
                       <Car className="h-3 w-3" />
                       Auto
                     </Badge>
                   ) : (
-                    <Badge className="bg-orange-100 text-orange-700 border-0 gap-1 text-xs">
+                    <Badge className="bg-tint text-brand-dark border-0 gap-1 text-xs">
                       <Home className="h-3 w-3" />
                       Propiedad
                     </Badge>
@@ -133,7 +133,7 @@ export default function AdminTable({ requests: initialRequests, adminSecret }: A
                 {/* Origin */}
                 <td className="px-4 py-3">
                   {r.publisher_type === 'inmobiliaria' ? (
-                    <Badge className="bg-purple-100 text-purple-700 border-0 text-xs">Inmo</Badge>
+                    <Badge className="bg-tint text-brand-dark border-0 text-xs">Inmo</Badge>
                   ) : (
                     <Badge className="bg-green-100 text-green-700 border-0 text-xs">Particular</Badge>
                   )}
