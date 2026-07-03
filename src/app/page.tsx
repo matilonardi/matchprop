@@ -97,17 +97,8 @@ export default async function HomePage() {
     <div className="min-h-screen bg-white">
       <Navbar />
 
-      {/* Strip utilitario */}
-      <div className="pt-16">
-        <div className="border-b border-hairline">
-          <div className="max-w-6xl mx-auto px-5 sm:px-11 py-2.5 flex items-center text-[13px] text-ink-3">
-            <span>Córdoba, Argentina · Marketplace de demanda</span>
-          </div>
-        </div>
-      </div>
-
       {/* ── Hero ── */}
-      <section className="border-b border-hairline">
+      <section className="pt-16 border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-[72px] grid lg:grid-cols-[1.05fr_.95fr] gap-14 items-center">
           <div>
             <div className="flex items-center gap-3 mb-6">
