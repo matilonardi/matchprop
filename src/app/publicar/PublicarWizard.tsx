@@ -708,18 +708,6 @@ export default function PublicarWizard() {
                       />
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {(form.operation_type === 'alquiler'
-                      ? ['300', '500', '700', '1000', '1500']
-                      : ['70000', '150000', '230000', '400000', '620000']
-                    ).map((v) => (
-                      <button key={v} type="button"
-                        onClick={() => setForm((f) => ({ ...f, budget_usd: v }))}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_usd === v ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                        Hasta USD {parseInt(v).toLocaleString()}
-                      </button>
-                    ))}
-                  </div>
                 </>
               )}
 
@@ -756,15 +744,6 @@ export default function PublicarWizard() {
                         className="pl-7"
                       />
                     </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {['500000', '800000', '1000000', '1500000', '2000000'].map((v) => (
-                      <button key={v} type="button"
-                        onClick={() => setForm((f) => ({ ...f, budget_ars: v }))}
-                        className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${form.budget_ars === v ? 'border-brand bg-tint text-brand' : 'border-gray-200 text-gray-600 hover:border-gray-300'}`}>
-                        Hasta $ {parseInt(v).toLocaleString('es-AR')}
-                      </button>
-                    ))}
                   </div>
                 </>
               )}
