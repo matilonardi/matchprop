@@ -113,7 +113,9 @@ function RequestCard({ req }: { req: PublicBuyerRequest }) {
             {isRent && <span className="text-sm font-normal text-ink-3">/mes</span>}
           </div>
           {payLabel && (
-            <span className="shrink-0 text-xs font-medium text-brand bg-tint px-2.5 py-1 rounded-full">
+            <span className={`shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${
+              isRent ? 'text-amber-700 bg-amber-50' : 'text-brand bg-tint'
+            }`}>
               {payLabel}
             </span>
           )}

@@ -53,7 +53,23 @@ function sanitize(parsed) {
   let financing = (parsed.financing || 'efectivo').toLowerCase().trim()
   if (!VALID_FINANCING.has(financing)) financing = 'efectivo'
 
-  return { ...parsed, property_types: types, financing }
+  // ── Saneamiento de presupuesto (determinístico, no depende del LLM) ──
+  let budget_usd = Number(parsed.budget_usd) || 0
+  let budget_ars = parsed.budget_ars != null ? Number(parsed.budget_ars) : null
+
+  if (parsed.operation_type === 'alquiler') {
+    // Los alquileres se cotizan en pesos. Si el LLM puso el monto en USD y es
+    // demasiado alto para ser un alquiler en dólares (>20.000/mes), es pesos mal etiquetado.
+    if (budget_usd >= 20000 && !budget_ars) {
+      budget_ars = budget_usd
+      budget_usd = 0
+    }
+  } else {
+    // Compra: montos absurdos (>3M USD en Córdoba) son error de parseo → "a convenir".
+    if (budget_usd > 3000000) budget_usd = 0
+  }
+
+  return { ...parsed, property_types: types, financing, budget_usd, budget_ars }
 }
 
 // ── Fallback de zona por grupo ────────────────────────────────
