@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
-  Clock, Lock, X, CalendarDays, ChevronDown, Search,
+  Clock, Lock, X, CalendarDays, ChevronDown, Search, Star, User,
   Home, Building2, Building, Store, Trees, Banknote, TrendingUp, Car,
 } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger } from '@/components/ui/select'
@@ -96,7 +96,12 @@ function RequestCard({ req }: { req: PublicBuyerRequest }) {
             <Icon className="h-5 w-5" strokeWidth={1.5} />
           </span>
           <div className="flex items-center gap-2 text-[13px] text-ink-3">
-            {featured && <span className="text-brand font-semibold">Destacado</span>}
+            {featured && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-white">
+                <Star className="h-3 w-3 fill-current" strokeWidth={0} />
+                Destacado
+              </span>
+            )}
             <span>{req.views_count} vista{req.views_count !== 1 ? 's' : ''} · {timeAgo(req.created_at)}</span>
           </div>
         </div>
@@ -119,6 +124,21 @@ function RequestCard({ req }: { req: PublicBuyerRequest }) {
           {[typeLabels.join(' / ') || 'Propiedad', opLabel, req.zones.slice(0, 2).join(', ')].filter(Boolean).join(' · ')}
           {req.zones.length > 2 ? ` +${req.zones.length - 2}` : ''}
         </p>
+
+        {/* Quién publica */}
+        <div className="mt-2">
+          {req.publisher_type === 'inmobiliaria' ? (
+            <span className="inline-flex items-center gap-1 rounded-full bg-tint px-2 py-0.5 text-xs font-medium text-brand">
+              <Building2 className="h-3 w-3" strokeWidth={1.75} />
+              {req.agency_name || 'Inmobiliaria'}
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-full bg-chip px-2 py-0.5 text-xs font-medium text-ink-2">
+              <User className="h-3 w-3" strokeWidth={1.75} />
+              Particular
+            </span>
+          )}
+        </div>
 
         {/* Chips de requisitos */}
         {visibleChips.length > 0 && (
