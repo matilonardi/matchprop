@@ -46,7 +46,7 @@ async function sendEmailNotification({
       Authorization: `Bearer ${RESEND_API_KEY}`,
     },
     body: JSON.stringify({
-      from: 'Demandi <noreply@matchprop.com.ar>',
+      from: 'Demandi <noreply@demandi.com.ar>',
       to: [to],
       subject,
       html: `

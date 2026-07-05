@@ -203,7 +203,7 @@ export async function POST(
       const requestUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.vercel.app'}/pedidos/${requestId}`
 
       await resend.emails.send({
-        from: 'Demandi <alertas@matchprop.com.ar>',
+        from: 'Demandi <alertas@demandi.com.ar>',
         to: req.contact_email,
         subject: `📬 ${brokerDisplay} está interesado en tu búsqueda`,
         html: `

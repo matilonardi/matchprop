@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
   // Send email notifications (batch, max 50/hour on Resend free tier)
   const emailPromises = matchingBrokers.slice(0, 10).map((broker) =>
     resend.emails.send({
-      from: 'Demandi <alertas@matchprop.com.ar>',
+      from: 'Demandi <alertas@demandi.com.ar>',
       to: broker.email,
       subject: `Nuevo pedido en tu zona: ${types} en ${zones}`,
       html: `

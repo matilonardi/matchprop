@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
 
     try {
       await resend.emails.send({
-        from: 'MatchProp <alertas@matchprop.com.ar>',
+        from: 'Demandi <alertas@demandi.com.ar>',
         to: broker.email,
         subject: `¿Qué pasó con la búsqueda de ${req.contact_name}?`,
         html: `

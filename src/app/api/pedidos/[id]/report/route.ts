@@ -89,7 +89,7 @@ export async function POST(
       : requestId
 
     await resend.emails.send({
-      from: 'Demandi <alertas@matchprop.com.ar>',
+      from: 'Demandi <alertas@demandi.com.ar>',
       to: 'lonardimatias@gmail.com',
       subject: `⚠️ Nuevo reporte: ${REASON_LABELS[reason] || reason}`,
       html: `

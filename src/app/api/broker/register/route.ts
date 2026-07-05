@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     phone,
     email,
     zones,
-    credits: 2,
+    credits: 20, // beta: 20 desbloqueos gratis al registrarse
   }
   // specialty column requires migration 006 — include only if present
   if (specialty) profilePayload.specialty = specialty
@@ -87,9 +87,9 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(process.env.RESEND_API_KEY || '')
 
     await resend.emails.send({
-      from: 'Demandi <alertas@matchprop.com.ar>',
+      from: 'Demandi <alertas@demandi.com.ar>',
       to: email,
-      subject: '¡Bienvenido a Demandi! Tus 2 créditos gratis te esperan',
+      subject: '¡Bienvenido a Demandi! Tus 20 desbloqueos gratis te esperan',
       html: `
         <div style="font-family:Arial,sans-serif;max-width:520px;margin:0 auto;color:#1f2937;">
           <div style="background:#2563eb;padding:32px 24px;border-radius:12px 12px 0 0;text-align:center;">
@@ -97,10 +97,9 @@ export async function POST(request: NextRequest) {
           </div>
           <div style="background:#f9fafb;padding:28px 24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
             <p style="font-size:16px;">Hola <strong>${name}</strong>,</p>
-            <p>Tu cuenta está activa. Recibiste <strong>2 créditos gratis</strong> para empezar a desbloquear contactos de compradores en tus zonas — sin pagar nada.</p>
-            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px 16px;margin:16px 0;text-align:center;">
-              <p style="margin:0;font-size:20px;">🎁</p>
-              <p style="margin:4px 0 0;font-weight:bold;color:#c2410c;">2 créditos gratuitos activos</p>
+            <p>Tu cuenta está activa. Recibiste <strong>20 desbloqueos gratis</strong> para ver contactos de compradores en tus zonas — sin pagar nada durante la beta.</p>
+            <div style="background:#EEF6F0;border:1px solid #2E8B58;border-radius:8px;padding:12px 16px;margin:16px 0;text-align:center;">
+              <p style="margin:4px 0 0;font-weight:bold;color:#22693F;">20 desbloqueos gratuitos activos</p>
               <p style="margin:4px 0 0;font-size:13px;color:#9a3412;">Usálos para ver el teléfono y WhatsApp de compradores en tus zonas.</p>
             </div>
             <div style="background:white;border:1px solid #e5e7eb;border-radius:8px;padding:16px;margin:20px 0;">
