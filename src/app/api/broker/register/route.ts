@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
       phone: phone || '',
       email,
       zones,
-      credits: 2,
+      credits: 20, // beta: 20 desbloqueos gratis al registrarse
     }
     // specialty column requires migration 006 — include only if present
     if (specialty) profilePayload.specialty = specialty
