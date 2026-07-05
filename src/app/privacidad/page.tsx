@@ -107,8 +107,8 @@ export default function PrivacidadPage() {
                 </ul>
                 <p className="mt-2">
                   Para ejercer estos derechos, escribinos a{' '}
-                  <a href="mailto:hola@matchprop.com.ar" className="text-brand hover:underline">
-                    hola@matchprop.com.ar
+                  <a href="mailto:hola@demandi.com.ar" className="text-brand hover:underline">
+                    hola@demandi.com.ar
                   </a>
                   . Responderemos en un plazo máximo de 5 días hábiles.
                 </p>
@@ -151,8 +151,8 @@ export default function PrivacidadPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">10. Contacto</h2>
                 <p>
                   Para cualquier consulta sobre el tratamiento de tus datos personales, contactanos en{' '}
-                  <a href="mailto:hola@matchprop.com.ar" className="text-brand hover:underline">
-                    hola@matchprop.com.ar
+                  <a href="mailto:hola@demandi.com.ar" className="text-brand hover:underline">
+                    hola@demandi.com.ar
                   </a>
                   .
                 </p>

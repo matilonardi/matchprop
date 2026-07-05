@@ -159,8 +159,8 @@ export default function TerminosPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-3">11. Contacto</h2>
                 <p>
                   Para consultas, reclamos o solicitudes relacionadas con estos Términos, podés escribirnos a{' '}
-                  <a href="mailto:hola@matchprop.com.ar" className="text-brand hover:underline">
-                    hola@matchprop.com.ar
+                  <a href="mailto:hola@demandi.com.ar" className="text-brand hover:underline">
+                    hola@demandi.com.ar
                   </a>
                   .
                 </p>

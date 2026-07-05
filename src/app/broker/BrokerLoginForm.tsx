@@ -112,7 +112,7 @@ export default function BrokerLoginForm() {
       if (msg.toLowerCase().includes('rate') || msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('too many')) {
         setError('Demasiados intentos. Esperá unos minutos e intentá de nuevo.')
       } else if (msg.toLowerCase().includes('smtp') || msg.toLowerCase().includes('send') || msg.toLowerCase().includes('email')) {
-        setError('Error al enviar el email. Por favor contactá a soporte: hola@matchprop.com.ar')
+        setError('Error al enviar el email. Por favor contactá a soporte: hola@demandi.com.ar')
       } else {
         setError(`No pudimos enviar el email. ${msg || 'Verificá la dirección e intentá de nuevo.'}`)
       }
