@@ -37,16 +37,18 @@ export async function POST(
   const supabase = createServerClient()
 
   let brokerId: string | null = null
+  let reporterLabel = 'Anónimo (reporte sin iniciar sesión)'
 
   if (broker_user_id) {
     const { data: broker } = await supabase
       .from('broker_profiles')
-      .select('id')
+      .select('id, name, agency_name, email')
       .eq('user_id', broker_user_id)
       .single()
 
     if (broker) {
       brokerId = broker.id
+      reporterLabel = `${broker.name || 'Broker'}${broker.agency_name ? ` (${broker.agency_name})` : ''}${broker.email ? ` · ${broker.email}` : ''}`
 
       // 1 report per broker per request
       const { data: existing } = await supabase
@@ -99,8 +101,9 @@ export async function POST(
           </div>
           <div style="background:#f9fafb;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
             <p style="margin:0 0 16px;font-size:15px;"><strong>Motivo:</strong> ${REASON_LABELS[reason] || reason}</p>
+            <p style="margin:0 0 8px;font-size:15px;"><strong>Reportado por:</strong> ${reporterLabel}</p>
             <p style="margin:0 0 8px;font-size:15px;"><strong>Pedido:</strong> ${reqSummary}</p>
-            ${req?.contact_name ? `<p style="margin:0 0 8px;font-size:15px;"><strong>Publicado por:</strong> ${req.contact_name}</p>` : ''}
+            ${req?.contact_name ? `<p style="margin:0 0 8px;font-size:15px;"><strong>Publicado por (dueño de la búsqueda):</strong> ${req.contact_name}</p>` : ''}
             <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">ID: ${requestId}</p>
             <a href="${appUrl}/pedidos/${requestId}" style="display:inline-block;background:#dc2626;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">Ver publicación →</a>
           </div>
