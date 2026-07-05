@@ -99,6 +99,7 @@ export default function BrokerDashboard() {
   const [editSaving, setEditSaving] = useState(false)
   const [editError, setEditError] = useState('')
   const [zoneSearch, setZoneSearch] = useState('')
+  const [showAllZones, setShowAllZones] = useState(false)
   const [closeTarget, setCloseTarget] = useState<{ id: string; name: string } | null>(null)
   const [closeReason, setCloseReason] = useState('')
   const [closeSubmitting, setCloseSubmitting] = useState(false)
@@ -382,7 +383,7 @@ export default function BrokerDashboard() {
                 </Link>
               </div>
               <div className="space-y-2">
-                {broker.zones.map((zone) => (
+                {(showAllZones ? broker.zones : broker.zones.slice(0, 6)).map((zone) => (
                   <Link
                     key={zone}
                     href={`/pedidos?zone=${encodeURIComponent(zone)}`}
@@ -397,12 +398,14 @@ export default function BrokerDashboard() {
                     </span>
                   </Link>
                 ))}
-                <Link
-                  href="/pedidos"
-                  className="flex items-center justify-center gap-1.5 w-full mt-1 py-2 text-xs text-gray-500 hover:text-gray-700 transition-colors"
-                >
-                  Ver todas las búsquedas activas
-                </Link>
+                {broker.zones.length > 6 && (
+                  <button
+                    onClick={() => setShowAllZones((v) => !v)}
+                    className="flex items-center justify-center gap-1.5 w-full mt-1 py-2 text-xs font-medium text-brand hover:text-brand-dark transition-colors"
+                  >
+                    {showAllZones ? 'Ver menos' : `Ver ${broker.zones.length - 6} zonas más`}
+                  </button>
+                )}
               </div>
             </div>
 
