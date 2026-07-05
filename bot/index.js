@@ -104,6 +104,22 @@ function logMissed(entry) {
   fs.writeFileSync(MISSED_FILE, JSON.stringify(missed.slice(0, 100), null, 2))
 }
 
+// ── Cache de mensajes ya procesados ──────────────────────────
+// Guarda los IDs de WhatsApp ya manejados (creados/ignorados) para poder
+// re-escanear una ventana amplia sin re-parsear ni volver a llamar al LLM.
+// Permite recuperar mensajes salteados sin duplicar ni gastar tokens de más.
+const PROCESSED_FILE = './processed.json'
+const MAX_PROCESSED = 8000
+
+function loadProcessed() {
+  try { return new Set(JSON.parse(fs.readFileSync(PROCESSED_FILE, 'utf8'))) } catch { return new Set() }
+}
+function saveProcessed(set) {
+  // conservar solo los más recientes (Set mantiene orden de inserción)
+  const arr = [...set].slice(-MAX_PROCESSED)
+  fs.writeFileSync(PROCESSED_FILE, JSON.stringify(arr))
+}
+
 // ── Config ────────────────────────────────────────────────────
 const TARGET_GROUP_IDS = (process.env.TARGET_GROUP_IDS || '')
   .split(',').map(s => s.trim()).filter(Boolean)
@@ -116,8 +132,10 @@ const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID || ''
 
 // Cuántas horas hacia atrás buscar mensajes (default 25h para no perder nada)
 const HOURS_BACK = parseInt(process.env.HOURS_BACK || '25')
-// Mínimo de horas hacia atrás aunque last_run sea reciente (evita perder msgs entre runs)
-const MIN_LOOKBACK_HOURS = parseInt(process.env.MIN_LOOKBACK_HOURS || '3')
+// Mínimo de horas hacia atrás aunque last_run sea reciente (evita perder msgs entre runs).
+// Ventana amplia (48h) para recuperar mensajes salteados; el cache de procesados
+// (processed.json) evita re-parsear/duplicar, así que ampliar no cuesta tokens.
+const MIN_LOOKBACK_HOURS = parseInt(process.env.MIN_LOOKBACK_HOURS || '48')
 
 // ── Telegram notificación ─────────────────────────────────────
 async function sendTelegram(text) {
@@ -243,6 +261,7 @@ client.on('ready', async () => {
   let totalIgnorados = 0
   let totalMissed    = 0
   const missedList   = []
+  const processedIds = loadProcessed()
 
   for (const groupId of TARGET_GROUP_IDS) {
     let group
@@ -259,7 +278,8 @@ client.on('ready', async () => {
     const hoursSince = (Date.now() - since) / 3_600_000
     const fetchLimit = hoursSince > 72 ? 5000 : hoursSince > 24 ? 2000 : hoursSince > 6 ? 1000 : 500
     const messages = await group.fetchMessages({ limit: fetchLimit })
-    const nuevos = messages.filter(m => m.timestamp * 1000 > since && !m.fromMe)
+    // Solo mensajes en la ventana, no míos, y que no hayamos procesado antes.
+    const nuevos = messages.filter(m => m.timestamp * 1000 > since && !m.fromMe && !(m.id?._serialized && processedIds.has(m.id._serialized)))
 
     // Advertir si probablemente se cortó la historia por el límite
     if (messages.length >= fetchLimit && messages.length > 0 && messages[0].timestamp * 1000 > since) {
@@ -269,6 +289,10 @@ client.on('ready', async () => {
     console.log(`   ${nuevos.length} mensajes nuevos desde la última vez`)
 
     for (const msg of nuevos) {
+      // Marcar como procesado ya mismo; si hay error transitorio de API lo revertimos abajo.
+      const msgId = msg.id?._serialized
+      if (msgId) processedIds.add(msgId)
+
       if (!msg.body || msg.body.length < 25) {
         console.log(`   ⏭ (msg corto, ${msg.body?.length ?? 0} chars)`)
         continue
@@ -386,6 +410,8 @@ client.on('ready', async () => {
           totalIgnorados++
         } else {
           process.stdout.write(`→ ❌ error: ${errMsg}\n`)
+          // Error transitorio: desmarcar para reintentar en la próxima corrida.
+          if (msgId) processedIds.delete(msgId)
           const entry = { group: group.name, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'api_error', error: errMsg }
           logMissed(entry)
           missedList.push(entry)
@@ -404,6 +430,7 @@ client.on('ready', async () => {
   console.log('━'.repeat(50))
 
   saveLastRun()
+  saveProcessed(processedIds)
 
   // ── Notificación Telegram ─────────────────────────────────────
   const fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })

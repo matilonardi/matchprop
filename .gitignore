@@ -46,6 +46,8 @@ bot/.wwebjs_cache/
 bot/bot.log
 bot/debug_lids.js
 bot/last_run.json
+bot/processed.json
+bot/missed.json
 bot/launchd.log
 bot/run_daily.sh
 bot/session/
