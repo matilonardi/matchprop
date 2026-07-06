@@ -44,7 +44,7 @@ Look editorial, plano, moderno — sin aspecto "generado por AI".
 ## Dominio y DNS
 - `demandi.com.ar` usa **nameservers de Vercel** (`ns1/ns2.vercel-dns.com`) → todo el DNS se maneja por Vercel (CLI: `vercel dns ...`).
 - **Envío de emails (Resend):** registros en `send.demandi.com.ar` (DKIM `resend._domainkey`, SPF, MX a `feedback-smtp.sa-east-1.amazonses.com`) + DMARC.
-- **Recepción / contacto:** `hola@demandi.com.ar` reenvía a `lonardimatias@gmail.com` vía **ForwardEmail** (MX `mx1/mx2.forwardemail.net` + TXT `forward-email=...` en la raíz). No hay casilla propia; todo cae en el Gmail.
+- **Recepción / contacto:** `hola@demandi.com.ar` reenvía a `lonardimatias@gmail.com` vía **ImprovMX** (free; MX `mx1.improvmx.com`/`mx2.improvmx.com` + SPF `include:spf.improvmx.com` en la raíz; alias configurado en la cuenta ImprovMX de lonardimatias@gmail.com). No hay casilla propia; todo cae en el Gmail. (Nota: ForwardEmail se descartó porque bloquea dominios registrados hace <90 días en el plan free.)
 - `NEXT_PUBLIC_APP_URL=https://demandi.com.ar`.
 
 ---
