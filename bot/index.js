@@ -64,6 +64,11 @@ function sanitize(parsed) {
       budget_ars = budget_usd
       budget_usd = 0
     }
+    // Rangos plausibles de alquiler (Córdoba). Fuera de rango = error de parseo → "a convenir".
+    //   ARS: ~$100.000 a $10.000.000/mes (uso bandas laxas 80k–15M)
+    //   USD: hasta ~10.000/mes (uso 100–15.000)
+    if (budget_ars != null && (budget_ars < 80000 || budget_ars > 15000000)) budget_ars = null
+    if (budget_usd && (budget_usd < 100 || budget_usd > 15000)) budget_usd = 0
   } else {
     // Compra: montos absurdos (>3M USD en Córdoba) son error de parseo → "a convenir".
     if (budget_usd > 3000000) budget_usd = 0
