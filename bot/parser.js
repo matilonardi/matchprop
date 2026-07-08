@@ -2,6 +2,17 @@ const Groq = require('groq-sdk')
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY })
 
+// ── Throttle entre llamadas a Groq ───────────────────────────
+// El modelo 70b tiene límites de tokens/min bajos y el prompt es grande.
+// Espaciamos las llamadas para no gatillar 429 en cada corrida.
+const THROTTLE_MS = parseInt(process.env.GROQ_THROTTLE_MS || '700')
+let lastCallAt = 0
+async function throttle() {
+  const wait = lastCallAt + THROTTLE_MS - Date.now()
+  if (wait > 0) await new Promise(r => setTimeout(r, wait))
+  lastCallAt = Date.now()
+}
+
 const ZONES = `Acosta,Alberdi,Almirante Brown,Alqarias,Alta Córdoba,Alta Gracia,Alto Alberdi,Alto Verde,Altos de Manantiales,Altos del Chateau,Ameghino Norte,Ameghino Sud,Ampliación Empalme,Ampliación Las Palmas,Anisacate,Argüello,Argüello Norte,Ascochinga,Ayacucho,Bajo Palermo,Bell Ville,Bella Vista,Bicentenario,Bouwer,Brisas de Manantiales,Cabana,Campos de Manantiales,Cañitas,Cañuelas Country,Capilla del Monte,Causana,Centro,Cerro de las Rosas,Chacras de la Villa,Chateau Carreras,Ciudad de los Niños,Cofico,Colinas de Manantiales,Colinas de Vélez Sársfield,Colonia Caroya,Colonia Lola,Comarca,Condominios del Valle,Cosquín,Costa Azul,Costas de Manantiales,Country Club Jockey,Crisol Norte,Crisol Sur,Cruz del Eje,Cuatro Hojas,Cuesta Colorada,Cumbres,Cumbres del Golf,Cupani,Deán Funes,Docta,Docta Avenida,Docta Boulevard,Docta Central,Docta Parque,Docta Soho,Don Bosco,Ducasse,Dumesnil,Duplares,Ejército Argentino,El Balcón,El Bosque,El Perchel,El Prado,El Talar,Empalme,Estación Juárez Celman,Estancia Q2,Ferreyra,Fontanas del Sur,Fortín del Pozo,General Paz,Golf,Granja de Funes,Green Park,Greenville,Güemes,Heredades,Hermitage,Hipódromo,Housing del Valle,Inaudi,Ipona,Ituzaingó,Jardín,Jardín Claret,Jardín del Pilar,Jardín Espinosa,Jardín Hipódromo,Jesús María,José Ignacio Díaz,Juniors,Kennedy,La Calera,La Carolina,La Cascada,La Cercanía,La Cuesta,La Cumbre,La Cumbrecita,La Deseada,La Falda,La Herradura,La Luisita,La Morada,La Reserva,La Rosella,La Rufina,La Serena,Laguna Larga,Las Corzuelas,Las Delicias,Las Margaritas,Las Palmas,Las Veras,Lofts,Lomas de la Carolina,Lomas de Mendiolaza,Lomas de Villa Allende,Lomas Este,Lomas Sur,Los Árboles,Los Aromas,Los Boulevares,Los Carolinos,Los Cielos,Los Naranjos,Los Nogales,Los Pinos,Los Plátanos,Los Reartes,Los Robles,Los Soles,Los Sueños,Los Vascos,Maipú,Maipú I,Maipú II,Malagueño,Maldonado,Manantiales,Manantiales I,Manantiales II,Mansos del Sur,Marcos Juárez,Marqués de Sobremonte,Marqués de Sobremonte Anexo,Mendiolaza,Mirador del Chateau,Miradores de Manantiales,Miralta,Mitte,Nobu,Nueva Córdoba,Nueva Italia,Nuevo Urca,Ñu Porá,O'Higgins,Observatorio,Oncativo,Pacífico,Parque Capital,Parque Chacabuco,Parque Chateau Carreras,Parque Futura,Parque Montecristo,Parque Vélez Sársfield,Parterres,Paso de los Andes,Patagonia Village,Patricios,Piedras Blancas,Pilar,Poblado,Poeta Lugones,Portón de Piedra,Providencia,Pueyrredón,Quebrada de las Rosas,Quebrada Honda,Quebradas de Manantiales,Quintas de Italia,Quintas de San Isidro,Quintas de Santa Ana,Renacimiento,Residencial América,Residencial San Carlos,Residencial Vélez Sarsfield,Rincones de Manantiales,Río Ceballos,Río Cuarto,Río Tercero,Rogelio Martínez,Rosedal,Saldán,Salsipuedes,San Alfonso,San Antonio,San Carlos,San Fernando,San Francisco,San Ignacio Village,San Lorenzo,San Martín,San Remo,San Vicente,Santa Ana,Santa Rita,Santa Rosa de Calamuchita,Santina Norte,Santina Sur,Senda,SEP,Sierra Nueva,Siete Soles,Sinsacate,Sol y Río,Solares de Manantiales,Tablada Park,Talar,Talleres,Tejas del Sur,Terrazas de Manantiales,Terrazas del Valle,Tierra Alta,Toledo,Tropezon,Unquillo,Urca,Valle del Sol,Valle Escondido,Valle Hermoso,Verandas,Villa Adela,Villa Allende,Villa Aspacia,Villa Belgrano,Villa Cabrera,Villa Carlos Paz,Villa Catalina,Villa del Dique,Villa del Lago,Villa del Parque,Villa Díaz,Villa El Libertador,Villa General Belgrano,Villa Giardino,Villa María,Villa Martínez,Villa Páez,Villa Revol,Villa Rivera Indarte,Villa Warcalde,Villasol,Yocsina,Yofre Sud`
 
 const SYSTEM_PROMPT = `Sos un asistente que analiza mensajes de grupos de WhatsApp de inmobiliarios en Córdoba, Argentina.
@@ -9,17 +20,25 @@ Estos grupos son SOLO de propiedades — nunca hay autos.
 
 Tu tarea: determinar si el mensaje es una búsqueda activa de propiedad para un cliente comprador.
 
-IGNORAR — devolver null si:
-- Es un saludo, buenos días, gracias, emoji solo
-- Es una respuesta corta ("sí", "dale", "👍", "ok")
-- Es una OFERTA: el broker tiene una propiedad para VENDER o ALQUILAR
-  ("tengo casa en...", "vendo...", "ofrezco...", "disponible...", "en venta...")
-- Es una consulta de precio o información general
-- No menciona zona ni tipo de propiedad
-- Es muy vago o incompleto
+REGLA PRINCIPAL: si el mensaje expresa que alguien BUSCA/NECESITA una propiedad
+(intención de comprador), es una BÚSQUEDA → PROCESAR. Esta intención SIEMPRE gana,
+aunque el texto contenga palabras como "en venta" o "a la venta" (el comprador busca
+algo que esté en venta — eso NO lo convierte en oferta).
 
-PROCESAR — si el broker busca propiedad para un CLIENTE que quiere COMPRAR:
-("busco", "necesito", "cliente busca", "tengo comprador", "solicito", etc.)
+PROCESAR (devolver JSON) si hay intención de comprador:
+- "busco", "buscamos", "busca", "búsqueda", "necesito", "cliente busca",
+  "tengo comprador", "tengo cliente", "solicito", "requiero", "pedido de compra", etc.
+- Ejemplos que SÍ son búsqueda: "Busco depto en Nueva Córdoba apto crédito",
+  "Busco departamento en venta hasta USD 90.000", "Cliente compra casa 3 dorm".
+
+IGNORAR — devolver null SOLO si NO hay intención de comprador:
+- Saludo/respuesta corta ("buenos días", "gracias", "dale", "👍", "ok")
+- Es una OFERTA de venta/alquiler SIN que nadie busque: "vendo", "ofrezco",
+  "disponible", "nuevo ingreso", "tengo casa en...", una ficha/link de propiedad.
+- Consulta de precio o info general
+- No menciona ni zona ni tipo de propiedad, o es demasiado vago.
+
+Ante la duda entre oferta y búsqueda, si aparece "busco/necesito/cliente busca" → es BÚSQUEDA.
 
 Tipos de propiedad válidos (elegí uno o más):
 casa, departamento, duplex, ph, terreno, local, renta, revaluo
@@ -134,7 +153,10 @@ async function parseMessage(text) {
   const MAX_RETRIES = 3
   for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
     try {
+      await throttle()
       const response = await groq.chat.completions.create({
+        // 8b: presupuesto diario alto (el 70b free = 100k tokens/día ≈ 31 búsquedas, inviable).
+        // La recall se arregla con el prompt (intención de comprador gana), no con el modelo.
         model: 'llama-3.1-8b-instant',
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -155,15 +177,19 @@ async function parseMessage(text) {
 
       return parsed
     } catch (err) {
-      const isRateLimit = err.status === 429 || err.message?.includes('rate')
-      if (isRateLimit && attempt < MAX_RETRIES) {
+      // Reintentar ante CUALQUIER error transitorio (rate limit, conexión, timeout).
+      if (attempt < MAX_RETRIES) {
         const wait = attempt * 3000 // 3s, 6s
-        console.error(`   ⏳ Groq rate limit, reintento ${attempt}/${MAX_RETRIES} en ${wait/1000}s...`)
+        console.error(`   ⏳ Groq error (${err.message?.slice(0, 40)}), reintento ${attempt}/${MAX_RETRIES} en ${wait/1000}s...`)
         await new Promise(r => setTimeout(r, wait))
         continue
       }
-      console.error('Error parseando mensaje:', err.message)
-      return null
+      // Agotados los reintentos: es un fallo transitorio, NO "no es búsqueda".
+      // Lanzamos para que el bot NO lo marque como procesado y lo reintente en la próxima corrida.
+      console.error('Error parseando mensaje (transitorio):', err.message)
+      const e = new Error('parse_transient: ' + err.message)
+      e.transient = true
+      throw e
     }
   }
   return null

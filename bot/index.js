@@ -344,7 +344,17 @@ client.on('ready', async () => {
       }
 
       // Parsear siempre — no depender del teléfono para decidir si es búsqueda
-      const raw    = await parseMessage(msg.body)
+      let raw
+      try {
+        raw = await parseMessage(msg.body)
+      } catch (err) {
+        // Error transitorio de Groq (conexión/rate limit): NO marcar como procesado
+        // para reintentar en la próxima corrida.
+        if (err?.transient && msgId) processedIds.delete(msgId)
+        process.stdout.write('→ ⚠️ error transitorio (se reintenta)\n')
+        totalMissed++
+        continue
+      }
       const parsed = raw ? sanitize(raw) : null
 
       if (!parsed) {
