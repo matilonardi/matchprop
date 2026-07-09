@@ -21,19 +21,25 @@ export async function POST(request: NextRequest) {
   // Find brokers with matching zones (simple overlap matching)
   const { data: matchingBrokers } = await supabase
     .from('broker_profiles')
-    .select('id, name, email, zones')
+    .select('id, name, email, zones, alert_frequency')
     .overlaps('zones', req.zones)
     .limit(50)
 
   if (!matchingBrokers?.length) return Response.json({ matched: 0 })
 
-  // Record alerts and send emails
+  // Registrar la alerta para TODOS los matches (dashboard + digests).
   const alertRows = matchingBrokers.map((b) => ({
     broker_id: b.id,
     request_id: req.id,
   }))
 
   await supabase.from('broker_alerts').upsert(alertRows, { onConflict: 'broker_id,request_id' })
+
+  // Email inmediato SOLO a quienes eligieron 'instant' (o sin preferencia = default).
+  // 'daily'/'weekly' → digest por cron · 'off' → nada.
+  const instantBrokers = matchingBrokers.filter(
+    (b) => !b.alert_frequency || b.alert_frequency === 'instant'
+  )
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
   const requestUrl = `${appUrl}/pedidos/${req.id}`
@@ -45,7 +51,7 @@ export async function POST(request: NextRequest) {
   const zones = req.zones.slice(0, 3).join(', ')
 
   // Send email notifications (batch, max 50/hour on Resend free tier)
-  const emailPromises = matchingBrokers.slice(0, 10).map((broker) =>
+  const emailPromises = instantBrokers.slice(0, 10).map((broker) =>
     resend.emails.send({
       from: 'Demandi <alertas@demandi.com.ar>',
       to: broker.email,
@@ -78,5 +84,15 @@ export async function POST(request: NextRequest) {
 
   await Promise.allSettled(emailPromises)
 
-  return Response.json({ matched: matchingBrokers.length })
+  // Marcar como emailados los alerts de los brokers 'instant' (para que el digest no los repita).
+  const instantIds = instantBrokers.slice(0, 10).map((b) => b.id)
+  if (instantIds.length) {
+    await supabase
+      .from('broker_alerts')
+      .update({ emailed_at: new Date().toISOString() })
+      .eq('request_id', req.id)
+      .in('broker_id', instantIds)
+  }
+
+  return Response.json({ matched: matchingBrokers.length, emailed: instantIds.length })
 }

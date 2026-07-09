@@ -90,6 +90,9 @@ export default function BrokerDashboard() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [broker, setBroker] = useState<Broker | null>(null)
+  const [userId, setUserId] = useState('')
+  const [alertFreq, setAlertFreq] = useState('instant')
+  const [alertSaving, setAlertSaving] = useState(false)
   const [leads, setLeads] = useState<Lead[]>([])
   const [marketStats, setMarketStats] = useState<MarketStats | null>(null)
   const [platformStats, setPlatformStats] = useState<{ total: number; byUs: number } | null>(null)
@@ -122,6 +125,14 @@ export default function BrokerDashboard() {
           router.replace('/broker?login=1')
           return
         }
+
+        setUserId(user.id)
+
+        // Preferencia de alertas
+        fetch(`/api/broker/alerts?userId=${user.id}`)
+          .then(r => r.ok ? r.json() : null)
+          .then(d => d?.alert_frequency && setAlertFreq(d.alert_frequency))
+          .catch(() => {})
 
         const res = await fetch(`/api/broker/me?userId=${user.id}`)
         if (!res.ok) {
@@ -253,6 +264,24 @@ export default function BrokerDashboard() {
     router.replace('/broker')
   }
 
+  async function saveAlertFreq(freq: string) {
+    const prev = alertFreq
+    setAlertFreq(freq) // optimista
+    setAlertSaving(true)
+    try {
+      const res = await fetch('/api/broker/alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userId, frequency: freq }),
+      })
+      if (!res.ok) setAlertFreq(prev) // revertir si falla
+    } catch {
+      setAlertFreq(prev)
+    } finally {
+      setAlertSaving(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -366,6 +395,36 @@ export default function BrokerDashboard() {
               <p className="text-xs text-gray-400 mt-1">
                 {misPedidos.filter(p => p.status === 'active').length} activas
               </p>
+            </div>
+          </div>
+
+          {/* Alertas por email */}
+          <div id="alertas" className="bg-white rounded-xl border border-gray-100 p-5 mb-6">
+            <div className="flex items-center gap-2 mb-1">
+              <Bell className="h-4 w-4 text-brand" />
+              <h2 className="font-semibold text-gray-900">Alertas por email</h2>
+            </div>
+            <p className="text-sm text-ink-2 mb-4">Elegí cada cuánto querés que te avisemos de pedidos nuevos en tus zonas.</p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                { id: 'instant', label: 'Al instante', sub: 'Un mail por pedido' },
+                { id: 'daily',   label: 'Resumen diario', sub: '1 mail por día' },
+                { id: 'weekly',  label: 'Resumen semanal', sub: 'Los lunes' },
+                { id: 'off',     label: 'No recibir', sub: 'Sin emails' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  disabled={alertSaving}
+                  onClick={() => saveAlertFreq(opt.id)}
+                  className={`text-left px-3 py-3 rounded-xl border-2 transition-all disabled:opacity-60 ${
+                    alertFreq === opt.id ? 'border-brand bg-tint' : 'border-field bg-white hover:border-ink-3'
+                  }`}
+                >
+                  <div className={`text-sm font-semibold ${alertFreq === opt.id ? 'text-brand' : 'text-ink'}`}>{opt.label}</div>
+                  <div className="text-[11px] text-ink-3 mt-0.5">{opt.sub}</div>
+                </button>
+              ))}
             </div>
           </div>
 
