@@ -49,6 +49,12 @@ function sanitize(parsed) {
     })
     .filter(Boolean)
 
+  // Operación: solo 'compra' o 'alquiler' son búsquedas válidas.
+  // Cualquier otra cosa (ej. 'venta') = oferta mal clasificada → descartar.
+  const op = (parsed.operation_type || 'compra').toLowerCase().trim()
+  if (op !== 'compra' && op !== 'alquiler') return null
+  parsed.operation_type = op
+
   // Normalizar financing
   let financing = (parsed.financing || 'efectivo').toLowerCase().trim()
   if (!VALID_FINANCING.has(financing)) financing = 'efectivo'
