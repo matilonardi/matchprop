@@ -5,6 +5,7 @@ import Navbar from '@/components/Navbar'
 import Footer from '@/components/Footer'
 import WhatsAppButton from '@/components/WhatsAppButton'
 import HeroTicker from '@/components/HeroTicker'
+import AnimateIn from '@/components/AnimateIn'
 import { createServerClient } from '@/lib/supabase-server'
 
 export const revalidate = 60
@@ -97,30 +98,32 @@ export default async function HomePage() {
   const maxZoneCount = topZones[0]?.count || 1
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-clip">
       <Navbar />
 
       {/* ── Hero ── */}
       <section className="pt-16 border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-[72px] grid lg:grid-cols-[1.05fr_.95fr] gap-14 items-center">
           <div>
-            <div className="flex items-center gap-3 mb-6">
+            <AnimateIn variant="fade-up" delay={0} className="flex items-center gap-3 mb-6">
               <span className="h-px w-6 bg-brand" />
               <span className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">
                 El marketplace al revés
               </span>
-            </div>
-            <h1 className="text-4xl md:text-[58px] font-extrabold text-ink leading-[1.03] tracking-[-0.02em]">
-              Publicá lo que buscás. Que te encuentren a vos.
-            </h1>
-            <p className="mt-6 text-lg md:text-[19px] text-ink-2 max-w-[460px] leading-relaxed">
+            </AnimateIn>
+            <AnimateIn variant="fade-up" delay={90}>
+              <h1 className="text-4xl md:text-[58px] font-extrabold text-ink leading-[1.03] tracking-[-0.02em]">
+                Publicá lo que buscás. Que te encuentren a vos.
+              </h1>
+            </AnimateIn>
+            <AnimateIn as="p" variant="fade-up" delay={180} className="mt-6 text-lg md:text-[19px] text-ink-2 max-w-[460px] leading-relaxed">
               Dejá de scrollear miles de avisos. Contanos qué propiedad buscás y los
               vendedores de Córdoba vienen con la oferta.
-            </p>
-            <div className="mt-6">
+            </AnimateIn>
+            <AnimateIn variant="fade-up" delay={270} className="mt-6">
               <HeroTicker />
-            </div>
-            <div className="mt-8 flex flex-wrap items-center gap-6">
+            </AnimateIn>
+            <AnimateIn variant="fade-up" delay={360} className="mt-8 flex flex-wrap items-center gap-6">
               <Link href="/publicar">
                 <Button size="lg" className="rounded-lg px-5 text-[15px]">
                   Publicar mi búsqueda
@@ -129,14 +132,14 @@ export default async function HomePage() {
               <Link href="/pedidos" className="link-underline text-[15px] font-medium text-ink hover:text-brand">
                 Ver búsquedas →
               </Link>
-            </div>
-            <p className="mt-6 text-sm text-ink-3">
+            </AnimateIn>
+            <AnimateIn as="p" variant="fade-up" delay={450} className="mt-6 text-sm text-ink-3">
               Gratis para compradores · Sin registro · Sin spam
-            </p>
+            </AnimateIn>
           </div>
 
           {/* Visual: tarjetas float */}
-          <div className="relative hidden lg:block">
+          <AnimateIn variant="fade-left" delay={200} className="relative hidden lg:block">
             <div className="space-y-4">
               <SampleCard
                 icon={<Home className="h-5 w-5" strokeWidth={1.5} />}
@@ -157,14 +160,14 @@ export default async function HomePage() {
                 floatClass="animate-float-b ml-8"
               />
             </div>
-          </div>
+          </AnimateIn>
         </div>
       </section>
 
       {/* ── Stats strip ── */}
       <section className="border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11">
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-hairline items-center">
+          <AnimateIn as="div" variant="fade-up" className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-hairline items-center">
             {/* Dato estrella: búsquedas activas en vivo */}
             <div className="py-8 sm:pr-8">
               {totalBusquedas > 0 ? (
@@ -198,15 +201,17 @@ export default async function HomePage() {
                 <div className="mt-2 text-sm text-ink-2">{label}</div>
               </div>
             ))}
-          </div>
+          </AnimateIn>
         </div>
       </section>
 
       {/* ── Cómo funciona ── */}
       <section className="border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20">
-          <h2 className="text-3xl md:text-[38px] font-extrabold text-ink tracking-[-0.02em]">Cómo funciona</h2>
-          <p className="mt-3 text-ink-2 text-lg">Tres pasos y la oferta viene a buscarte.</p>
+          <AnimateIn variant="fade-up">
+            <h2 className="text-3xl md:text-[38px] font-extrabold text-ink tracking-[-0.02em]">Cómo funciona</h2>
+            <p className="mt-3 text-ink-2 text-lg">Tres pasos y la oferta viene a buscarte.</p>
+          </AnimateIn>
 
           <div className="mt-12 grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-hairline">
             {[
@@ -214,12 +219,12 @@ export default async function HomePage() {
               { step: '02', icon: <Bell className="h-6 w-6" strokeWidth={1.5} />, title: 'Los vendedores te ven', desc: 'Inmobiliarias y particulares reciben alertas por zona. Ven tu búsqueda —nunca tu contacto sin permiso.' },
               { step: '03', icon: <Phone className="h-6 w-6" strokeWidth={1.5} />, title: 'Te contactan con opciones reales', desc: 'Cuando alguien tiene algo para vos, ve tu contacto y te escribe. Cero spam.' },
             ].map(({ step, icon, title, desc }, idx) => (
-              <div key={step} className={`py-8 ${idx === 0 ? 'md:pr-10' : 'md:px-10'}`}>
+              <AnimateIn as="div" variant="fade-up" delay={idx * 120} key={step} className={`py-8 ${idx === 0 ? 'md:pr-10' : 'md:px-10'}`}>
                 <div className="font-grotesk text-sm font-bold text-brand">{step}</div>
                 <div className="mt-4 text-ink">{icon}</div>
                 <h3 className="mt-4 text-xl font-bold text-ink">{title}</h3>
                 <p className="mt-2 text-[15px] text-ink-2 leading-relaxed">{desc}</p>
-              </div>
+              </AnimateIn>
             ))}
           </div>
         </div>
@@ -228,7 +233,7 @@ export default async function HomePage() {
       {/* ── Para compradores ── */}
       <section className="border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20 grid md:grid-cols-[.9fr_1.1fr] gap-14 items-center">
-          <div>
+          <AnimateIn as="div" variant="fade-right">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">Para compradores</div>
             <h2 className="mt-4 text-3xl md:text-[34px] font-extrabold text-ink tracking-[-0.02em]">
               Tu búsqueda trabaja sola mientras hacés otra cosa
@@ -253,9 +258,9 @@ export default async function HomePage() {
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </Link>
-          </div>
+          </AnimateIn>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <AnimateIn as="div" variant="fade-left" delay={120} className="grid gap-4 sm:grid-cols-2">
             <SampleCard
               icon={<Home className="h-5 w-5" strokeWidth={1.5} />}
               price="230.000" meta="Casa · Mendiolaza"
@@ -276,7 +281,7 @@ export default async function HomePage() {
               price="620.000" meta="Casa · Villa Belgrano"
               tags={['3+ dorm.', 'Pileta']} views={31} ago="hace 3h"
             />
-          </div>
+          </AnimateIn>
         </div>
       </section>
 
@@ -284,7 +289,7 @@ export default async function HomePage() {
       {topZones.length > 0 && (
         <section className="border-b border-hairline">
           <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20 grid md:grid-cols-[.8fr_1.2fr] gap-14 items-center">
-            <div>
+            <AnimateIn as="div" variant="fade-right">
               <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">
                 Demanda en tiempo real
               </div>
@@ -301,9 +306,9 @@ export default async function HomePage() {
                   <ArrowRight className="ml-1.5 h-4 w-4" />
                 </Button>
               </Link>
-            </div>
+            </AnimateIn>
 
-            <div className="space-y-4">
+            <AnimateIn as="div" variant="fade-left" delay={120} className="space-y-4">
               {topZones.map(({ zone, count: zc, avgK }, i) => (
                 <div key={zone}>
                   <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5 mb-1.5">
@@ -326,7 +331,7 @@ export default async function HomePage() {
                   </div>
                 </div>
               ))}
-            </div>
+            </AnimateIn>
           </div>
         </section>
       )}
@@ -334,7 +339,7 @@ export default async function HomePage() {
       {/* ── Para vendedores ── */}
       <section className="bg-surface border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11 py-16 md:py-20 grid md:grid-cols-[1.1fr_.9fr] gap-14 items-center">
-          <div className="space-y-3 order-2 md:order-1">
+          <AnimateIn as="div" variant="fade-right" delay={120} className="space-y-3 order-2 md:order-1">
             {[
               { icon: <Home className="h-5 w-5" strokeWidth={1.5} />, label: 'Casa · Mendiolaza · USD 230k', badge: 'Nuevo', time: 'hace 1h' },
               { icon: <Home className="h-5 w-5" strokeWidth={1.5} />, label: 'Casa · Villa Belgrano · USD 620k', badge: '', time: 'hace 3h' },
@@ -352,9 +357,9 @@ export default async function HomePage() {
                 <Button size="sm" variant="outline" className="shrink-0 text-xs">Ver contacto</Button>
               </div>
             ))}
-          </div>
+          </AnimateIn>
 
-          <div className="order-1 md:order-2">
+          <AnimateIn as="div" variant="fade-left" className="order-1 md:order-2">
             <div className="text-[13px] font-semibold uppercase tracking-[0.08em] text-brand">Para vendedores</div>
             <h2 className="mt-4 text-3xl md:text-[34px] font-extrabold text-ink tracking-[-0.02em]">
               Compradores que ya saben lo que quieren
@@ -362,7 +367,7 @@ export default async function HomePage() {
             <ul className="mt-8 space-y-4">
               {[
                 'Ves el pedido completo antes de contactar',
-                'Alertas automáticas por zona — propiedades y autos',
+                'Alertas automáticas por zona',
                 'Contactás directo a la punta compradora',
               ].map((text) => (
                 <li key={text} className="flex items-start gap-3">
@@ -377,13 +382,13 @@ export default async function HomePage() {
                 <ArrowRight className="ml-1.5 h-4 w-4" />
               </Button>
             </Link>
-          </div>
+          </AnimateIn>
         </div>
       </section>
 
       {/* ── CTA final ── */}
       <section className="border-b border-hairline">
-        <div className="max-w-6xl mx-auto px-5 sm:px-11 py-20 md:py-24 text-center">
+        <AnimateIn as="div" variant="scale-up" className="max-w-6xl mx-auto px-5 sm:px-11 py-20 md:py-24 text-center">
           <h2 className="text-4xl md:text-[44px] font-extrabold text-ink tracking-[-0.02em]">Empezá gratis hoy</h2>
           <p className="mt-4 text-lg text-ink-2 max-w-xl mx-auto">
             Publicá lo que buscás o explorá las búsquedas activas de compradores reales en Córdoba.
@@ -402,7 +407,7 @@ export default async function HomePage() {
             <Lock className="h-3.5 w-3.5" strokeWidth={1.5} />
             Tu contacto nunca se muestra públicamente
           </p>
-        </div>
+        </AnimateIn>
       </section>
 
       <Footer />

@@ -27,6 +27,17 @@ export default function AnimateIn({
   useEffect(() => {
     const el = ref.current
     if (!el) return
+
+    // Degradación elegante: si el usuario prefiere menos movimiento o el
+    // navegador no soporta IntersectionObserver, mostramos el contenido ya.
+    const prefersReduced =
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (prefersReduced || typeof IntersectionObserver === 'undefined') {
+      setVisible(true)
+      return
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -37,7 +48,23 @@ export default function AnimateIn({
       { threshold }
     )
     observer.observe(el)
-    return () => observer.disconnect()
+
+    // Failsafe: si el observer nunca dispara (p. ej. pestaña en segundo plano,
+    // renderer sin composición) pero el elemento ya está en viewport, revelarlo
+    // igual para que el contenido nunca quede oculto. No afecta el scroll-reveal
+    // de secciones fuera de pantalla.
+    const failsafe = setTimeout(() => {
+      const r = el.getBoundingClientRect()
+      if (r.top < (window.innerHeight || 0) && r.bottom > 0) {
+        setVisible(true)
+        observer.disconnect()
+      }
+    }, 1600)
+
+    return () => {
+      observer.disconnect()
+      clearTimeout(failsafe)
+    }
   }, [threshold])
 
   const variants: Record<Variant, { hidden: string; show: string }> = {
