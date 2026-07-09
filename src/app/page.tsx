@@ -164,13 +164,36 @@ export default async function HomePage() {
       {/* ── Stats strip ── */}
       <section className="border-b border-hairline">
         <div className="max-w-6xl mx-auto px-5 sm:px-11">
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-hairline">
+          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-hairline items-center">
+            {/* Dato estrella: búsquedas activas en vivo */}
+            <div className="py-8 sm:pr-8">
+              {totalBusquedas > 0 ? (
+                <>
+                  <div className="inline-flex items-center gap-1.5 rounded-full bg-tint px-2.5 py-1 mb-2">
+                    <span className="relative flex h-[7px] w-[7px]" aria-hidden="true">
+                      <span className="absolute inline-flex h-full w-full rounded-full bg-brand animate-radar" />
+                      <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-brand" />
+                    </span>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.08em] text-brand">En vivo</span>
+                  </div>
+                  <div className="text-6xl md:text-7xl font-extrabold text-brand tabular leading-[0.95] tracking-[-0.02em]">
+                    {totalBusquedas.toLocaleString('es-AR')}
+                  </div>
+                  <div className="mt-2 text-sm font-medium text-ink-2">Búsquedas activas ahora</div>
+                </>
+              ) : (
+                <>
+                  <div className="text-[34px] font-extrabold text-ink tabular leading-none">100%</div>
+                  <div className="mt-2 text-sm text-ink-2">Gratis para compradores</div>
+                </>
+              )}
+            </div>
+
             {[
-              { n: totalBusquedas > 0 ? totalBusquedas.toLocaleString('es-AR') : '100%', label: totalBusquedas > 0 ? 'Búsquedas activas ahora' : 'Gratis para compradores' },
               { n: 'Alta intención', label: 'Leads que ya saben qué quieren' },
               { n: 'Córdoba', label: 'Foco inicial · expansión planificada' },
-            ].map(({ n, label }, idx) => (
-              <div key={label} className={`py-8 ${idx === 0 ? 'sm:pr-8' : 'sm:px-8'}`}>
+            ].map(({ n, label }) => (
+              <div key={label} className="py-8 sm:px-8">
                 <div className="text-[34px] font-extrabold text-ink tabular leading-none">{n}</div>
                 <div className="mt-2 text-sm text-ink-2">{label}</div>
               </div>
