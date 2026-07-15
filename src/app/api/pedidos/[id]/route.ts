@@ -1,20 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createHmac, timingSafeEqual } from 'crypto'
-
-function makeCloseToken(requestId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
-  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
-}
-
-function verifyCloseToken(requestId: string, token: string): boolean {
-  const expected = makeCloseToken(requestId)
-  try {
-    return timingSafeEqual(Buffer.from(token), Buffer.from(expected))
-  } catch {
-    return false
-  }
-}
+import { verifyCloseToken } from '@/lib/close-token'
 
 export async function PATCH(
   request: NextRequest,

@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server'
 import { cookies } from 'next/headers'
 import { createServerClient } from '@/lib/supabase-server'
+import { verifyAdminSecret } from '@/lib/admin-auth'
 
 export async function GET(request: NextRequest) {
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
   const cookieStore = await cookies()
   const session = cookieStore.get('matchprop_admin')?.value
-  if (session !== ADMIN_SECRET) {
+  if (!verifyAdminSecret(session)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

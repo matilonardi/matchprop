@@ -1,11 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createHmac, timingSafeEqual } from 'crypto'
-
-function makeCloseToken(requestId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
-  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
-}
+import { verifyCloseToken } from '@/lib/close-token'
 
 export async function POST(
   request: NextRequest,
@@ -19,16 +14,7 @@ export async function POST(
     return Response.json({ error: 'Token requerido' }, { status: 400 })
   }
 
-  // Verify token using timing-safe comparison
-  const expected = makeCloseToken(id)
-  let valid = false
-  try {
-    valid = timingSafeEqual(Buffer.from(close_token), Buffer.from(expected))
-  } catch {
-    valid = false
-  }
-
-  if (!valid) {
+  if (!verifyCloseToken(id, close_token)) {
     return Response.json({ error: 'Token inválido' }, { status: 403 })
   }
 

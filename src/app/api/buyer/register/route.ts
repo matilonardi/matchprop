@@ -1,11 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createHmac } from 'crypto'
-
-function makeCloseToken(requestId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
-  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
-}
+import { makeCloseToken } from '@/lib/close-token'
+import { triggerMatching } from '@/lib/trigger-matching'
 
 export async function POST(request: NextRequest) {
   const body = await request.json()
@@ -75,17 +71,46 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: 'Datos de la búsqueda incompletos' }, { status: 400 })
   }
 
-  // Verify hCaptcha token (skip on localhost, if no secret, or if widget failed gracefully)
+  // Verify hCaptcha token (skip only on localhost or when hCaptcha isn't configured —
+  // never soft-fail open on a missing token or a network error, that defeats the point
+  // of having anti-abuse verification at all).
   const hcaptchaSecret = process.env.HCAPTCHA_SECRET
   const isLocalhost = (process.env.NEXT_PUBLIC_APP_URL || '').includes('localhost')
-  if (hcaptchaSecret && !isLocalhost && captcha_token) {
-    const verify = await fetch('https://api.hcaptcha.com/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({ secret: hcaptchaSecret, response: captcha_token }),
-    }).then(r => r.json()).catch(() => ({ success: true })) // soft-fail on network error
+  if (hcaptchaSecret && !isLocalhost) {
+    if (!captcha_token) {
+      return Response.json(
+        { error: 'Verificación de seguridad requerida. Recargá la página e intentá de nuevo.' },
+        { status: 400 }
+      )
+    }
+
+    let verify: { success?: boolean }
+    try {
+      const controller = new AbortController()
+      const timeout = setTimeout(() => controller.abort(), 5_000)
+      const res = await fetch('https://api.hcaptcha.com/siteverify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({ secret: hcaptchaSecret, response: captcha_token }),
+        signal: controller.signal,
+      }).finally(() => clearTimeout(timeout))
+      verify = await res.json()
+    } catch (e) {
+      // Fail closed: an hCaptcha outage/timeout must not silently disable
+      // anti-abuse protection. Ask the user to retry instead of registering them.
+      console.error('[buyer/register] hcaptcha verification errored:', e)
+      return Response.json(
+        { error: 'No pudimos verificar el captcha. Intentá de nuevo en un momento.' },
+        { status: 503 }
+      )
+    }
+
     if (!verify.success) {
-      console.warn('[hcaptcha] verification failed — proceeding anyway (MVP mode)')
+      console.warn('[buyer/register] hcaptcha verification failed')
+      return Response.json(
+        { error: 'Verificación de seguridad fallida. Recargá la página e intentá de nuevo.' },
+        { status: 400 }
+      )
     }
   }
 
@@ -183,15 +208,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: reqError.message }, { status: 500 })
   }
 
-  // Trigger AI matching in background
-  try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-    fetch(`${appUrl}/api/matching`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ request_id: reqData.id }),
-    }).catch(() => {})
-  } catch {}
+  // Trigger AI matching in background (non-blocking, timeout-bounded, logged on failure)
+  triggerMatching(reqData.id, 'buyer/register')
 
   const close_token = makeCloseToken(reqData.id)
   return Response.json({ id: reqData.id, close_token }, { status: 201 })

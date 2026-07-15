@@ -1,5 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { getAuthenticatedBroker } from '@/lib/broker-auth'
+import { withTimeout } from '@/lib/with-timeout'
 import { Resend } from 'resend'
 
 // ---------------------------------------------------------------------------
@@ -29,24 +31,16 @@ export async function GET(
   props: { params: Promise<{ id: string }> }
 ) {
   const { id: requestId } = await props.params
-  const brokerUserId = request.nextUrl.searchParams.get('broker_user_id')
-
-  if (!brokerUserId) return Response.json({ unlocked: false })
-
   const supabase = createServerClient()
 
-  const { data: broker } = await supabase
-    .from('broker_profiles')
-    .select('id')
-    .eq('user_id', brokerUserId)
-    .single()
-
-  if (!broker) return Response.json({ unlocked: false })
+  // Identity comes from the verified access token, never from a query param.
+  const auth = await getAuthenticatedBroker(supabase, request)
+  if (!auth) return Response.json({ unlocked: false })
 
   const { data: purchase } = await supabase
     .from('lead_purchases')
     .select('id')
-    .eq('broker_id', broker.id)
+    .eq('broker_id', auth.brokerId)
     .eq('request_id', requestId)
     .single()
 
@@ -83,29 +77,26 @@ export async function POST(
     )
   }
 
-  // ── Basic validation ───────────────────────────────────────────────────────
-  const body = await request.json()
-  const { broker_user_id } = body
-
-  if (!broker_user_id || !requestId) {
+  if (!requestId) {
     return Response.json({ error: 'Parámetros requeridos' }, { status: 400 })
   }
 
   const supabase = createServerClient()
 
-  // ── Broker profile ─────────────────────────────────────────────────────────
+  // ── Identity: verified access token, never a client-supplied id (IDOR) ─────
+  const auth = await getAuthenticatedBroker(supabase, request)
+  if (!auth) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
+  }
+
   const { data: broker, error: brokerError } = await supabase
     .from('broker_profiles')
     .select('id, credits, name, agency_name, email')
-    .eq('user_id', broker_user_id)
+    .eq('id', auth.brokerId)
     .single()
 
   if (brokerError || !broker) {
     return Response.json({ error: 'Perfil de broker no encontrado' }, { status: 404 })
-  }
-
-  if (broker.credits < 1) {
-    return Response.json({ error: 'Sin créditos suficientes' }, { status: 402 })
   }
 
   // ── Per-broker rate limit: max 15 unlocks / hour ───────────────────────────
@@ -123,77 +114,42 @@ export async function POST(
     )
   }
 
-  // ── Already purchased? Return contact without charging ─────────────────────
-  const { data: existing } = await supabase
-    .from('lead_purchases')
-    .select('id')
-    .eq('broker_id', broker.id)
-    .eq('request_id', requestId)
+  // ── Atomic credit check + deduct + record purchase ─────────────────────────
+  // unlock_lead() takes a row lock on broker_profiles for the transaction
+  // duration, so two concurrent requests for the same broker can't both
+  // pass the credit check and both get a free unlock (see migration
+  // 016_unlock_lead_rpc.sql for the race this replaces). Also idempotent:
+  // a broker who already unlocked this request isn't charged again.
+  const { data: unlockResultRaw, error: unlockError } = await supabase
+    .rpc('unlock_lead', { p_broker_id: broker.id, p_request_id: requestId })
     .single()
 
-  if (existing) {
-    const { data: req } = await supabase
-      .from('buyer_requests')
-      .select('contact_name, contact_phone, contact_email')
-      .eq('id', requestId)
-      .single()
-    return Response.json({ contact: req })
-  }
-
-  // ── Deduct credit ──────────────────────────────────────────────────────────
-  // Uses .eq('credits', broker.credits) as optimistic lock —
-  // if another request already decremented it, this update affects 0 rows.
-  const { data: updatedRows } = await supabase
-    .from('broker_profiles')
-    .update({ credits: broker.credits - 1 })
-    .eq('id', broker.id)
-    .eq('credits', broker.credits)  // optimistic lock
-    .select('id')
-  const updated = updatedRows?.length ?? 0
-
-  if (!updated || updated === 0) {
-    // Concurrent request already decremented — re-read and check
-    const { data: fresh } = await supabase
-      .from('broker_profiles')
-      .select('credits')
-      .eq('id', broker.id)
-      .single()
-
-    if (!fresh || fresh.credits < 1) {
+  if (unlockError) {
+    if (unlockError.message?.includes('insufficient_credits')) {
       return Response.json({ error: 'Sin créditos suficientes' }, { status: 402 })
     }
-    // Retry once with fresh value
-    await supabase
-      .from('broker_profiles')
-      .update({ credits: fresh.credits - 1 })
-      .eq('id', broker.id)
-      .eq('credits', fresh.credits)
+    if (unlockError.message?.includes('broker_not_found')) {
+      return Response.json({ error: 'Perfil de broker no encontrado' }, { status: 404 })
+    }
+    console.error('[unlock] unlock_lead RPC failed:', unlockError, { brokerId: broker.id, requestId })
+    return Response.json({ error: 'Error al desbloquear' }, { status: 500 })
   }
 
-  // ── Record purchase & transaction ──────────────────────────────────────────
-  await supabase.from('lead_purchases').insert({
-    broker_id: broker.id,
-    request_id: requestId,
-    credits_spent: 1,
-  })
+  // The Supabase client isn't generated against a typed schema in this
+  // project, so the RPC row shape needs an explicit cast here.
+  const unlockResult = unlockResultRaw as { already_unlocked: boolean; credits_remaining: number } | null
 
-  await supabase.from('credit_transactions').insert({
-    broker_id: broker.id,
-    amount: -1,
-    description: `Lead desbloqueado: ${requestId}`,
-  })
+  const wasAlreadyUnlocked = unlockResult?.already_unlocked === true
 
-  await supabase.rpc('increment_request_views', { req_id: requestId })
-
-  // ── Fetch full request for email ───────────────────────────────────────────
+  // ── Fetch full request for the response + (first-time only) email ─────────
   const { data: req } = await supabase
     .from('buyer_requests')
     .select('contact_name, contact_phone, contact_email, property_types, zones, budget_usd, request_type')
     .eq('id', requestId)
     .single()
 
-  // ── Notify buyer (non-blocking) ────────────────────────────────────────────
-  if (req?.contact_email) {
+  // ── Notify buyer (non-blocking) — only on the first unlock, not repeats ────
+  if (req?.contact_email && !wasAlreadyUnlocked) {
     try {
       const resend = new Resend(process.env.RESEND_API_KEY || '')
       const brokerDisplay = broker.agency_name
@@ -202,7 +158,7 @@ export async function POST(
       const zones = (req.zones || []).slice(0, 3).join(', ')
       const requestUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.vercel.app'}/pedidos/${requestId}`
 
-      await resend.emails.send({
+      await withTimeout(resend.emails.send({
         from: 'Demandi <alertas@demandi.com.ar>',
         to: req.contact_email,
         subject: `📬 ${brokerDisplay} está interesado en tu búsqueda`,
@@ -243,7 +199,7 @@ export async function POST(
             </div>
           </div>
         `,
-      })
+      }), 8_000, 'resend buyer notification')
     } catch (e) {
       console.error('[unlock] email error:', e)
     }

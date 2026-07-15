@@ -1,10 +1,9 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-
-const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
+import { verifyAdminSecret } from '@/lib/admin-auth'
 
 function auth(req: NextRequest): boolean {
-  return req.headers.get('x-admin-secret') === ADMIN_SECRET
+  return verifyAdminSecret(req.headers.get('x-admin-secret'))
 }
 
 export async function GET(request: NextRequest) {

@@ -1,4 +1,5 @@
 import { NextRequest } from 'next/server'
+import { verifyAdminSecret } from '@/lib/admin-auth'
 
 // GET /api/telegram/setup?key=ADMIN_SECRET
 // Registers the webhook with Telegram
@@ -6,8 +7,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const key = searchParams.get('key')
 
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
-  if (key !== ADMIN_SECRET) {
+  if (!verifyAdminSecret(key)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
@@ -53,8 +53,7 @@ export async function DELETE(request: NextRequest) {
   const { searchParams } = new URL(request.url)
   const key = searchParams.get('key')
 
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
-  if (key !== ADMIN_SECRET) {
+  if (!verifyAdminSecret(key)) {
     return Response.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

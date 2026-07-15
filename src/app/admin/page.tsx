@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase-server'
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
+import { verifyAdminSecret } from '@/lib/admin-auth'
 import {
   Users, FileText,
   DollarSign, UserCheck,
@@ -19,12 +20,14 @@ export default async function AdminPage({
 }) {
   const params = await searchParams
 
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
   const cookieStore = await cookies()
   const session = cookieStore.get('matchprop_admin')?.value
-  if (session !== ADMIN_SECRET) {
+  if (!verifyAdminSecret(session)) {
     redirect('/admin/login')
   }
+  // Safe to read directly below: verifyAdminSecret already confirmed
+  // ADMIN_SECRET is configured and matches the session cookie.
+  const ADMIN_SECRET = process.env.ADMIN_SECRET as string
 
   const tab = params.tab || 'pulso'
   const supabase = createServerClient()

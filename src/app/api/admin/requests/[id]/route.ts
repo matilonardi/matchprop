@@ -1,15 +1,15 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { verifyAdminSecret } from '@/lib/admin-auth'
 
 export async function DELETE(
   request: NextRequest,
   props: { params: Promise<{ id: string }> }
 ) {
   // Verify admin secret
-  const ADMIN_SECRET = process.env.ADMIN_SECRET || 'matchprop-admin-2025'
   const providedSecret = request.headers.get('x-admin-secret')
 
-  if (providedSecret !== ADMIN_SECRET) {
+  if (!verifyAdminSecret(providedSecret)) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 

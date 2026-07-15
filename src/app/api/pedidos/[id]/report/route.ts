@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { withTimeout } from '@/lib/with-timeout'
 import { Resend } from 'resend'
 
 const VALID_REASONS = [
@@ -90,27 +91,36 @@ export async function POST(
       ? `${req.property_types?.join(', ')} · ${req.zones?.slice(0, 2).join(', ')} · ${req.budget_ars ? `$ ${req.budget_ars.toLocaleString('es-AR')}` : req.budget_usd ? `USD ${req.budget_usd.toLocaleString()}` : 'sin precio'}`
       : requestId
 
-    await resend.emails.send({
-      from: 'Demandi <alertas@demandi.com.ar>',
-      to: 'lonardimatias@gmail.com',
-      subject: `⚠️ Nuevo reporte: ${REASON_LABELS[reason] || reason}`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1f2937;">
-          <div style="background:#dc2626;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
-            <h2 style="color:white;margin:0;font-size:20px;">⚠️ Pedido reportado</h2>
+    await withTimeout(
+      resend.emails.send({
+        from: 'Demandi <alertas@demandi.com.ar>',
+        to: 'lonardimatias@gmail.com',
+        subject: `⚠️ Nuevo reporte: ${REASON_LABELS[reason] || reason}`,
+        html: `
+          <div style="font-family:Arial,sans-serif;max-width:480px;margin:0 auto;color:#1f2937;">
+            <div style="background:#dc2626;padding:24px;border-radius:12px 12px 0 0;text-align:center;">
+              <h2 style="color:white;margin:0;font-size:20px;">⚠️ Pedido reportado</h2>
+            </div>
+            <div style="background:#f9fafb;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
+              <p style="margin:0 0 16px;font-size:15px;"><strong>Motivo:</strong> ${REASON_LABELS[reason] || reason}</p>
+              <p style="margin:0 0 8px;font-size:15px;"><strong>Reportado por:</strong> ${reporterLabel}</p>
+              <p style="margin:0 0 8px;font-size:15px;"><strong>Pedido:</strong> ${reqSummary}</p>
+              ${req?.contact_name ? `<p style="margin:0 0 8px;font-size:15px;"><strong>Publicado por (dueño de la búsqueda):</strong> ${req.contact_name}</p>` : ''}
+              <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">ID: ${requestId}</p>
+              <a href="${appUrl}/pedidos/${requestId}" style="display:inline-block;background:#dc2626;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">Ver publicación →</a>
+            </div>
           </div>
-          <div style="background:#f9fafb;padding:24px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;">
-            <p style="margin:0 0 16px;font-size:15px;"><strong>Motivo:</strong> ${REASON_LABELS[reason] || reason}</p>
-            <p style="margin:0 0 8px;font-size:15px;"><strong>Reportado por:</strong> ${reporterLabel}</p>
-            <p style="margin:0 0 8px;font-size:15px;"><strong>Pedido:</strong> ${reqSummary}</p>
-            ${req?.contact_name ? `<p style="margin:0 0 8px;font-size:15px;"><strong>Publicado por (dueño de la búsqueda):</strong> ${req.contact_name}</p>` : ''}
-            <p style="margin:0 0 16px;font-size:13px;color:#6b7280;">ID: ${requestId}</p>
-            <a href="${appUrl}/pedidos/${requestId}" style="display:inline-block;background:#dc2626;color:white;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:14px;">Ver publicación →</a>
-          </div>
-        </div>
-      `,
-    })
-  } catch { /* email failure doesn't affect the response */ }
+        `,
+      }),
+      8_000,
+      'resend admin notification'
+    )
+  } catch (e) {
+    // Email failure doesn't fail the request (the report is already saved
+    // in request_reports), but it must not disappear silently — an admin
+    // notification that never arrives means abuse reports go unnoticed.
+    console.error('[pedidos/report] admin notification email failed:', e, { requestId })
+  }
 
   return Response.json({ ok: true }, { status: 201 })
 }

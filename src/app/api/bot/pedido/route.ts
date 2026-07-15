@@ -1,18 +1,27 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createHmac } from 'crypto'
+import { makeCloseToken } from '@/lib/close-token'
+import { triggerMatching } from '@/lib/trigger-matching'
+import { timingSafeEqual } from 'crypto'
 
-function makeCloseToken(requestId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
-  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
+function verifyBotSecret(provided: string): boolean {
+  const expected = process.env.BOT_SECRET
+  if (!expected || !provided) return false
+  const a = Buffer.from(provided)
+  const b = Buffer.from(expected)
+  if (a.length !== b.length) return false
+  try {
+    return timingSafeEqual(a, b)
+  } catch {
+    return false
+  }
 }
 
 export async function POST(request: NextRequest) {
-  // Verificar bot secret
-  const BOT_SECRET = process.env.BOT_SECRET || ''
-  const provided   = request.headers.get('x-bot-secret') || ''
+  // Verificar bot secret (constant-time — fails closed if BOT_SECRET isn't set)
+  const provided = request.headers.get('x-bot-secret') || ''
 
-  if (!BOT_SECRET || provided !== BOT_SECRET) {
+  if (!verifyBotSecret(provided)) {
     return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
@@ -117,15 +126,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: error.message }, { status: 500 })
   }
 
-  // AI matching en background (no bloqueante)
-  try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://matchprop.vercel.app'
-    fetch(`${appUrl}/api/matching`, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ request_id: data.id }),
-    }).catch(() => {})
-  } catch {}
+  // AI matching en background (no bloqueante, pero con timeout y logging si falla)
+  triggerMatching(data.id, 'bot/pedido')
 
   const close_token = makeCloseToken(data.id)
   return Response.json({ id: data.id, close_token }, { status: 201 })

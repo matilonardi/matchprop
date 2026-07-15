@@ -1,11 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createHmac } from 'crypto'
-
-function makeCloseToken(requestId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
-  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
-}
+import { makeCloseToken } from '@/lib/close-token'
+import { triggerMatching } from '@/lib/trigger-matching'
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -211,15 +207,8 @@ export async function POST(request: NextRequest) {
     return Response.json({ error: error.message }, { status: 500 })
   }
 
-  // Trigger AI matching in background (non-blocking)
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-  try {
-    fetch(`${appUrl}/api/matching`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ request_id: data.id }),
-    }).catch(() => {})
-  } catch {}
+  // Trigger AI matching in background (non-blocking, timeout-bounded, logged on failure)
+  triggerMatching(data.id, 'pedidos')
 
   const close_token = makeCloseToken(data.id)
   return Response.json({ id: data.id, close_token }, { status: 201 })

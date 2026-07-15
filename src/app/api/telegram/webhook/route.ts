@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
+import { triggerMatching } from '@/lib/trigger-matching'
 import Anthropic from '@anthropic-ai/sdk'
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
@@ -8,7 +9,7 @@ const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 // AI parser — extracts structured data from a free-form search text
 // ─────────────────────────────────────────────────────────────
 async function parseRequestWithAI(text: string) {
-  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY })
+  const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY, timeout: 15_000 })
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5',
     max_tokens: 600,
@@ -75,11 +76,18 @@ Reglas clave:
 // ─────────────────────────────────────────────────────────────
 async function sendTelegramMessage(chatId: number, text: string) {
   if (!BOT_TOKEN) return
-  await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
-  }).catch(() => {})
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text, parse_mode: 'Markdown' }),
+    })
+    if (!res.ok) {
+      console.error('[telegram/webhook] sendMessage failed:', res.status, chatId)
+    }
+  } catch (e) {
+    console.error('[telegram/webhook] sendMessage errored:', e, chatId)
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -203,14 +211,8 @@ export async function POST(request: NextRequest) {
         `\n🔗 [Ver pedido](${appUrl}/pedidos/${data.id})`
     )
 
-    // Trigger AI matching
-    try {
-      fetch(`${appUrl}/api/matching`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ request_id: data.id }),
-      }).catch(() => {})
-    } catch {}
+    // Trigger AI matching (non-blocking, timeout-bounded, logged on failure)
+    triggerMatching(data.id, 'telegram/webhook')
   } catch (err) {
     console.error('Telegram webhook error:', err)
     await sendTelegramMessage(chatId, '❌ Error al guardar el pedido. Revisá los logs.')

@@ -1,20 +1,7 @@
 import { NextRequest } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
-import { createHmac, timingSafeEqual } from 'crypto'
-
-function makeCloseToken(requestId: string): string {
-  const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || 'placeholder'
-  return createHmac('sha256', secret).update(requestId).digest('hex').slice(0, 32)
-}
-
-function verifyCloseToken(requestId: string, token: string): boolean {
-  const expected = makeCloseToken(requestId)
-  try {
-    return timingSafeEqual(Buffer.from(token), Buffer.from(expected))
-  } catch {
-    return false
-  }
-}
+import { getAuthenticatedBroker } from '@/lib/broker-auth'
+import { makeCloseToken, verifyCloseToken } from '@/lib/close-token'
 
 async function sendEmailNotification({
   to,
@@ -39,33 +26,43 @@ async function sendEmailNotification({
     ? `${appUrl}/pedidos/${requestId}?close_token=${closeToken}#mensajes`
     : `${appUrl}/pedidos/${requestId}`
 
-  await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-    },
-    body: JSON.stringify({
-      from: 'Demandi <noreply@demandi.com.ar>',
-      to: [to],
-      subject,
-      html: `
-        <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
-          <h2 style="color:#f97316;margin-bottom:4px">Demandi</h2>
-          <p style="color:#374151">Hola <strong>${toName}</strong>,</p>
-          <p style="color:#374151">${message}</p>
-          <a href="${link}"
-             style="display:inline-block;margin-top:16px;background:#f97316;color:#fff;
-                    padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
-            Ver mensaje →
-          </a>
-          <p style="color:#9ca3af;font-size:12px;margin-top:24px">
-            Demandi · Córdoba, Argentina
-          </p>
-        </div>
-      `,
-    }),
-  }).catch(() => {}) // fire-and-forget
+  try {
+    const res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'Demandi <noreply@demandi.com.ar>',
+        to: [to],
+        subject,
+        html: `
+          <div style="font-family:sans-serif;max-width:480px;margin:auto;padding:24px">
+            <h2 style="color:#f97316;margin-bottom:4px">Demandi</h2>
+            <p style="color:#374151">Hola <strong>${toName}</strong>,</p>
+            <p style="color:#374151">${message}</p>
+            <a href="${link}"
+               style="display:inline-block;margin-top:16px;background:#f97316;color:#fff;
+                      padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">
+              Ver mensaje →
+            </a>
+            <p style="color:#9ca3af;font-size:12px;margin-top:24px">
+              Demandi · Córdoba, Argentina
+            </p>
+          </div>
+        `,
+      }),
+    })
+    if (!res.ok) {
+      console.error('[pedidos/messages] email notification failed:', res.status, to)
+    }
+  } catch (e) {
+    // Non-blocking by design (caller doesn't await user-visible state on this),
+    // but must not vanish silently — a lost message notification is invisible
+    // to both the buyer/broker and to us unless it's logged.
+    console.error('[pedidos/messages] email notification errored:', e, to)
+  }
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -94,27 +91,12 @@ export async function GET(
       .eq('sender_type', 'broker')
       .is('read_at', null)
   } else {
-    // Broker auth: accept broker_user_id as query param (client-side) or session cookie
-    const brokerUserId = request.nextUrl.searchParams.get('broker_user_id')
-
-    let resolvedBrokerId: string | null = null
-
-    if (brokerUserId) {
-      // Passed explicitly by the client (avoids session-cookie dependency)
-      const { data: bp } = await supabase
-        .from('broker_profiles').select('id').eq('user_id', brokerUserId).single()
-      resolvedBrokerId = bp?.id ?? null
-    } else {
-      // Fallback: session cookie (works in SSR contexts)
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: bp } = await supabase
-          .from('broker_profiles').select('id').eq('user_id', user.id).single()
-        resolvedBrokerId = bp?.id ?? null
-      }
-    }
-
-    if (!resolvedBrokerId) return Response.json({ error: 'No autorizado' }, { status: 401 })
+    // Broker auth: identity comes from the verified access token, never
+    // from a client-supplied broker_user_id (that was an IDOR: anyone who
+    // knew a broker's user id could read/mark-read their conversations).
+    const auth = await getAuthenticatedBroker(supabase, request)
+    if (!auth) return Response.json({ error: 'No autorizado' }, { status: 401 })
+    const resolvedBrokerId = auth.brokerId
 
     // Verify they've unlocked this request
     const { data: purchase } = await supabase
@@ -144,24 +126,12 @@ export async function GET(
     .order('created_at', { ascending: true })
 
   // When fetched by buyer (closeToken), return all messages
-  // When fetched by broker, filter to their conversation only
+  // When fetched by broker, filter to their conversation only.
+  // Re-verify via the access token rather than trusting a query param.
   if (!closeToken) {
-    const brokerUserId = request.nextUrl.searchParams.get('broker_user_id')
-    let brokerId: string | null = null
-    if (brokerUserId) {
-      const { data: bp } = await supabase
-        .from('broker_profiles').select('id').eq('user_id', brokerUserId).single()
-      brokerId = bp?.id ?? null
-    } else {
-      const { data: { user } } = await supabase.auth.getUser()
-      if (user) {
-        const { data: bp } = await supabase
-          .from('broker_profiles').select('id').eq('user_id', user.id).single()
-        brokerId = bp?.id ?? null
-      }
-    }
-    if (brokerId) {
-      msgsQuery = msgsQuery.eq('broker_id', brokerId) as typeof msgsQuery
+    const auth = await getAuthenticatedBroker(supabase, request)
+    if (auth) {
+      msgsQuery = msgsQuery.eq('broker_id', auth.brokerId) as typeof msgsQuery
     }
   }
 
@@ -190,14 +160,14 @@ export async function GET(
 
 // ─────────────────────────────────────────────────────────────
 // POST /api/pedidos/[id]/messages
-// Body: { content, broker_user_id } or { content, close_token }
+// Body: { content } (broker, authenticated via Bearer token) or { content, close_token } (buyer)
 // ─────────────────────────────────────────────────────────────
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id: requestId } = await params
-  const { content, broker_user_id, close_token, reply_to_broker_id } = await request.json()
+  const { content, close_token, reply_to_broker_id } = await request.json()
 
   if (!content?.trim()) {
     return Response.json({ error: 'El mensaje no puede estar vacío' }, { status: 400 })
@@ -252,14 +222,15 @@ export async function POST(
   }
 
   // ── Broker message ───────────────────────────────────────────
-  if (!broker_user_id) {
-    return Response.json({ error: 'Parámetros requeridos' }, { status: 400 })
+  const auth = await getAuthenticatedBroker(supabase, request)
+  if (!auth) {
+    return Response.json({ error: 'No autorizado' }, { status: 401 })
   }
 
   const { data: broker } = await supabase
     .from('broker_profiles')
     .select('id, name, email')
-    .eq('user_id', broker_user_id)
+    .eq('id', auth.brokerId)
     .single()
 
   if (!broker) return Response.json({ error: 'Broker no encontrado' }, { status: 404 })

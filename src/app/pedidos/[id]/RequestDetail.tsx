@@ -16,6 +16,14 @@ import { PROPERTY_TYPE_LABELS, FINANCING_LABELS } from '@/lib/constants'
 import { supabase } from '@/lib/supabase'
 import type { PublicBuyerRequest } from '@/lib/supabase'
 
+// Broker-authenticated requests must prove identity with the Supabase access
+// token — the server never trusts a client-supplied user/broker id (IDOR).
+async function authHeaders(): Promise<Record<string, string>> {
+  const { data } = await supabase.auth.getSession()
+  const token = data.session?.access_token
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
 interface Contact {
   contact_name: string
   contact_phone: string
@@ -97,7 +105,8 @@ export default function RequestDetail({
 
       // If broker is logged in, check if they already unlocked this contact
       if (uid) {
-        const res = await fetch(`/api/pedidos/${request.id}/unlock?broker_user_id=${uid}`)
+        const headers = await authHeaders()
+        const res = await fetch(`/api/pedidos/${request.id}/unlock`, { headers })
         if (res.ok) {
           const data = await res.json()
           if (data.unlocked && data.contact) {
@@ -106,7 +115,7 @@ export default function RequestDetail({
             const openChat = typeof window !== 'undefined' && window.location.hash === '#mensajes'
             setShowChat(openChat)
             // Always load messages in background so unread badge is ready
-            fetch(`/api/pedidos/${request.id}/messages?broker_user_id=${uid}`)
+            fetch(`/api/pedidos/${request.id}/messages`, { headers })
               .then(r => r.ok ? r.json() : null)
               .then(d => { if (d?.messages) setMessages(d.messages) })
               .catch(() => {})
@@ -153,14 +162,16 @@ export default function RequestDetail({
   async function loadMessages() {
     try {
       let url: string
+      let headers: Record<string, string> = {}
       if (closeToken) {
         url = `/api/pedidos/${request.id}/messages?close_token=${closeToken}`
       } else if (userId) {
-        url = `/api/pedidos/${request.id}/messages?broker_user_id=${userId}`
+        url = `/api/pedidos/${request.id}/messages`
+        headers = await authHeaders()
       } else {
         return
       }
-      const res = await fetch(url)
+      const res = await fetch(url, { headers })
       if (res.ok) {
         const data = await res.json()
         setMessages(data.messages || [])
@@ -192,8 +203,8 @@ export default function RequestDetail({
     try {
       const res = await fetch(`/api/pedidos/${request.id}/messages`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: textToSend, broker_user_id: userId }),
+        headers: { 'Content-Type': 'application/json', ...(await authHeaders()) },
+        body: JSON.stringify({ content: textToSend }),
       })
       if (!res.ok) {
         const data = await res.json()
@@ -288,17 +299,16 @@ export default function RequestDetail({
     setUnlocking(true)
     setUnlockError('')
     try {
-      // Get the logged-in broker's user ID from Supabase session
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) {
+      // Get the logged-in broker's session (access token proves identity server-side)
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
         setUnlockError('Tenés que iniciar sesión para desbloquear contactos.')
         return
       }
 
       const res = await fetch(`/api/pedidos/${request.id}/unlock`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ broker_user_id: user.id }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
       })
       if (res.status === 402) {
         setUnlockError('Sin créditos. Comprá más créditos para continuar.')
