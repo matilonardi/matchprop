@@ -66,8 +66,10 @@ Ejemplos de mapeo:
 - "Nva Cba" → "Nueva Córdoba"
 
 operation_type:
+- SOLO puede ser "compra" o "alquiler" — NUNCA "venta" ni otro valor.
 - Si el mensaje dice "alquiler", "alquilar", "en alquiler", "para alquilar", "rentar", "arriendo" → "alquiler"
 - Si dice "compra", "comprar", "quiere comprar", "para comprar" o no especifica → "compra"
+- Un comprador que busca algo "en venta" o "a la venta" es una COMPRA (operation_type: "compra").
 
 Para el presupuesto (mercado inmobiliario de Córdoba — MUY IMPORTANTE):
 Las COMPRAS se cotizan en DÓLARES aunque el mensaje use "$".
@@ -126,6 +128,11 @@ const SEARCH_KEYWORDS = [
   'requiero', 'requiere',
 ]
 
+function hasSearchIntent(text) {
+  const t = text.toLowerCase()
+  return SEARCH_KEYWORDS.some(k => t.includes(k))
+}
+
 function isObviousNonSearch(text) {
   const t = text.toLowerCase()
 
@@ -139,7 +146,7 @@ function isObviousNonSearch(text) {
 
   // Si tiene palabras de oferta Y no tiene palabras de búsqueda → descartar
   const hasOffer  = OFFER_KEYWORDS.some(k => t.includes(k))
-  const hasSearch = SEARCH_KEYWORDS.some(k => t.includes(k))
+  const hasSearch = hasSearchIntent(text)
 
   if (hasOffer && !hasSearch) return true
 
@@ -195,4 +202,4 @@ async function parseMessage(text) {
   return null
 }
 
-module.exports = { parseMessage }
+module.exports = { parseMessage, hasSearchIntent }

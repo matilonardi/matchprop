@@ -1,10 +1,16 @@
 require('dotenv').config()
 
-const SUPABASE_URL        = 'https://aqndahpjtkjgmwyltruy.supabase.co'
-const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFxbmRhaHBqdGtqZ213eWx0cnV5Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3OTMwMTgyMSwiZXhwIjoyMDk0ODc3ODIxfQ.AaQiiCUJyFqJ0ZSs1eUPCw5M7nixMLythzORpUB7XXg'
-const TELEGRAM_BOT_TOKEN  = process.env.TELEGRAM_BOT_TOKEN || '8831510212:AAEBZR15S2_H6OaODCTbxoPi8PLqcBI-mVI'
-const TELEGRAM_CHAT_ID    = process.env.TELEGRAM_CHAT_ID   || '5318125242'
-const MATCHPROP_URL       = (process.env.MATCHPROP_URL || 'https://matchprop.vercel.app').replace(/\/$/, '')
+// Secrets SOLO por env (bot/.env) — nunca hardcodeados en el repo.
+const SUPABASE_URL         = process.env.SUPABASE_URL || 'https://aqndahpjtkjgmwyltruy.supabase.co'
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY
+const TELEGRAM_BOT_TOKEN   = process.env.TELEGRAM_BOT_TOKEN
+const TELEGRAM_CHAT_ID     = process.env.TELEGRAM_CHAT_ID
+const MATCHPROP_URL        = (process.env.MATCHPROP_URL || 'https://matchprop.vercel.app').replace(/\/$/, '')
+
+if (!SUPABASE_SERVICE_KEY || !TELEGRAM_BOT_TOKEN || !TELEGRAM_CHAT_ID) {
+  console.error('❌ Faltan SUPABASE_SERVICE_ROLE_KEY / TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID en bot/.env')
+  process.exit(1)
+}
 
 async function fetchTodayPedidos() {
   // Córdoba = UTC-3. Inicio del día local en UTC.

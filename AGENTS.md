@@ -122,7 +122,8 @@ node index.js   # ← SIEMPRE así (carga dotenv). Nunca correr parser.js direct
 - **Automatizado con launchd** (`~/Library/LaunchAgents/com.matchprop.bot.plist` → `bot/run_daily.sh`): dispara cada 1h; el wrapper filtra por día → **Lun-Vie cada 1h, Sáb-Dom cada 2h**. Requiere Mac prendida + sesión de WhatsApp Web activa.
 - **Ventana de re-escaneo: 48h** (`MIN_LOOKBACK_HOURS`) para no perder mensajes si la Mac durmió.
 - **`processed.json`:** cache de IDs ya vistos → re-escanear la ventana amplia sin re-parsear ni gastar tokens.
-- **Dedup:** `source_message_id` (índice único en la DB) — inmune a la variación del parser LLM.
+- **Dedup:** `source_message_id` (índice único en la DB) — inmune a la variación del parser LLM. El dedup local por teléfono+zona+presupuesto está **acotado a 7 días** (`DEDUP_WINDOW_DAYS`), exige misma operación y presupuesto "a convenir" solo matchea con otro "a convenir" (antes descartaba casi todo de brokers recurrentes).
+- **Alertas de falla (Telegram):** QR pedido (sesión caída), auth_failure, desconexión, error fatal, watchdog si la corrida no termina en 30 min (`WATCHDOG_MINUTES`). El resumen distingue creados / duplicados / ignorados y avisa grupos no encontrados.
 - **Saneamiento de presupuesto (determinístico):** alquiler con monto alto en USD → se reinterpreta como ARS; compra >3M USD (error de parseo) → "a convenir".
 - **LLM:** `llama-3.1-8b-instant` (Groq). **Regla:** solo pedidos reales de los grupos, nunca ejemplos.
 - Grupos monitoreados (`TARGET_GROUP_IDS`): NUEVA CBA Y G PAZ · Zona Norte Team · Zona Sur Team · Centro, Cofico, Alberdi.

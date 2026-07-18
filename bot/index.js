@@ -1,7 +1,7 @@
 require('dotenv').config()
 const { Client, LocalAuth } = require('whatsapp-web.js')
 const qrcode = require('qrcode-terminal')
-const { parseMessage } = require('./parser')
+const { parseMessage, hasSearchIntent } = require('./parser')
 const fs = require('fs')
 
 // ── Extractor de teléfono del texto del mensaje ──────────────
@@ -39,7 +39,7 @@ const PROPERTY_TYPE_MAP = {
 }
 const VALID_FINANCING = new Set(['efectivo','credito','ambos'])
 
-function sanitize(parsed) {
+function sanitize(parsed, text) {
   // Normalizar property_types
   const types = (parsed.property_types || [])
     .map(t => {
@@ -50,9 +50,13 @@ function sanitize(parsed) {
     .filter(Boolean)
 
   // Operación: solo 'compra' o 'alquiler' son búsquedas válidas.
-  // Cualquier otra cosa (ej. 'venta') = oferta mal clasificada → descartar.
-  const op = (parsed.operation_type || 'compra').toLowerCase().trim()
-  if (op !== 'compra' && op !== 'alquiler') return null
+  // El LLM a veces etiqueta "busco depto en venta" como 'venta': si el texto
+  // tiene intención de búsqueda explícita es una compra, no una oferta.
+  let op = (parsed.operation_type || 'compra').toLowerCase().trim()
+  if (op !== 'compra' && op !== 'alquiler') {
+    if (text && hasSearchIntent(text)) op = 'compra'
+    else return null // oferta mal clasificada → descartar
+  }
   parsed.operation_type = op
 
   // Normalizar financing
@@ -179,26 +183,39 @@ function saveLastRun() {
   fs.writeFileSync(LAST_RUN_FILE, JSON.stringify({ timestamp: Date.now() }))
 }
 
-// Verifica si ya existe un pedido activo con el mismo teléfono + zona + presupuesto.
+// Verifica si ya existe un pedido activo reciente con el mismo teléfono + operación + zona + presupuesto.
 // Usa la API REST de Supabase directamente para evitar importar el SDK.
-async function isDuplicate(phone, zones, budgetUsd) {
-  if (!phone || phone.startsWith('LID_')) return false
+// ⚠️ Criterio estricto a propósito: un falso positivo acá descarta un lead en silencio.
+//   - Ventana de 7 días (los brokers publican búsquedas nuevas de otros clientes todo el tiempo).
+//   - Presupuesto 0 ("a convenir") solo matchea con otro 0 — antes 0 matcheaba con todo
+//     y, combinado con el fallback de zona por grupo, terminaba descartando casi todos
+//     los mensajes de brokers recurrentes como "duplicado".
+const DEDUP_WINDOW_DAYS = parseInt(process.env.DEDUP_WINDOW_DAYS || '7')
+
+async function isDuplicate(phone, parsed) {
+  if (!phone) return false
   const supabaseUrl  = process.env.SUPABASE_URL
   const supabaseKey  = process.env.SUPABASE_SERVICE_ROLE_KEY
   if (!supabaseUrl || !supabaseKey) return false
   try {
-    const url = `${supabaseUrl}/rest/v1/buyer_requests?contact_phone=eq.${encodeURIComponent(phone)}&status=eq.active&select=id,zones,budget_usd`
+    const since = new Date(Date.now() - DEDUP_WINDOW_DAYS * 24 * 60 * 60 * 1000).toISOString()
+    const url = `${supabaseUrl}/rest/v1/buyer_requests?contact_phone=eq.${encodeURIComponent(phone)}&status=eq.active&created_at=gte.${since}&select=id,zones,budget_usd,budget_ars,operation_type`
     const res = await fetch(url, {
       headers: { apikey: supabaseKey, Authorization: `Bearer ${supabaseKey}` },
     })
     if (!res.ok) return false
     const existing = await res.json()
+    const op = parsed.operation_type || 'compra'
+    const isAlq = op === 'alquiler'
     for (const req of existing) {
-      const zoneMatch = (req.zones || []).some(z => zones.includes(z))
-      const b1 = budgetUsd || 0
-      const b2 = req.budget_usd || 0
-      const budgetMatch = b1 === 0 || b2 === 0 || Math.abs(b1 - b2) / Math.max(b1, b2) < 0.15
-      if (zoneMatch && budgetMatch) return true
+      if ((req.operation_type || 'compra') !== op) continue
+      const zoneMatch = (req.zones || []).some(z => parsed.zones.includes(z))
+      if (!zoneMatch) continue
+      const b1 = (isAlq ? parsed.budget_ars : parsed.budget_usd) || 0
+      const b2 = (isAlq ? req.budget_ars : req.budget_usd) || 0
+      const budgetMatch = (b1 === 0 && b2 === 0) ||
+        (b1 > 0 && b2 > 0 && Math.abs(b1 - b2) / Math.max(b1, b2) < 0.15)
+      if (budgetMatch) return true
     }
     return false
   } catch {
@@ -213,8 +230,8 @@ async function createPedido(body) {
     body:    JSON.stringify(body),
   })
   if (res.ok) {
-    const data = await res.json()
-    return data.id
+    // 201 = creado · 200 = la API lo detectó como duplicado ({ id, duplicate: true })
+    return await res.json()
   } else {
     const err = await res.text()
     throw new Error(err)
@@ -232,16 +249,53 @@ const client = new Client({
   },
 })
 
+let qrAlerted = false
 client.on('qr', qr => {
   console.log('\n📱 Escaneá este QR con el celular de Nico:\n')
   qrcode.generate(qr, { small: true })
   console.log('\n(Solo hay que hacerlo una vez — la sesión queda guardada)\n')
+  // Corriendo por launchd nadie ve este QR: avisar que la sesión se cayó.
+  if (!qrAlerted) {
+    qrAlerted = true
+    sendTelegram('📱 <b>Propi Bot</b>: la sesión de WhatsApp expiró — el bot está pidiendo QR. Correr <code>node index.js</code> a mano en la Mac y escanear.')
+  }
 })
 
 client.on('authenticated', () => console.log('✅ Sesión autenticada'))
-client.on('auth_failure', msg => { console.error('❌ Error de autenticación:', msg); process.exit(1) })
 
-client.on('ready', async () => {
+client.on('auth_failure', async msg => {
+  console.error('❌ Error de autenticación:', msg)
+  await sendTelegram('❌ <b>Propi Bot</b>: sesión de WhatsApp inválida (auth_failure). Hay que volver a escanear el QR en la Mac.')
+  process.exit(1)
+})
+
+let shuttingDown = false // evita alerta espuria cuando el destroy() normal dispara 'disconnected'
+client.on('disconnected', async reason => {
+  if (shuttingDown) return
+  console.error('❌ WhatsApp desconectado:', reason)
+  await sendTelegram(`❌ <b>Propi Bot</b>: WhatsApp se desconectó (${reason}). Revisar la sesión en la Mac.`)
+  process.exit(1)
+})
+
+// ── Watchdog: si la corrida no termina, avisar y salir ────────
+// Sin esto, una sesión de WhatsApp muerta deja el proceso colgado para
+// siempre y el bot deja de cargar pedidos sin ninguna señal.
+const WATCHDOG_MINUTES = parseInt(process.env.WATCHDOG_MINUTES || '30')
+setTimeout(async () => {
+  console.error(`⏰ Watchdog: la corrida no terminó en ${WATCHDOG_MINUTES} min.`)
+  await sendTelegram(`⏰ <b>Propi Bot colgado</b>: la corrida no terminó en ${WATCHDOG_MINUTES} min. Probable sesión de WhatsApp Web caída — en la Mac: pkill -f "chrome.*matchprop" y correr de nuevo.`)
+  process.exit(1)
+}, WATCHDOG_MINUTES * 60 * 1000)
+
+client.on('ready', () => {
+  run().catch(async err => {
+    console.error('❌ Error fatal en la corrida:', err)
+    await sendTelegram(`❌ <b>Propi Bot error fatal</b>: ${String(err?.message || err).slice(0, 300)}`)
+    process.exit(1)
+  })
+})
+
+async function run() {
   console.log('\n🤖 Bot conectado!\n')
 
   // Esperar a que WhatsApp Web sincronice los mensajes recientes del servidor
@@ -259,8 +313,9 @@ client.on('ready', async () => {
       console.log()
     })
     console.log('━'.repeat(50))
+    shuttingDown = true
     await client.destroy()
-    return
+    process.exit(0)
   }
 
   // ── Modo batch: ir directo a los grupos por ID ───────────────
@@ -268,10 +323,12 @@ client.on('ready', async () => {
   const sinceStr = new Date(since).toLocaleString('es-AR')
   console.log(`📅 Procesando mensajes desde: ${sinceStr}\n`)
 
-  let totalCreados   = 0
-  let totalIgnorados = 0
-  let totalMissed    = 0
-  const missedList   = []
+  let totalCreados    = 0
+  let totalIgnorados  = 0
+  let totalDuplicados = 0
+  let totalMissed     = 0
+  const missedList    = []
+  const groupsNotFound = []
   const processedIds = loadProcessed()
 
   for (const groupId of TARGET_GROUP_IDS) {
@@ -280,6 +337,7 @@ client.on('ready', async () => {
       group = await client.getChatById(groupId)
     } catch {
       console.log(`⚠️  Grupo no encontrado: ${groupId}`)
+      groupsNotFound.push(groupId)
       continue
     }
 
@@ -361,7 +419,7 @@ client.on('ready', async () => {
         totalMissed++
         continue
       }
-      const parsed = raw ? sanitize(raw) : null
+      const parsed = raw ? sanitize(raw, msg.body) : null
 
       if (!parsed) {
         process.stdout.write('→ ignorado\n')
@@ -396,15 +454,15 @@ client.on('ready', async () => {
       }
 
       // Deduplicación local antes de llamar a la API
-      const dup = await isDuplicate(finalPhone, parsed.zones, parsed.budget_usd || 0)
+      const dup = await isDuplicate(finalPhone, parsed)
       if (dup) {
         process.stdout.write('→ ↩ duplicado\n')
-        totalIgnorados++
+        totalDuplicados++
         continue
       }
 
       try {
-        const id = await createPedido({
+        const result = await createPedido({
           request_type:   'property',
           operation_type: parsed.operation_type  || 'compra',
           property_types: parsed.property_types  || [],
@@ -422,13 +480,18 @@ client.on('ready', async () => {
           source:         'whatsapp',
           source_message_id: msg.id?._serialized || null,
         })
-        process.stdout.write(`→ ✅ creado (${id})\n`)
-        totalCreados++
+        if (result.duplicate) {
+          process.stdout.write(`→ ↩ duplicado (API)\n`)
+          totalDuplicados++
+        } else {
+          process.stdout.write(`→ ✅ creado (${result.id})\n`)
+          totalCreados++
+        }
       } catch (err) {
         const errMsg = err.message || ''
         if (errMsg.includes('duplicate')) {
           process.stdout.write(`→ ↩ duplicado\n`)
-          totalIgnorados++
+          totalDuplicados++
         } else {
           process.stdout.write(`→ ❌ error: ${errMsg}\n`)
           // Error transitorio: desmarcar para reintentar en la próxima corrida.
@@ -446,8 +509,10 @@ client.on('ready', async () => {
   // ── Resumen ───────────────────────────────────────────────────
   console.log('━'.repeat(50))
   console.log(`✅ Pedidos creados:  ${totalCreados}`)
+  console.log(`↩  Duplicados:      ${totalDuplicados}`)
   console.log(`⏭  Ignorados:       ${totalIgnorados}`)
   if (totalMissed > 0) console.log(`⚠️  Sin procesar:    ${totalMissed} (ver missed.json)`)
+  if (groupsNotFound.length) console.log(`❌ Grupos no encontrados: ${groupsNotFound.join(', ')}`)
   console.log('━'.repeat(50))
 
   saveLastRun()
@@ -465,17 +530,26 @@ client.on('ready', async () => {
     }).join('\n')
     missedSection = `\n\n⚠️ <b>${totalMissed} búsqueda${totalMissed > 1 ? 's' : ''} sin procesar:</b>\n${items}`
   }
+  if (groupsNotFound.length) {
+    missedSection += `\n\n❌ <b>${groupsNotFound.length} grupo${groupsNotFound.length > 1 ? 's' : ''} no encontrado${groupsNotFound.length > 1 ? 's' : ''}</b> — revisar TARGET_GROUP_IDS.`
+  }
 
+  const statsLine = `⏭ ${totalIgnorados} ignorados · ↩ ${totalDuplicados} duplicados`
   const telegramMsg = totalCreados > 0
-    ? `${emoji} <b>Propi Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados.\n⏭ ${totalIgnorados} ignorados (ofertas, links, etc.)${missedSection}\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
-    : `${emoji} <b>Propi Bot — ${fecha}</b>\n\nSin pedidos nuevos.\n⏭ ${totalIgnorados} mensajes procesados.${missedSection}`
+    ? `${emoji} <b>Propi Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados.\n${statsLine}${missedSection}\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
+    : `${emoji} <b>Propi Bot — ${fecha}</b>\n\nSin pedidos nuevos.\n${statsLine}${missedSection}`
   await sendTelegram(telegramMsg)
 
   console.log('\n🏁 Listo. Podés cerrar la terminal.\n')
 
+  shuttingDown = true
   await client.destroy()
   process.exit(0)
-})
+}
 
 console.log('🚀 Iniciando Propi Bot...')
-client.initialize()
+client.initialize().catch(async err => {
+  console.error('❌ Error inicializando WhatsApp Web:', err)
+  await sendTelegram(`❌ <b>Propi Bot</b>: error inicializando WhatsApp Web: ${String(err?.message || err).slice(0, 200)}`)
+  process.exit(1)
+})

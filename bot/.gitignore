@@ -1,3 +1,7 @@
 node_modules/
 session/
 .env
+last_run.json
+processed.json
+missed.json
+*.log
