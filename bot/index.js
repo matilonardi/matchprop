@@ -530,6 +530,15 @@ client.on('ready', async () => {
 // que parece ser más confiable en builds nuevas de WhatsApp Web / multi-device.
 // Dispara para mensajes entrantes Y salientes, por eso filtramos fromMe.
 client.on('message_create', async (msg) => {
+  // Modo debug (DEBUG_ALL_MESSAGES=1 node index.js): loguear TODO lo que
+  // llega — DMs y cualquier grupo — con su chat id. Sirve para verificar que
+  // el listener está vivo sin esperar actividad en los grupos monitoreados,
+  // y para descubrir el ID de un grupo nuevo antes de sumarlo a
+  // TARGET_GROUP_IDS (reemplaza al viejo "modo discovery").
+  if (process.env.DEBUG_ALL_MESSAGES === '1') {
+    console.log(`🐛 [debug] chat=${msg.from} fromMe=${msg.fromMe} chars=${msg.body?.length ?? 0} "${(msg.body || '').slice(0, 40).replace(/\n/g, ' ')}"`)
+  }
+
   // Filtrar ANTES de loguear nada — evita procesar/imprimir cada mensaje de
   // cada chat (tus DMs, Estados de WhatsApp, otros grupos ajenos a Demandi).
   if (msg.fromMe) return
