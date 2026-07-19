@@ -128,6 +128,16 @@ node index.js   # ← SIEMPRE así (carga dotenv). Nunca correr parser.js direct
 - **LLM:** `llama-3.1-8b-instant` (Groq). **Regla:** solo pedidos reales de los grupos, nunca ejemplos.
 - Grupos monitoreados (`TARGET_GROUP_IDS`): NUEVA CBA Y G PAZ · Zona Norte Team · Zona Sur Team · Centro, Cofico, Alberdi.
 
+### Migrar el bot a una Mac nueva
+El bot corre **local en una Mac** (no en Vercel — necesita el Chrome con la sesión de WhatsApp). Checklist:
+1. **Apagar el bot en la Mac vieja** (dos bots con la misma sesión se pisan): `launchctl unload ~/Library/LaunchAgents/com.matchprop.bot.plist`.
+2. Clonar el repo + `cd bot && npm install` (requiere Node ≥18).
+3. Copiar `bot/.env` desde la Mac vieja (gitignoreado a propósito: GROQ_API_KEY, BOT_SECRET, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, TARGET_GROUP_IDS, MATCHPROP_URL).
+4. NO copiar `bot/session/`: correr `node index.js` y escanear el QR con el celular cuya cuenta está en los grupos monitoreados.
+5. Instalar launchd: `cp bot/com.matchprop.bot.plist ~/Library/LaunchAgents/ && sed -i '' "s|/opt/homebrew/bin/node|$(which node)|" ~/Library/LaunchAgents/com.matchprop.bot.plist && launchctl load ~/Library/LaunchAgents/com.matchprop.bot.plist` (ajustar `WorkingDirectory` en el plist si el repo no está en `~/matchprop`).
+6. La Mac debe quedar prendida y sin dormir; logs en `bot/bot.log`.
+7. No hace falta la app de WhatsApp en la Mac — el bot usa su propio Chrome headless. El celular vinculado debe conectarse a internet al menos cada ~14 días.
+
 ---
 
 ## Modelo de créditos (beta)
