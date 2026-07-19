@@ -115,15 +115,15 @@ Parsea mensajes de grupos de WhatsApp y crea pedidos en Supabase.
 ```bash
 cd /Users/matias.lonardi/matchprop/bot
 node index.js   # ← SIEMPRE así (carga dotenv). Nunca correr parser.js directo.
-# Saltear ventana: echo '{"timestamp":'$(( $(date +%s) * 1000 - 7200000 ))'}' > last_run.json
 # Si el browser quedó colgado: pkill -f "chrome.*matchprop"
 ```
 
-- **Automatizado con launchd** (`~/Library/LaunchAgents/com.matchprop.bot.plist` → `bot/run_daily.sh`): dispara cada 1h; el wrapper filtra por día → **Lun-Vie cada 1h, Sáb-Dom cada 2h**. Requiere Mac prendida + sesión de WhatsApp Web activa.
-- **Ventana de re-escaneo: 48h** (`MIN_LOOKBACK_HOURS`) para no perder mensajes si la Mac durmió.
-- **`processed.json`:** cache de IDs ya vistos → re-escanear la ventana amplia sin re-parsear ni gastar tokens.
+- **Modo ALWAYS-ON** (rework jul 2026): escucha `message_create` en vivo y procesa cada mensaje al llegar. Ya **no** usa `getChatById()`/`fetchMessages()` — esa API de WhatsApp Web está rota (issue wwebjs/whatsapp-web.js#5733) y colgaba las corridas. Las llamadas restantes a Store (`msg.getContact()`) tienen timeout (`withTimeout`); nombres de grupos hardcodeados en `GROUP_NAMES`.
+- **Automatizado con launchd** (`~/Library/LaunchAgents/com.matchprop.bot.plist`, template en `bot/com.matchprop.bot.plist`): **KeepAlive** relanza el proceso si muere. ⚠️ El plist viejo (disparo cada 1h, `run_daily.sh`) es incompatible con always-on: dos Chrome sobre la misma sesión → "browser is already running". Requiere Mac prendida + sesión de WhatsApp Web activa.
+- **Tradeoff always-on:** mensajes que llegan con el bot caído / Mac dormida **no se recuperan solos** (ya no hay ventana de re-escaneo).
+- **`processed.json`:** evita reprocesar el mismo mensaje si WhatsApp lo re-entrega en reconexiones.
 - **Dedup:** `source_message_id` (índice único en la DB) — inmune a la variación del parser LLM. El dedup local por teléfono+zona+presupuesto está **acotado a 7 días** (`DEDUP_WINDOW_DAYS`), exige misma operación y presupuesto "a convenir" solo matchea con otro "a convenir" (antes descartaba casi todo de brokers recurrentes).
-- **Alertas de falla (Telegram):** QR pedido (sesión caída), auth_failure, desconexión, error fatal, watchdog si la corrida no termina en 30 min (`WATCHDOG_MINUTES`). El resumen distingue creados / duplicados / ignorados y avisa grupos no encontrados.
+- **Alertas (Telegram):** conectado 🟢, aviso por cada pedido creado, QR pedido (sesión caída), auth_failure, desconexión, crash (uncaughtException fatal / unhandledRejection ignorado con rate-limit de 30 min), watchdog de arranque 90s si Chrome quedó trabado.
 - **Saneamiento de presupuesto (determinístico):** alquiler con monto alto en USD → se reinterpreta como ARS; compra >3M USD (error de parseo) → "a convenir".
 - **LLM:** `llama-3.1-8b-instant` (Groq). **Regla:** solo pedidos reales de los grupos, nunca ejemplos.
 - Grupos monitoreados (`TARGET_GROUP_IDS`): NUEVA CBA Y G PAZ · Zona Norte Team · Zona Sur Team · Centro, Cofico, Alberdi.

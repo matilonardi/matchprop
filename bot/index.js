@@ -7,6 +7,31 @@ const fs = require('fs')
 // ── Extractor de teléfono del texto del mensaje ──────────────
 // Si WhatsApp no da un número válido (contacto no guardado),
 // intenta encontrarlo en el cuerpo del mensaje.
+// Timeout genérico para llamadas a la API interna de WhatsApp Web (vía
+// Puppeteer/Store) que pueden quedar colgadas sin nunca resolver NI
+// rechazar — el mismo bug de fondo que getChats()/getChatById() (issue
+// wwebjs/whatsapp-web.js#5733). Sin esto, un solo mensaje puede trabar el
+// pipeline para siempre sin loguear absolutamente nada.
+function withTimeout(promise, ms, label) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`timeout: ${label} (${ms}ms)`)), ms)
+    promise.then(
+      (v) => { clearTimeout(timer); resolve(v) },
+      (e) => { clearTimeout(timer); reject(e) }
+    )
+  })
+}
+
+// Parsea un id crudo tipo "5491155803400@c.us" o "XXXXX@lid" al mismo
+// formato { user, server } que devuelve contact.id — sin depender de
+// ninguna llamada async extra a Store.
+function parseWaId(idString) {
+  if (!idString) return null
+  const at = idString.indexOf('@')
+  if (at < 0) return null
+  return { user: idString.slice(0, at), server: idString.slice(at + 1) }
+}
+
 function extractPhoneFromText(text) {
   // Buscar patrones argentinos: +54 9 XXXX XXXXXXX, 351XXXXXXX, etc.
   const patterns = [
@@ -120,9 +145,10 @@ function logMissed(entry) {
 }
 
 // ── Cache de mensajes ya procesados ──────────────────────────
-// Guarda los IDs de WhatsApp ya manejados (creados/ignorados) para poder
-// re-escanear una ventana amplia sin re-parsear ni volver a llamar al LLM.
-// Permite recuperar mensajes salteados sin duplicar ni gastar tokens de más.
+// Guarda los IDs de WhatsApp ya manejados para evitar reprocesar el mismo
+// mensaje si WhatsApp lo re-entrega (pasa a veces en reconexiones de
+// multi-device). Ya no se usa para "recuperar ventana perdida" — en modo
+// always-on no hace falta, se procesa cada mensaje al momento en que llega.
 const PROCESSED_FILE = './processed.json'
 const MAX_PROCESSED = 8000
 
@@ -138,19 +164,33 @@ function saveProcessed(set) {
 // ── Config ────────────────────────────────────────────────────
 const TARGET_GROUP_IDS = (process.env.TARGET_GROUP_IDS || '')
   .split(',').map(s => s.trim()).filter(Boolean)
+const TARGET_GROUP_SET = new Set(TARGET_GROUP_IDS)
+
+// Falla ruidosa, no silenciosa: si esta lista queda vacía (ej. alguien
+// comenta la línea en .env por error), el bot arranca "bien" pero filtra
+// el 100% de los mensajes para siempre sin ninguna señal de que algo está
+// mal. Esto ya pasó una vez — avisamos fuerte para que no vuelva a pasar
+// desapercibido.
+if (TARGET_GROUP_SET.size === 0) {
+  console.error('❌ TARGET_GROUP_IDS está vacío o no configurado — el bot NO va a procesar ningún mensaje. Revisá el archivo .env.')
+}
+
+// Nombres de los grupos, hardcodeados a propósito: antes se resolvían con
+// client.getChatById(id).name, pero esa llamada es justo la que está rota
+// en WhatsApp Web ahora (ver comentario en 'message' handler más abajo).
+// Solo se usan para logging y para el fallback de zona — no son críticos,
+// así que un ID nuevo sin nombre acá simplemente muestra el ID crudo.
+const GROUP_NAMES = {
+  '120363142502886742@g.us': 'NUEVA CBA Y G PAZ',
+  '120363139126417574@g.us': 'Zona Norte Team',
+  '120363143003526405@g.us': 'Zona Sur Team',
+  '120363142169193128@g.us': 'Centro, Cofico, Alberdi',
+}
 
 const MATCHPROP_URL      = (process.env.MATCHPROP_URL || 'https://matchprop.vercel.app').replace(/\/$/, '')
 const BOT_SECRET         = process.env.BOT_SECRET || ''
-const LAST_RUN_FILE      = './last_run.json'
 const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || ''
 const TELEGRAM_CHAT_ID   = process.env.TELEGRAM_CHAT_ID || ''
-
-// Cuántas horas hacia atrás buscar mensajes (default 25h para no perder nada)
-const HOURS_BACK = parseInt(process.env.HOURS_BACK || '25')
-// Mínimo de horas hacia atrás aunque last_run sea reciente (evita perder msgs entre runs).
-// Ventana amplia (48h) para recuperar mensajes salteados; el cache de procesados
-// (processed.json) evita re-parsear/duplicar, así que ampliar no cuesta tokens.
-const MIN_LOOKBACK_HOURS = parseInt(process.env.MIN_LOOKBACK_HOURS || '48')
 
 // ── Telegram notificación ─────────────────────────────────────
 async function sendTelegram(text) {
@@ -164,24 +204,35 @@ async function sendTelegram(text) {
   } catch {}
 }
 
-// ── Helpers ───────────────────────────────────────────────────
-function getLastRun() {
-  // Siempre mirar al menos MIN_LOOKBACK_HOURS atrás aunque last_run sea más reciente.
-  // Los duplicados los rechaza la API — esto garantiza que mensajes entre runs no se pierdan.
-  const minLookback = Date.now() - MIN_LOOKBACK_HOURS * 60 * 60 * 1000
-  try {
-    const data = JSON.parse(fs.readFileSync(LAST_RUN_FILE, 'utf8'))
-    const stored = data.timestamp || 0
-    return Math.min(stored, minLookback)
-  } catch {
-    // Primera vez: procesar últimas HOURS_BACK horas
-    return Date.now() - HOURS_BACK * 60 * 60 * 1000
-  }
+// ── Crash-proofing ────────────────────────────────────────────
+// El bot ahora corre 24/7 (modo always-on, ver 'message' handler), así que
+// no puede simplemente morir ante cualquier error interno — eso significaría
+// dejar de escuchar mensajes hasta que alguien lo note y lo reinicie a mano.
+//
+// - unhandledRejection: son justamente los errores internos de WhatsApp Web
+//   que estamos esquivando (getChats/getChatById rotos) — se loguean y el
+//   bot SIGUE corriendo. No son fatales, whatsapp-web.js los tira de fondo.
+// - uncaughtException: algo más serio (ej. el ProtocolError de Puppeteer que
+//   vimos en producción) — ahí sí preferimos salir con código 1 para que
+//   launchd relance el proceso desde cero en vez de seguir en un estado raro.
+let lastCrashAlertAt = 0
+async function alertCrash(kind, err, { fatal }) {
+  console.error(`❌ ${kind}${fatal ? ' (fatal)' : ' (ignorado, sigue corriendo)'}:`, err)
+  // No floodear Telegram si el mismo error interno se repite muchas veces por hora.
+  const now = Date.now()
+  if (!fatal && now - lastCrashAlertAt < 30 * 60 * 1000) return
+  lastCrashAlertAt = now
+  await sendTelegram(
+    `${fatal ? '🔴' : '🟡'} <b>Propi Bot — ${kind}</b>\n\n${String(err?.message || err).slice(0, 300)}\n\n${fatal ? 'El bot se reinicia solo.' : 'El bot sigue corriendo, esto se ignora (es el bug conocido de WhatsApp Web).'}`
+  )
 }
 
-function saveLastRun() {
-  fs.writeFileSync(LAST_RUN_FILE, JSON.stringify({ timestamp: Date.now() }))
-}
+process.on('uncaughtException', (err) => {
+  alertCrash('uncaughtException', err, { fatal: true }).finally(() => process.exit(1))
+})
+process.on('unhandledRejection', (err) => {
+  alertCrash('unhandledRejection', err, { fatal: false })
+})
 
 // Verifica si ya existe un pedido activo reciente con el mismo teléfono + operación + zona + presupuesto.
 // Usa la API REST de Supabase directamente para evitar importar el SDK.
@@ -238,7 +289,166 @@ async function createPedido(body) {
   }
 }
 
+const processedIds = loadProcessed()
+
+// ── Procesa un mensaje individual (llamado desde el listener 'message') ──
+async function processMessage(msg, groupName) {
+  const msgId = msg.id?._serialized
+  if (msgId) {
+    if (processedIds.has(msgId)) return // ya lo vimos (re-entrega de WA)
+    processedIds.add(msgId)
+    saveProcessed(processedIds)
+  }
+
+  if (!msg.body || msg.body.length < 25) return
+
+  // msg.getContact() consulta el Store interno de WhatsApp Web — es el mismo
+  // tipo de llamada que está rota/inestable en la build nueva (getChats(),
+  // getChatById()). Si se cuelga, NO puede trabar el pedido para siempre:
+  // le ponemos timeout y, si falla, seguimos con los datos que ya vienen
+  // en el mensaje (msg.author) sin necesitar esa consulta extra.
+  let contact = null
+  let rawName = ''
+  try {
+    contact = await withTimeout(msg.getContact(), 8000, 'msg.getContact')
+    rawName = contact.pushname || contact.name || ''
+  } catch (err) {
+    console.warn(`⚠️  msg.getContact() falló/timeout en ${groupName} (sigo sin nombre de contacto):`, err.message)
+  }
+  if (!rawName) rawName = msg._data?.notifyName || ''
+  const name    = /^\d+$/.test(rawName) ? '' : rawName
+  const preview = msg.body.substring(0, 60).replace(/\n/g, ' ')
+
+  process.stdout.write(`[${groupName}] ${name}: ${preview}... `)
+
+  // Id del remitente: si contact.id no está disponible (getContact falló),
+  // msg.author (grupos) / msg.from (DMs) traen el mismo dato sin depender
+  // de ninguna otra llamada a Store.
+  const senderId = contact?.id || parseWaId(msg.author) || parseWaId(msg.from)
+
+  // Teléfono real: solo cuando server === 'c.us'
+  // LID (@lid): identificador de privacidad de WhatsApp — no es número real,
+  // pero lo usamos como ID único para no perder la búsqueda.
+  let finalPhone = ''
+  let isLID = false
+
+  if (senderId?.server === 'c.us' && /^\d{10,15}$/.test(senderId.user)) {
+    finalPhone = senderId.user
+  } else if (senderId?.server === 'lid' && senderId?.user) {
+    const fromText = extractPhoneFromText(msg.body)
+    if (fromText) {
+      finalPhone = fromText
+    } else {
+      finalPhone = senderId.user
+      isLID = true
+    }
+  }
+
+  if (!finalPhone) {
+    const fromText = extractPhoneFromText(msg.body)
+    if (fromText) finalPhone = fromText
+  }
+
+  if (!finalPhone) {
+    process.stdout.write('→ ignorado (sin ID)\n')
+    return
+  }
+
+  let raw
+  try {
+    raw = await parseMessage(msg.body)
+  } catch (err) {
+    // Error transitorio de Groq (conexión/rate limit): desmarcar como
+    // procesado para no perderlo — como ya no hay "próxima corrida" que
+    // reintente automáticamente, esto solo evita que quede marcado como
+    // visto; si querés reintentarlo hay que reenviarlo o reiniciar el bot.
+    if (err?.transient && msgId) processedIds.delete(msgId)
+    process.stdout.write('→ ⚠️ error transitorio\n')
+    const entry = { group: groupName, name, phone: finalPhone, body: msg.body.slice(0, 300), reason: 'parse_error', error: err?.message }
+    logMissed(entry)
+    return
+  }
+  const parsed = raw ? sanitize(raw, msg.body) : null
+
+  if (!parsed) {
+    process.stdout.write('→ ignorado\n')
+    return
+  }
+
+  // Fallback de zona: si el parser no detectó zona, usar la del grupo
+  if (!parsed.zones?.length) {
+    const fallback = getGroupFallbackZones(groupName)
+    if (fallback.length) {
+      parsed.zones = fallback
+      process.stdout.write(`[zona fallback: ${fallback[0]}] `)
+    }
+  }
+
+  if (!parsed.zones?.length) {
+    process.stdout.write('→ ⚠️  sin zona\n')
+    logMissed({ group: groupName, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'no_zones' })
+    return
+  }
+
+  if (isLID && parsed.description) {
+    parsed.description = `[Contactar por nombre en WA: ${name || 'ver grupo'}] ${parsed.description}`
+  } else if (isLID) {
+    parsed.description = `Contactar por nombre en WA: ${name || 'ver grupo'}`
+  }
+
+  const dup = await isDuplicate(finalPhone, parsed)
+  if (dup) {
+    process.stdout.write('→ ↩ duplicado\n')
+    return
+  }
+
+  try {
+    const result = await createPedido({
+      request_type:   'property',
+      operation_type: parsed.operation_type  || 'compra',
+      property_types: parsed.property_types  || [],
+      zones:          parsed.zones           || [],
+      bedrooms_min:   parsed.bedrooms_min    || null,
+      bedrooms_max:   parsed.bedrooms_max    || null,
+      bathrooms_min:  parsed.bathrooms_min   || null,
+      budget_usd:     parsed.budget_usd      || 0,
+      budget_ars:     parsed.budget_ars      || null,
+      financing:      parsed.financing       || 'efectivo',
+      description:    parsed.description     || null,
+      contact_name:   name,
+      contact_phone:  finalPhone,
+      publisher_type: 'inmobiliaria',
+      source:         'whatsapp',
+      source_message_id: msgId || null,
+    })
+    if (result.duplicate) {
+      // La API lo detectó como duplicado (mismo source_message_id o mismo
+      // teléfono+zona+tipo reciente) — no es un pedido nuevo, no avisar.
+      process.stdout.write(`→ ↩ duplicado (API)\n`)
+      return
+    }
+    process.stdout.write(`→ ✅ creado (${result.id})\n`)
+    await sendTelegram(
+      `🏠 <b>Nuevo pedido — Propi Bot</b>\n\n${name || 'Alguien'} en <b>${groupName}</b> busca ${(parsed.property_types || []).join('/') || 'propiedad'} en ${parsed.zones.slice(0, 2).join(', ')}.\n\n🔗 <a href="${MATCHPROP_URL}/pedidos/${result.id}">Ver pedido</a>`
+    )
+  } catch (err) {
+    const errMsg = err.message || ''
+    if (errMsg.includes('duplicate')) {
+      process.stdout.write(`→ ↩ duplicado\n`)
+    } else {
+      process.stdout.write(`→ ❌ error: ${errMsg}\n`)
+      if (msgId) processedIds.delete(msgId)
+      logMissed({ group: groupName, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'api_error', error: errMsg })
+    }
+  }
+}
+
 // ── WhatsApp client ───────────────────────────────────────────
+// webVersionCache: por default whatsapp-web.js carga la ÚLTIMA build de
+// WhatsApp Web. Probamos pinear una build vieja y estable y también
+// 'none' (sin cachear ninguna) — ninguna cambió nada, WhatsApp le sigue
+// asignando la misma build nueva a esta cuenta sin importar qué le pidamos
+// del lado del cliente. Se deja en 'none' por ser la opción más simple.
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './session' }),
   puppeteer: {
@@ -246,6 +456,9 @@ const client = new Client({
     protocolTimeout: 300000, // 5 minutos
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
            '--disable-accelerated-2d-canvas', '--no-first-run', '--disable-gpu'],
+  },
+  webVersionCache: {
+    type: 'none',
   },
 })
 
@@ -258,6 +471,13 @@ client.on('qr', qr => {
   if (!qrAlerted) {
     qrAlerted = true
     sendTelegram('📱 <b>Propi Bot</b>: la sesión de WhatsApp expiró — el bot está pidiendo QR. Correr <code>node index.js</code> a mano en la Mac y escanear.')
+    // Con QR pendiente el watchdog de arranque (90s) no alcanza para escanear:
+    // dar 10 min y recién ahí salir para que launchd relance.
+    clearTimeout(readyWatchdog)
+    setTimeout(() => {
+      console.error('❌ QR no escaneado en 10 min — salgo para reintentar.')
+      process.exit(1)
+    }, 10 * 60 * 1000)
   }
 })
 
@@ -265,291 +485,75 @@ client.on('authenticated', () => console.log('✅ Sesión autenticada'))
 
 client.on('auth_failure', async msg => {
   console.error('❌ Error de autenticación:', msg)
-  await sendTelegram('❌ <b>Propi Bot</b>: sesión de WhatsApp inválida (auth_failure). Hay que volver a escanear el QR en la Mac.')
+  await sendTelegram('🔴 <b>Propi Bot</b>: sesión de WhatsApp inválida (auth_failure). Hay que volver a escanear el QR en la Mac.')
   process.exit(1)
 })
 
-let shuttingDown = false // evita alerta espuria cuando el destroy() normal dispara 'disconnected'
-client.on('disconnected', async reason => {
-  if (shuttingDown) return
-  console.error('❌ WhatsApp desconectado:', reason)
-  await sendTelegram(`❌ <b>Propi Bot</b>: WhatsApp se desconectó (${reason}). Revisar la sesión en la Mac.`)
+// Si se desconecta, salimos para que launchd relance el proceso y arranque
+// una sesión limpia — whatsapp-web.js no siempre se recupera bien de una
+// desconexión sin reiniciar el Client.
+client.on('disconnected', async (reason) => {
+  console.warn('⚠️  Desconectado:', reason)
+  await sendTelegram(`🟡 <b>Propi Bot desconectado</b>\n\nMotivo: ${reason}\nSe reinicia solo.`)
   process.exit(1)
 })
 
-// ── Watchdog: si la corrida no termina, avisar y salir ────────
-// Sin esto, una sesión de WhatsApp muerta deja el proceso colgado para
-// siempre y el bot deja de cargar pedidos sin ninguna señal.
-const WATCHDOG_MINUTES = parseInt(process.env.WATCHDOG_MINUTES || '30')
-setTimeout(async () => {
-  console.error(`⏰ Watchdog: la corrida no terminó en ${WATCHDOG_MINUTES} min.`)
-  await sendTelegram(`⏰ <b>Propi Bot colgado</b>: la corrida no terminó en ${WATCHDOG_MINUTES} min. Probable sesión de WhatsApp Web caída — en la Mac: pkill -f "chrome.*matchprop" y correr de nuevo.`)
-  process.exit(1)
-}, WATCHDOG_MINUTES * 60 * 1000)
-
-client.on('ready', () => {
-  run().catch(async err => {
-    console.error('❌ Error fatal en la corrida:', err)
-    await sendTelegram(`❌ <b>Propi Bot error fatal</b>: ${String(err?.message || err).slice(0, 300)}`)
-    process.exit(1)
-  })
+client.on('ready', async () => {
+  console.log('\n🤖 Bot conectado! Escuchando mensajes en vivo...\n')
+  try {
+    const wwebVersion = await client.getWWebVersion()
+    console.log(`📦 WhatsApp Web version cargada: ${wwebVersion}`)
+  } catch (e) {
+    console.log('⚠️  No se pudo leer la versión de WhatsApp Web:', e.message)
+  }
+  await sendTelegram('🟢 <b>Propi Bot conectado</b>\n\nEscuchando los grupos configurados en vivo.')
 })
 
-async function run() {
-  console.log('\n🤖 Bot conectado!\n')
+// ── Modo always-on: procesar cada mensaje al momento en que llega ─────────
+// Antes el bot hacía client.getChatById(groupId) + chat.fetchMessages() para
+// "ir a buscar" el historial de cada grupo — esa es justo la función de
+// WhatsApp Web que está rota ahora mismo (bug de whatsapp-web.js, no
+// nuestro: github.com/wwebjs/whatsapp-web.js/issues/5733). El evento
+// 'message' que dispara cuando llega un mensaje NO pasa por ese código
+// roto, así que lo esquivamos escuchando en vivo en vez de pedir la lista.
+//
+// Tradeoff: si la Mac se duerme o el bot se cae un rato, los mensajes que
+// llegaron mientras estaba parado NO se recuperan solos (antes sí, con la
+// ventana de 48h). Mitigado por: el crash-proofing de arriba (se reinicia
+// solo) + que la Mac tiene que estar prendida para el bot igual.
+// message_create (no 'message'): el fix de la comunidad usó message_create,
+// que parece ser más confiable en builds nuevas de WhatsApp Web / multi-device.
+// Dispara para mensajes entrantes Y salientes, por eso filtramos fromMe.
+client.on('message_create', async (msg) => {
+  // Filtrar ANTES de loguear nada — evita procesar/imprimir cada mensaje de
+  // cada chat (tus DMs, Estados de WhatsApp, otros grupos ajenos a Demandi).
+  if (msg.fromMe) return
+  if (!TARGET_GROUP_SET.has(msg.from)) return // no es uno de los 4 grupos configurados
 
-  // Esperar a que WhatsApp Web sincronice los mensajes recientes del servidor
-  await new Promise(r => setTimeout(r, 8000))
-
-  // ── Modo discovery: listar grupos ────────────────────────────
-  if (TARGET_GROUP_IDS.length === 0) {
-    console.log('⚠️  TARGET_GROUP_IDS no configurado. Listando grupos...')
-    const chats = await client.getChats()
-    const groups = chats.filter(c => c.isGroup)
-    console.log('━'.repeat(50))
-    groups.sort((a, b) => b.timestamp - a.timestamp).forEach((g, i) => {
-      console.log(`  [${i + 1}] ${g.name}`)
-      console.log(`      ID: ${g.id._serialized}`)
-      console.log()
-    })
-    console.log('━'.repeat(50))
-    shuttingDown = true
-    await client.destroy()
-    process.exit(0)
+  const groupName = GROUP_NAMES[msg.from] || msg.from
+  console.log(`📩 [${groupName}] mensaje entrante (${msg.body?.length ?? 0} chars)`)
+  try {
+    await processMessage(msg, groupName)
+  } catch (err) {
+    // No dejar que un error al procesar UN mensaje mate el listener entero.
+    console.error(`❌ Error procesando mensaje en ${groupName}:`, err)
   }
-
-  // ── Modo batch: ir directo a los grupos por ID ───────────────
-  const since    = getLastRun()
-  const sinceStr = new Date(since).toLocaleString('es-AR')
-  console.log(`📅 Procesando mensajes desde: ${sinceStr}\n`)
-
-  let totalCreados    = 0
-  let totalIgnorados  = 0
-  let totalDuplicados = 0
-  let totalMissed     = 0
-  const missedList    = []
-  const groupsNotFound = []
-  const processedIds = loadProcessed()
-
-  for (const groupId of TARGET_GROUP_IDS) {
-    let group
-    try {
-      group = await client.getChatById(groupId)
-    } catch {
-      console.log(`⚠️  Grupo no encontrado: ${groupId}`)
-      groupsNotFound.push(groupId)
-      continue
-    }
-
-    console.log(`📂 ${group.name}`)
-
-    // Limit dinámico según tiempo transcurrido desde la última corrida
-    const hoursSince = (Date.now() - since) / 3_600_000
-    const fetchLimit = hoursSince > 72 ? 5000 : hoursSince > 24 ? 2000 : hoursSince > 6 ? 1000 : 500
-    const messages = await group.fetchMessages({ limit: fetchLimit })
-    // Solo mensajes en la ventana, no míos, y que no hayamos procesado antes.
-    const nuevos = messages.filter(m => m.timestamp * 1000 > since && !m.fromMe && !(m.id?._serialized && processedIds.has(m.id._serialized)))
-
-    // Advertir si probablemente se cortó la historia por el límite
-    if (messages.length >= fetchLimit && messages.length > 0 && messages[0].timestamp * 1000 > since) {
-      console.log(`   ⚠️  ATENCIÓN: el grupo tiene más de ${fetchLimit} msgs desde la última corrida — pueden faltar mensajes. Corré el bot nuevamente con HOURS_BACK más alto si es necesario.`)
-    }
-
-    console.log(`   ${nuevos.length} mensajes nuevos desde la última vez`)
-
-    for (const msg of nuevos) {
-      // Marcar como procesado ya mismo; si hay error transitorio de API lo revertimos abajo.
-      const msgId = msg.id?._serialized
-      if (msgId) processedIds.add(msgId)
-
-      if (!msg.body || msg.body.length < 25) {
-        console.log(`   ⏭ (msg corto, ${msg.body?.length ?? 0} chars)`)
-        continue
-      }
-
-      const contact = await msg.getContact()
-      const rawName = contact.pushname || contact.name || ''
-      const name    = /^\d+$/.test(rawName) ? '' : rawName
-      const preview = msg.body.substring(0, 60).replace(/\n/g, ' ')
-
-      process.stdout.write(`   • ${name}: ${preview}... `)
-
-      // Teléfono real: solo cuando server === 'c.us'
-      // LID (@lid): identificador de privacidad de WhatsApp — no es número real,
-      // pero lo usamos como ID único para no perder la búsqueda.
-      let finalPhone = ''
-      let isLID = false
-
-      if (contact.id?.server === 'c.us' && /^\d{10,15}$/.test(contact.id.user)) {
-        finalPhone = contact.id.user
-      } else if (contact.id?.server === 'lid' && contact.id?.user) {
-        // Intentar extraer número del texto primero
-        const fromText = extractPhoneFromText(msg.body)
-        if (fromText) {
-          finalPhone = fromText
-        } else {
-          // Usar LID como fallback: garantiza unicidad aunque no sea un teléfono real
-          finalPhone = contact.id.user
-          isLID = true
-        }
-      }
-
-      // Opción adicional: buscar número en el texto del mensaje
-      if (!finalPhone) {
-        const fromText = extractPhoneFromText(msg.body)
-        if (fromText) finalPhone = fromText
-      }
-
-      // Sin ningún identificador → descartar
-      if (!finalPhone) {
-        process.stdout.write('→ ignorado (sin ID)\n')
-        totalIgnorados++
-        continue
-      }
-
-      // Parsear siempre — no depender del teléfono para decidir si es búsqueda
-      let raw
-      try {
-        raw = await parseMessage(msg.body)
-      } catch (err) {
-        // Error transitorio de Groq (conexión/rate limit): NO marcar como procesado
-        // para reintentar en la próxima corrida.
-        if (err?.transient && msgId) processedIds.delete(msgId)
-        process.stdout.write('→ ⚠️ error transitorio (se reintenta)\n')
-        totalMissed++
-        continue
-      }
-      const parsed = raw ? sanitize(raw, msg.body) : null
-
-      if (!parsed) {
-        process.stdout.write('→ ignorado\n')
-        totalIgnorados++
-        continue
-      }
-
-      // Fallback de zona: si el parser no detectó zona, usar la del grupo
-      if (!parsed.zones?.length) {
-        const fallback = getGroupFallbackZones(group.name)
-        if (fallback.length) {
-          parsed.zones = fallback
-          process.stdout.write(`[zona fallback: ${fallback[0]}] `)
-        }
-      }
-
-      // Sin zonas (ni parser ni fallback) → guardar para revisión
-      if (!parsed.zones?.length) {
-        process.stdout.write('→ ⚠️  sin zona\n')
-        const entry = { group: group.name, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'no_zones' }
-        logMissed(entry)
-        missedList.push(entry)
-        totalMissed++
-        continue
-      }
-
-      // Si es LID, agregar nota en description para que el broker sepa
-      if (isLID && parsed.description) {
-        parsed.description = `[Contactar por nombre en WA: ${name || 'ver grupo'}] ${parsed.description}`
-      } else if (isLID) {
-        parsed.description = `Contactar por nombre en WA: ${name || 'ver grupo'}`
-      }
-
-      // Deduplicación local antes de llamar a la API
-      const dup = await isDuplicate(finalPhone, parsed)
-      if (dup) {
-        process.stdout.write('→ ↩ duplicado\n')
-        totalDuplicados++
-        continue
-      }
-
-      try {
-        const result = await createPedido({
-          request_type:   'property',
-          operation_type: parsed.operation_type  || 'compra',
-          property_types: parsed.property_types  || [],
-          zones:          parsed.zones           || [],
-          bedrooms_min:   parsed.bedrooms_min    || null,
-          bedrooms_max:   parsed.bedrooms_max    || null,
-          bathrooms_min:  parsed.bathrooms_min   || null,
-          budget_usd:     parsed.budget_usd      || 0,
-          budget_ars:     parsed.budget_ars      || null,
-          financing:      parsed.financing       || 'efectivo',
-          description:    parsed.description     || null,
-          contact_name:   name,
-          contact_phone:  finalPhone,
-          publisher_type: 'inmobiliaria',
-          source:         'whatsapp',
-          source_message_id: msg.id?._serialized || null,
-        })
-        if (result.duplicate) {
-          process.stdout.write(`→ ↩ duplicado (API)\n`)
-          totalDuplicados++
-        } else {
-          process.stdout.write(`→ ✅ creado (${result.id})\n`)
-          totalCreados++
-        }
-      } catch (err) {
-        const errMsg = err.message || ''
-        if (errMsg.includes('duplicate')) {
-          process.stdout.write(`→ ↩ duplicado\n`)
-          totalDuplicados++
-        } else {
-          process.stdout.write(`→ ❌ error: ${errMsg}\n`)
-          // Error transitorio: desmarcar para reintentar en la próxima corrida.
-          if (msgId) processedIds.delete(msgId)
-          const entry = { group: group.name, name, phone: finalPhone, body: msg.body.slice(0, 300), parsed, reason: 'api_error', error: errMsg }
-          logMissed(entry)
-          missedList.push(entry)
-          totalMissed++
-        }
-      }
-    }
-    console.log()
-  }
-
-  // ── Resumen ───────────────────────────────────────────────────
-  console.log('━'.repeat(50))
-  console.log(`✅ Pedidos creados:  ${totalCreados}`)
-  console.log(`↩  Duplicados:      ${totalDuplicados}`)
-  console.log(`⏭  Ignorados:       ${totalIgnorados}`)
-  if (totalMissed > 0) console.log(`⚠️  Sin procesar:    ${totalMissed} (ver missed.json)`)
-  if (groupsNotFound.length) console.log(`❌ Grupos no encontrados: ${groupsNotFound.join(', ')}`)
-  console.log('━'.repeat(50))
-
-  saveLastRun()
-  saveProcessed(processedIds)
-
-  // ── Notificación Telegram ─────────────────────────────────────
-  const fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: '2-digit', month: '2-digit', year: 'numeric' })
-  const emoji = totalCreados > 0 ? '🏠' : '😴'
-
-  let missedSection = ''
-  if (missedList.length > 0) {
-    const items = missedList.slice(0, 5).map(e => {
-      const motivo = e.reason === 'no_phone' ? 'sin tel.' : e.reason === 'no_zones' ? 'sin zona' : 'error API'
-      return `  • ${e.name || '(?)'}: ${e.body.slice(0, 80).replace(/\n/g, ' ')}… (${motivo})`
-    }).join('\n')
-    missedSection = `\n\n⚠️ <b>${totalMissed} búsqueda${totalMissed > 1 ? 's' : ''} sin procesar:</b>\n${items}`
-  }
-  if (groupsNotFound.length) {
-    missedSection += `\n\n❌ <b>${groupsNotFound.length} grupo${groupsNotFound.length > 1 ? 's' : ''} no encontrado${groupsNotFound.length > 1 ? 's' : ''}</b> — revisar TARGET_GROUP_IDS.`
-  }
-
-  const statsLine = `⏭ ${totalIgnorados} ignorados · ↩ ${totalDuplicados} duplicados`
-  const telegramMsg = totalCreados > 0
-    ? `${emoji} <b>Propi Bot — ${fecha}</b>\n\n✅ <b>${totalCreados} pedidos nuevos</b> cargados.\n${statsLine}${missedSection}\n\n🔗 <a href="${MATCHPROP_URL}/pedidos">Ver pedidos</a>`
-    : `${emoji} <b>Propi Bot — ${fecha}</b>\n\nSin pedidos nuevos.\n${statsLine}${missedSection}`
-  await sendTelegram(telegramMsg)
-
-  console.log('\n🏁 Listo. Podés cerrar la terminal.\n')
-
-  shuttingDown = true
-  await client.destroy()
-  process.exit(0)
-}
+})
 
 console.log('🚀 Iniciando Propi Bot...')
-client.initialize().catch(async err => {
-  console.error('❌ Error inicializando WhatsApp Web:', err)
-  await sendTelegram(`❌ <b>Propi Bot</b>: error inicializando WhatsApp Web: ${String(err?.message || err).slice(0, 200)}`)
-  process.exit(1)
-})
+
+// Watchdog de arranque: client.initialize() abre Chrome vía Puppeteer contra
+// la carpeta de sesión guardada. Si quedó un Chrome anterior vivo (o un
+// lock file trabado) usando esa misma carpeta, la llamada se cuelga para
+// siempre — no tira error, no conecta, no loguea nada más. Sin límite de
+// tiempo, launchd nunca se entera (el proceso "sigue corriendo" aunque no
+// hace nada) y el bot queda muerto en los hechos sin que nadie lo note.
+const READY_TIMEOUT_MS = 90_000
+const readyWatchdog = setTimeout(() => {
+  console.error(`❌ El bot no terminó de conectar en ${READY_TIMEOUT_MS / 1000}s (posible sesión de Chrome trabada) — salgo para que se reintente.`)
+  sendTelegram('🔴 <b>Propi Bot</b>\n\nNo terminó de conectar a tiempo (posible sesión de Chrome trabada). Reintentando...')
+    .finally(() => process.exit(1))
+}, READY_TIMEOUT_MS)
+client.on('ready', () => clearTimeout(readyWatchdog))
+
+client.initialize()

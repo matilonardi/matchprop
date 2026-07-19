@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Propi Bot — launchd para el modo ALWAYS-ON.
+  El bot queda corriendo 24/7 escuchando mensajes en vivo; KeepAlive lo
+  relanza si el proceso muere (crash, desconexión de WhatsApp, watchdog).
+  ⚠️ Reemplaza al plist viejo que disparaba cada 1h (modo batch): dos
+  instancias sobre la misma sesión de Chrome chocan con
+  "The browser is already running".
+
+  Instalación (verificar antes la ruta de node con `which node`):
+    cp bot/com.matchprop.bot.plist ~/Library/LaunchAgents/
+    launchctl unload ~/Library/LaunchAgents/com.matchprop.bot.plist 2>/dev/null
+    launchctl load ~/Library/LaunchAgents/com.matchprop.bot.plist
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.matchprop.bot</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/opt/homebrew/bin/node</string>
+    <string>index.js</string>
+  </array>
+
+  <key>WorkingDirectory</key>
+  <string>/Users/matias.lonardi/matchprop/bot</string>
+
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>PATH</key>
+    <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+  </dict>
+
+  <!-- Relanzar siempre que el proceso termine (crash o salida limpia). -->
+  <key>KeepAlive</key>
+  <true/>
+
+  <!-- Esperar 30s entre relanzamientos para no ciclar como loco si algo
+       está roto (ej. sesión pidiendo QR). -->
+  <key>ThrottleInterval</key>
+  <integer>30</integer>
+
+  <key>RunAtLoad</key>
+  <true/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/matias.lonardi/matchprop/bot/bot.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/matias.lonardi/matchprop/bot/bot.log</string>
+</dict>
+</plist>
