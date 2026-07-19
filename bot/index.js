@@ -463,6 +463,7 @@ const client = new Client({
 })
 
 let qrAlerted = false
+let qrExitTimer = null
 client.on('qr', qr => {
   console.log('\n📱 Escaneá este QR con el celular de Nico:\n')
   qrcode.generate(qr, { small: true })
@@ -474,14 +475,18 @@ client.on('qr', qr => {
     // Con QR pendiente el watchdog de arranque (90s) no alcanza para escanear:
     // dar 10 min y recién ahí salir para que launchd relance.
     clearTimeout(readyWatchdog)
-    setTimeout(() => {
+    qrExitTimer = setTimeout(() => {
       console.error('❌ QR no escaneado en 10 min — salgo para reintentar.')
       process.exit(1)
     }, 10 * 60 * 1000)
   }
 })
 
-client.on('authenticated', () => console.log('✅ Sesión autenticada'))
+client.on('authenticated', () => {
+  console.log('✅ Sesión autenticada')
+  // El QR ya fue escaneado: cancelar el timer de salida.
+  clearTimeout(qrExitTimer)
+})
 
 client.on('auth_failure', async msg => {
   console.error('❌ Error de autenticación:', msg)
