@@ -454,6 +454,7 @@ const client = new Client({
   puppeteer: {
     headless: true,
     protocolTimeout: 300000, // 5 minutos
+    timeout: 120000, // launch de Chrome: el default de 30s queda corto en frío
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
            '--disable-accelerated-2d-canvas', '--no-first-run', '--disable-gpu'],
   },
@@ -562,7 +563,9 @@ console.log('🚀 Iniciando Propi Bot...')
 // siempre — no tira error, no conecta, no loguea nada más. Sin límite de
 // tiempo, launchd nunca se entera (el proceso "sigue corriendo" aunque no
 // hace nada) y el bot queda muerto en los hechos sin que nadie lo note.
-const READY_TIMEOUT_MS = 90_000
+// 4 min: restaurar la sesión de WhatsApp Web puede tardar >90s en frío —
+// un watchdog más corto mataba el arranque a mitad de camino en loop.
+const READY_TIMEOUT_MS = parseInt(process.env.READY_TIMEOUT_MS || '240000')
 const readyWatchdog = setTimeout(() => {
   console.error(`❌ El bot no terminó de conectar en ${READY_TIMEOUT_MS / 1000}s (posible sesión de Chrome trabada) — salgo para que se reintente.`)
   sendTelegram('🔴 <b>Propi Bot</b>\n\nNo terminó de conectar a tiempo (posible sesión de Chrome trabada). Reintentando...')
