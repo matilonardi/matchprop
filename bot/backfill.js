@@ -170,31 +170,44 @@ async function createPedido(body) {
 }
 
 // ── Parseo del export de WhatsApp ─────────────────────────────────────────
-// Android: "18/7/26, 21:03 - Juan Pérez: mensaje"
-// iOS:     "[18/7/26, 21:03:15] Juan Pérez: mensaje"
+// Formatos soportados (varían por SO e idioma del sistema):
+//   Android 24h: "18/7/26, 21:03 - Juan Pérez: mensaje"
+//   iOS 24h:     "[18/7/26, 21:03:15] Juan Pérez: mensaje"
+//   iOS 12h AR:  "[11/6/26, 12:30:34 p. m.] ~ Agustina Quinteros: mensaje"
 // Los mensajes multilínea continúan sin prefijo de fecha.
-const ANDROID_RE = /^(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s+(\d{1,2}):(\d{2})\s+-\s+([^:]+):\s?([\s\S]*)$/
-const IOS_RE     = /^\[(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s+(\d{1,2}):(\d{2})(?::\d{2})?\]\s+([^:]+):\s?([\s\S]*)$/
+const LINE_RE = /^\[?(\d{1,2})\/(\d{1,2})\/(\d{2,4}),?\s+(\d{1,2}):(\d{2})(?::\d{2})?(?:\s*([ap])\.?\s*m\.?)?\]?\s*(?:-\s*)?([^:]+):\s?([\s\S]*)$/i
 
-function parseExport(raw) {
+function parseExport(raw, groupName) {
   const messages = []
   let current = null
   for (const line of raw.split('\n')) {
-    const clean = line.replace(/^‎|‎/g, '') // marcas LTR que mete iOS
-    const m = clean.match(ANDROID_RE) || clean.match(IOS_RE)
+    // Sacar marcas de dirección de texto invisibles que mete iOS (U+200E etc.)
+    const clean = line.replace(/[‎‏‪-‮⁦-⁩]/g, '')
+    const m = clean.match(LINE_RE)
     if (m) {
       if (current) messages.push(current)
-      const [, d, mo, y, h, mi, sender, body] = m
+      const [, d, mo, y, hRaw, mi, ampm, senderRaw, body] = m
       const year = y.length === 2 ? 2000 + parseInt(y) : parseInt(y)
+      let h = parseInt(hRaw)
+      if (ampm) { // formato 12h: "p. m." suma 12, "12 a. m." es 0
+        const p = ampm.toLowerCase() === 'p'
+        if (p && h < 12) h += 12
+        if (!p && h === 12) h = 0
+      }
+      // "~ Nombre" = participante no agendado (iOS): sacar el prefijo.
+      const sender = senderRaw.trim().replace(/^~\s*/, '')
+      // Mensajes de sistema: el "remitente" es el nombre del propio grupo
+      // ("X creó este grupo", "Te uniste con el enlace", cifrado, etc.)
+      if (groupName && sender.startsWith(groupName)) { current = null; continue }
       current = {
-        date: new Date(year, parseInt(mo) - 1, parseInt(d), parseInt(h), parseInt(mi)),
-        sender: sender.trim(),
+        date: new Date(year, parseInt(mo) - 1, parseInt(d), h, parseInt(mi)),
+        sender,
         body: body || '',
       }
     } else if (current) {
       current.body += '\n' + clean
     }
-    // Líneas de sistema (sin "sender:") antes del primer mensaje se ignoran solas.
+    // Líneas de sistema sin "sender:" se ignoran solas.
   }
   if (current) messages.push(current)
   return messages
@@ -210,7 +223,7 @@ function senderPhone(sender) {
 // ── Pipeline ──────────────────────────────────────────────────────────────
 ;(async () => {
   const raw = fs.readFileSync(FILE, 'utf8')
-  const all = parseExport(raw)
+  const all = parseExport(raw, GROUP_NAME)
   const inRange = all.filter(m =>
     (!SINCE || m.date >= SINCE) && (!UNTIL || m.date <= UNTIL) &&
     m.body && m.body.length >= 25 &&
