@@ -293,6 +293,11 @@ const processedIds = loadProcessed()
 
 // ── Procesa un mensaje individual (llamado desde el listener 'message') ──
 async function processMessage(msg, groupName) {
+  // Builds nuevas de WA Web a veces entregan message_create con body vacío
+  // pero el texto presente en el payload crudo — usarlo como fallback.
+  if (!msg.body && msg._data?.body && typeof msg._data.body === 'string') {
+    msg.body = msg._data.body
+  }
   const msgId = msg.id?._serialized
   if (msgId) {
     if (processedIds.has(msgId)) return // ya lo vimos (re-entrega de WA)
@@ -554,6 +559,11 @@ client.on('message_create', async (msg) => {
   if (!TARGET_GROUP_SET.has(msg.from)) return // no es uno de los 4 grupos configurados
 
   const groupName = GROUP_NAMES[msg.from] || msg.from
+  // Fallback de body ANTES de loguear, para que el largo refleje la realidad
+  // (builds nuevas de WA a veces dejan msg.body vacío con el texto en _data).
+  if (!msg.body && msg._data?.body && typeof msg._data.body === 'string') {
+    msg.body = msg._data.body
+  }
   console.log(`📩 [${groupName}] mensaje entrante (${msg.body?.length ?? 0} chars)`)
   try {
     await processMessage(msg, groupName)
