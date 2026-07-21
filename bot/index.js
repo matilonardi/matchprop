@@ -449,14 +449,22 @@ async function processMessage(msg, groupName) {
 // 'none' (sin cachear ninguna) — ninguna cambió nada, WhatsApp le sigue
 // asignando la misma build nueva a esta cuenta sin importar qué le pidamos
 // del lado del cliente. Se deja en 'none' por ser la opción más simple.
+// HEADFUL=1 abre el Chrome con ventana visible. La build de WhatsApp Web de
+// jul 2026 desloguea al instante ("Desconectado: LOGOUT") las sesiones nuevas
+// vinculadas desde un Chrome headless/automatizado — con ventana visible y sin
+// la bandera de automatización pasa como navegador normal. Una vez vinculada,
+// la sesión guardada suele sobrevivir también en headless; si no, dejar
+// HEADFUL=1 en el plist (la ventana puede quedar minimizada).
+const HEADFUL = process.env.HEADFUL === '1'
 const client = new Client({
   authStrategy: new LocalAuth({ dataPath: './session' }),
   puppeteer: {
-    headless: true,
+    headless: !HEADFUL,
     protocolTimeout: 300000, // 5 minutos
     timeout: 120000, // launch de Chrome: el default de 30s queda corto en frío
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
-           '--disable-accelerated-2d-canvas', '--no-first-run', '--disable-gpu'],
+           '--disable-accelerated-2d-canvas', '--no-first-run', '--disable-gpu',
+           '--disable-blink-features=AutomationControlled'],
   },
   webVersionCache: {
     type: 'none',
