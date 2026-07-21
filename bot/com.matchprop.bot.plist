@@ -31,6 +31,11 @@
   <dict>
     <key>PATH</key>
     <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    <!-- Chrome con ventana visible: la build de WhatsApp Web de jul 2026
+         desloguea al instante las sesiones de un Chrome headless. La ventana
+         puede quedar minimizada. -->
+    <key>HEADFUL</key>
+    <string>1</string>
   </dict>
 
   <!-- Relanzar siempre que el proceso termine (crash o salida limpia). -->
