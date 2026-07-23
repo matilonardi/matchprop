@@ -64,15 +64,40 @@ const PROPERTY_TYPE_MAP = {
 }
 const VALID_FINANCING = new Set(['efectivo','credito','ambos'])
 
+// Fallback de tipo de propiedad por texto: el LLM a veces omite property_types
+// aunque el mensaje lo diga explícitamente (ej. "Dúplex 2 o 3 dormitorios").
+// Antes de dejarlo vacío, buscamos keywords directas en el texto original.
+const PROPERTY_TYPE_TEXT_MAP = [
+  [/du?plex/i, 'duplex'],
+  [/pent\s*house|penthouse|\bph\b/i, 'ph'],
+  [/departamento|\bdepto\b|\bdpto\b/i, 'departamento'],
+  [/terreno|\blote\b/i, 'terreno'],
+  [/local comercial|\blocal\b/i, 'local'],
+  [/revalu[oó]/i, 'revaluo'],
+  [/\brenta\b/i, 'renta'],
+  [/\bcasa\b/i, 'casa'],
+]
+
+function getPropertyTypesFromText(text) {
+  if (!text) return []
+  const found = new Set()
+  for (const [regex, type] of PROPERTY_TYPE_TEXT_MAP) {
+    if (regex.test(text)) found.add(type)
+  }
+  return [...found]
+}
+
 function sanitize(parsed, text) {
   // Normalizar property_types
-  const types = (parsed.property_types || [])
+  let types = (parsed.property_types || [])
     .map(t => {
       const lower = t.toLowerCase().trim()
       if (VALID_PROPERTY_TYPES.has(lower)) return lower
       return PROPERTY_TYPE_MAP[lower] || null
     })
     .filter(Boolean)
+
+  if (types.length === 0) types = getPropertyTypesFromText(text)
 
   // Operación: solo 'compra' o 'alquiler' son búsquedas válidas.
   // El LLM a veces etiqueta "busco depto en venta" como 'venta': si el texto
