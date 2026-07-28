@@ -316,6 +316,28 @@ async function createPedido(body) {
 
 const processedIds = loadProcessed()
 
+// message_create a veces entrega mensajes cuyo id.raw no trae _serialized ya
+// calculado (visto en producción: pedidos creados con source_message_id null,
+// rompiendo el índice anti-duplicado). Reconstruimos el mismo formato que usa
+// WhatsApp (fromMe_remote_id[_participant]) a partir de las piezas crudas de
+// msg.id — son las mismas que arma internamente whatsapp-web.js para el
+// getter _serialized (ver Message.js / GroupNotification.js). Si ni siquiera
+// esas piezas están, caemos a un id propio estable por chat+remitente+hora.
+function getStableMessageId(msg) {
+  if (msg.id?._serialized) return msg.id._serialized
+  const raw = msg.id
+  if (raw?.id && raw?.remote != null && typeof raw.fromMe === 'boolean') {
+    const remote = typeof raw.remote === 'object' ? (raw.remote._serialized || String(raw.remote)) : raw.remote
+    const participant = raw.participant
+      ? (typeof raw.participant === 'object' ? (raw.participant._serialized || String(raw.participant)) : raw.participant)
+      : null
+    return participant ? `${raw.fromMe}_${remote}_${raw.id}_${participant}` : `${raw.fromMe}_${remote}_${raw.id}`
+  }
+  const chat = msg.from || msg.author || ''
+  if (chat && msg.timestamp) return `synthetic_${chat}_${msg.author || ''}_${msg.timestamp}`
+  return null
+}
+
 // ── Procesa un mensaje individual (llamado desde el listener 'message') ──
 async function processMessage(msg, groupName) {
   // Builds nuevas de WA Web a veces entregan message_create con body vacío
@@ -323,7 +345,8 @@ async function processMessage(msg, groupName) {
   if (!msg.body && msg._data?.body && typeof msg._data.body === 'string') {
     msg.body = msg._data.body
   }
-  const msgId = msg.id?._serialized
+  const msgId = getStableMessageId(msg)
+  if (!msgId) console.warn('⚠️  No se pudo construir un id estable para el mensaje — sin anti-duplicado por mensaje en este caso.')
   if (msgId) {
     if (processedIds.has(msgId)) return // ya lo vimos (re-entrega de WA)
     processedIds.add(msgId)
