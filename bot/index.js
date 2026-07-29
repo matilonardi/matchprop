@@ -517,7 +517,14 @@ const client = new Client({
     timeout: 120000, // launch de Chrome: el default de 30s queda corto en frío
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage',
            '--disable-accelerated-2d-canvas', '--no-first-run', '--disable-gpu',
-           '--disable-blink-features=AutomationControlled'],
+           '--disable-blink-features=AutomationControlled',
+           // Sin esto, Chrome pausa/ralentiza el timers de la pestaña cuando la
+           // ventana queda minimizada u oculta (ahorro de batería de macOS) —
+           // el proceso sigue vivo pero WhatsApp Web deja de recibir mensajes
+           // en vivo sin ningún error ni desconexión visible.
+           '--disable-backgrounding-occluded-windows',
+           '--disable-renderer-backgrounding',
+           '--disable-background-timer-throttling'],
   },
   webVersionCache: {
     type: 'none',
