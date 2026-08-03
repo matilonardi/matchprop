@@ -581,6 +581,29 @@ client.on('ready', async () => {
     console.log('⚠️  No se pudo leer la versión de WhatsApp Web:', e.message)
   }
   await sendTelegram('🟢 <b>Propi Bot conectado</b>\n\nEscuchando los grupos configurados en vivo.')
+
+  // ── Heartbeat: detectar sesión "zombie" ──────────────────────────────────
+  // Visto en producción: el proceso sigue vivo y el último log dice "conectado",
+  // pero WhatsApp Web deja de entregar mensajes nuevos sin ningún evento de
+  // desconexión (el socket interno queda colgado). Cada HEARTBEAT_MS chequeamos
+  // el estado real vía client.getState(); si no responde a tiempo o no está
+  // CONNECTED, forzamos la salida — launchd (KeepAlive) relanza un proceso
+  // limpio en vez de quedar escuchando en silencio para siempre.
+  const HEARTBEAT_MS = parseInt(process.env.HEARTBEAT_MS || '300000') // 5 min
+  setInterval(async () => {
+    try {
+      const state = await withTimeout(client.getState(), 15000, 'client.getState')
+      if (state !== 'CONNECTED') {
+        console.error(`❌ Heartbeat: estado inesperado (${state}) — reinicio forzado.`)
+        await sendTelegram(`🔴 <b>Propi Bot</b>\n\nHeartbeat: estado ${state} (no CONNECTED) — reinicio forzado.`)
+        process.exit(1)
+      }
+    } catch (err) {
+      console.error(`❌ Heartbeat sin respuesta (${err.message}) — sesión probablemente colgada, reinicio forzado.`)
+      await sendTelegram(`🔴 <b>Propi Bot</b>\n\nHeartbeat sin respuesta (${err.message}) — reinicio forzado.`)
+      process.exit(1)
+    }
+  }, HEARTBEAT_MS)
 })
 
 // ── Modo always-on: procesar cada mensaje al momento en que llega ─────────
